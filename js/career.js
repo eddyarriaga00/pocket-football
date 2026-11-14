@@ -332,7 +332,10 @@
     for (const [name, gain, bar, who] of AWARDS) {
       if (who === 'rookie' && C.season !== 1) continue;
       const wins = bar(avg, finish), close = wins || bar(avg + 1.2, finish), pos = () => who === 'pos' ? C.pos : OTHER_POS[Math.floor(r() * OTHER_POS.length)];
-      const others = [somebody(pos()), somebody(pos()), somebody(pos())];
+      let others = [somebody(pos()), somebody(pos()), somebody(pos())];
+      /* All-League at your position goes to the men who led the league there (the leaders table), not to strangers:
+         the passing champion is not left off the All-League team */
+      if (who === 'pos') others = L.rows.filter(x => !x.me).slice(0, 3).map(x => ({ name: x.name, ab: x.ab, pos: C.pos, riv: x.riv })).concat(others).slice(0, 3);
       const winner = wins ? me : others[0], noms = (close ? [me, ...others.slice(0, 2)] : others).filter(n => n !== winner);
       night.push({ a: name + (who === 'pos' ? ' · ' + POS[C.pos].label : ''), w: winner, n: noms.slice(0, 2), xp: wins ? gain : 0 });
       if (wins) {

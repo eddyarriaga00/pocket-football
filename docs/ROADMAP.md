@@ -2105,6 +2105,30 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   Next: 62 the simulation over forty games; 63 drive summary and scoring wording; 64 standings order and
   tie-breaks; 65 awards and leaders; then the thirteenth stock-take.
 
+- Change 62 (13:30), forty simulated games (three-minute quarters), nothing changed. Against the ranges: 4.86 yards
+  a carry, 61.3% complete, 1.8% intercepted, 3.9% sacked, 42.2 points a game combined: all inside. Two things the
+  ranges do not cover, measured and left for the owner because changing them changes how the game plays: computer
+  teams run on 28% of their snaps (the pro game is nearer 42%), and a completion averages 16.5 yards (nearer 11
+  there). Both follow from short quarters and a pass-first set of playbooks; more running would mean fewer points.
+- Change 63 (13:35), the wording of the drive summary and the scoring list, nothing changed: "Touchdown drive ·
+  5 plays · 76 yards · 0:59" and "Q2 · Touchdown · 12-yd pass from Carter to Rhodes (kick good)" read as a box
+  score does.
+- Change 64 (13:40), the standings' order, nothing changed: teams rank by wins (a tie counts half), then point
+  difference, and the note under the table says so. The pro game breaks a tie on head-to-head and division record
+  first; that would change who makes the playoffs, so it is left for the owner.
+- Change 65 (13:50), awards and leaders. The statistical title at your position goes to the league's leader, but
+  All-League at your position, when you did not win it, went to a made-up name: the passing champion could be left
+  off the All-League team. It now goes to the leader at your position, and the nominees are the next two (the
+  leaders table is the record for both). Seen after a receiver's season (Vega: receiving title and All-League)
+  and a quarterback's (the test player won both). MVP and Offensive Player of the Year, when not yours, are still
+  made-up names from around the league. Audit empty at 320x568 and 390x844; careers clean; fingerprint unchanged.
+- Thirteenth stock-take (13:50), after sixty-five changes. Changes 61 to 65: two stat-sheet faults fixed (a
+  fumble's credit, All-League), three checks, and two questions of balance written down for the owner (run share,
+  tie-breaks). Next five: 66 the career leaders board: are the other names' numbers plausible for ten games;
+  67 the game grade: what earns an A+ and whether a bad loss can; 68 quarterback rating or the stat line's order
+  against a pro box score; 69 the play-by-play toasts' wording (first down, loss, no gain); 70 a full regression;
+  then the fourteenth stock-take.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
