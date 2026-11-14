@@ -2246,11 +2246,15 @@
   }
 
   function addYds(t, g, td, sack) {
+    /* A fumble the offense got back belongs, on the stat sheet, to the man who fumbled: the lineman who fell on it
+       is not given a carry or a catch. A quarterback stripped before he threw is a sack. */
+    const fb = !td && ps.fum && ps.fum.by && ps.fum.by.team === t && ps.fum.by !== ps.carrier ? ps.fum.by : null;  // a recovery run in for a score stays the scorer's
+    if (fb && fb === ps.qb && ps.mode === 'pass' && !ps.thrown && g < 0) sack = true;
     /* team totals the pro way: a sack's lost yards come off net passing, not rushing (a team no longer shows
        minus rushing yards for having had its quarterback sacked) */
     if (ps.caught || sack) G.stats[t].pass += g;
     else G.stats[t].rush += g;
-    const who = ps.carrier;
+    const who = fb || ps.carrier;
     if (ps.caught) {
       credit(ps.passer, 'pyd', g);
       credit(who, 'recyd', g);
@@ -2259,7 +2263,7 @@
       credit(who, 'car', 1);
       credit(who, 'ryd', g);
     }
-    const me = QUIET ? null : G.me, my = G.my, c = ps.carrier;
+    const me = QUIET ? null : G.me, my = G.my, c = who;
     if (!me) return;
     if (ps.caught) {
       if (ps.passer === me) {

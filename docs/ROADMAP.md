@@ -2086,6 +2086,25 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   Audit empty at 320x568 and 390x844 after change 56; careers, season, exhibition and camp clean.
   Next: 60 a full regression; then the twelfth stock-take.
 
+- Change 60 (13:00), a full regression, nothing changed: menus and all four modes audited at 320x568 and 390x844,
+  empty; fingerprint as pinned in change 56; the rough test player through three exhibitions and six career games,
+  clean; six simulated games at 4.7 yards a carry, 62% complete, 3.1% intercepted, 46.8 points (the last two at
+  the top of their ranges on six games: worth a longer run before reading anything into them).
+- Twelfth stock-take (13:00), after sixty changes. Changes 56 to 60 turned up the first fault of football rather
+  than of layout in some time (sack yards counted as rushing), found by reading a stat screen as a fan would. So
+  the next five read the numbers: 61 the box score's conventions (who is credited after a fumble, kneel-downs,
+  spikes); 62 the simulation over forty games against its ranges; 63 the drive summary and scoring list wording
+  against how a broadcast says it; 64 the standings' order and tie-breaks; 65 awards and leaders: do the right
+  players win them; then the thirteenth stock-take.
+- Change 61 (13:15), the box score after a fumble. A lineman had "1 car, -8 yds" on Season's roster tab: when the
+  offense got its own fumble back, the man who fell on it was credited with the carry (or the catch) and the whole
+  play's yards. The play now belongs to the man who fumbled; a quarterback stripped before he threw is a sack, with
+  its yards off net passing; a recovery run in for a touchdown stays the scorer's (`addYds`). Checked in sixteen
+  rainy exhibitions with 25 fumbles: no lineman with a carry or a catch. The seeded run is unchanged in every part,
+  totals included. Audit empty at 320x568 and 390x844; careers, season, exhibition and camp clean.
+  Next: 62 the simulation over forty games; 63 drive summary and scoring wording; 64 standings order and
+  tie-breaks; 65 awards and leaders; then the thirteenth stock-take.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
