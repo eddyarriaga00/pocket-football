@@ -1346,10 +1346,10 @@
     const m = C.career, fame = fameCase();
     scr.innerHTML = `<div class="menu solid"><h1 class="sm">Career <em>so far</em></h1>
   <div class="pc" style="--c:${team(C.team).c1};margin-top:14px"><div><h3>${esc(C.name)}</h3><p>#${C.num} · ${POS[C.pos].label} · age ${age()}<br>${C.season} season${C.season>1?'s':''} · ${m.g} games · ${rank()}</p></div><div class="ovr">${ovr()}<small>OVR</small></div></div>
-  <div class="nx"><small>Career totals</small><h4>${line(m)}</h4><p>${C.rings} title${C.rings===1?'':'s'} · ${(C.awards||[]).length} honor${(C.awards||[]).length===1?'':'s'} · ${fmt(C.xpTotal)} XP earned · ${money(C.cash || 0)} in salary</p></div>
+  <div class="nx"><small>Career totals</small><h4>${line(m)}</h4><div class="sdn" style="margin:8px 0 0"><span><b>${C.rings}</b>Title${C.rings===1?'':'s'}</span><span><b>${(C.awards||[]).length}</b>Honor${(C.awards||[]).length===1?'':'s'}</span><span><b>${short(C.xpTotal)}</b>XP</span><span><b>${money(C.cash || 0)}</b>Salary</span></div></div>
   <div class="nx"><small>Hall of fame case</small><h4>${fame.verdict}</h4>
   <div class="trust" style="margin:8px 0 6px"><span>Score · 100 is a first-ballot career</span><b>${fame.score}</b><div class="bar"><i style="width:${Math.min(100,fame.score)}%"></i></div></div>
-  <p>${fame.parts.map(([l,v])=>`${l} ${v}`).join(' · ')}</p></div>
+  <div class="fmp">${fame.parts.map(([l,v])=>`<span><b>${v}</b>${l}</span>`).join('')}</div></div>
   ${historyHtml()}${trophiesHtml()}
   <button class="go" id="keep">Keep playing</button><div class="stack"><button class="btn2" id="rt">Retire · put it to the hall of fame vote</button><button class="btn2 warn" id="nc">Erase and start a new career</button></div>
   <p class="note">Either way this career ends, and it cannot be undone. Retiring keeps it in the hall of fame; erasing does not. Your other saved careers are not touched.</p></div>`;
@@ -1471,7 +1471,7 @@
   <p class="tag">${ins} enshrined${hall.length > ins ? ` · ${hall.length - ins} more retired` : ''}. Retire a career to put it to the vote: a case of 70 gets in.</p>
   ${fresh ? `<div class="nx aw${fresh.inducted ? ' won' : ''}"><small>The vote · class of ${fresh.cls}</small><h4>${fresh.inducted ? `${esc(fresh.name)} is a hall of famer` : `${esc(fresh.name)} falls short`}</h4>
   <p>${esc(fresh.verdict)} · case ${fresh.score}${fresh.inducted ? '' : ' of the 70 it takes'}</p></div>` : ''}
-  ${hall.length ? hall.map(e => `<div class="pc hof" style="--c:${e.c1}"><div><h3>${esc(e.name)}</h3><p>#${e.num} · ${esc(e.pos)} · ${esc(e.team)}<br>${e.seasons} season${e.seasons === 1 ? '' : 's'}${e.age ? `, retired at ${e.age}` : ''} · ${e.games} games · ${e.rings} title${e.rings === 1 ? '' : 's'}<br>${esc(e.line)}${e.honors && e.honors.length ? `<br>${esc(honors(e))}` : ''}</p></div><div class="ovr">${e.score}<small>${e.inducted ? 'HOF' : 'CASE'}</small></div></div>`).join('')
+  ${hall.length ? hall.map(e => `<div class="pc hof" style="--c:${e.c1}"><div><h3>${esc(e.name)}</h3><p>#${e.num} · ${esc(e.pos)} · ${esc(e.team)}<br>${esc(e.line)}${e.honors && e.honors.length ? `<br>${esc(honors(e))}` : ''}</p><div class="pcc"><span>${e.seasons} season${e.seasons === 1 ? '' : 's'}</span><span>${e.games} games</span><span>${e.rings} title${e.rings === 1 ? '' : 's'}</span>${e.age ? `<span>retired at ${e.age}</span>` : ''}</div></div><div class="ovr">${e.score}<small>${e.inducted ? 'HOF' : 'CASE'}</small></div></div>`).join('')
     : '<p class="note">Nobody yet. A career you retire from its Retire screen is put to the vote here.</p>'}
   ${fresh ? '<button class="go" id="hnew">Start a new career</button>' : ''}</div>`;
     $('#bk').onclick = fresh ? () => showCreate() : () => PG.showMenu();

@@ -839,3 +839,12 @@ tr.me td{color:var(--acc);font-weight:700}
 .sdn{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin:0 0 8px;text-align:center}
 .sdn span{display:grid;gap:1px;padding:8px 2px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font:700 10px var(--display);letter-spacing:.04em;text-transform:uppercase;color:var(--mute)}
 .sdn b{font-size:16px;font-weight:800;letter-spacing:0;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* retirement: where the hall of fame score comes from, a chip a part */
+.fmp{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.fmp span{display:flex;align-items:baseline;gap:5px;padding:3px 8px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:11px;color:var(--mute);white-space:nowrap}
+.fmp b{font:800 12px var(--display);color:var(--ink);font-variant-numeric:tabular-nums}
+.sdn b{white-space:nowrap}
+
+/* hall of fame: room between the plaques */
+.pc.hof{margin-top:8px}

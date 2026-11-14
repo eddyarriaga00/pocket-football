@@ -1994,6 +1994,17 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   43 team editor (names and colors) at 320 wide; 44 rain and snow games through the rough test player; 45 a second
   look at the play-call sheet's Special tab and the two-point sheet; then the ninth stock-take.
 
+- Change 41 (10:05), the trade and retirement screens at 320 wide. A trade is two taps on the hub's Career row
+  (the button turns to "Confirm trade" with a line saying which team and what place): read well, left alone. The
+  retirement screen ("Career so far") had two lines of facts as text: the career's titles, honors, XP and salary are
+  four tiles, and the five parts of the hall of fame score are chips with the points each gives (`.fmp`).
+- Change 42 (10:10), milestones and the hall of fame at 320 wide. Milestones (twelve cards two across) read well,
+  left alone. The hall of fame's plaques sat flush against each other and against the line above: they have room
+  between them, and each one's seasons, games, titles and retiring age are chips under its line. Audit empty at
+  320x568 and 390x844; careers clean; fingerprint unchanged.
+  Next: 43 the team editor at 320 wide; 44 rain and snow games through the rough test player; 45 the Special tab and
+  the two-point sheet; then the ninth stock-take.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
