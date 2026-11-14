@@ -2205,6 +2205,29 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   formation, which this game does not have: left at 25, for the owner to say.
   Next: 80 a full regression; then the sixteenth stock-take.
 
+- Change 80 (15:30), a full regression, nothing changed: menus and all four modes audited at 320x568 and 390x844,
+  empty; fingerprint unchanged; the rough test player through four exhibitions and six career games, clean.
+- Sixteenth stock-take (15:30), after eighty changes. Changes 76 to 80: one rule put right (the missed field
+  goal's spot), three sets of rules read and found sound. Questions for the owner, collected from the day; each
+  would change how the game plays, so none was touched:
+  1. Overtime is one period of sudden death ("next score wins"). The pro game now gives both sides a possession.
+     Changing it also means the overtime banner and, probably, new booth lines.
+  2. A kickoff touchback is spotted at the 25. The pro game uses the 30 or 35 with its new kickoff formation.
+  3. Standings break a tie on point difference. The pro game uses head-to-head and division record first.
+  4. Computer teams run on 28% of snaps and a completion averages 16.5 yards (the pro game: about 42% and 11).
+     More running means fewer points with three-minute quarters.
+  5. MVP and Offensive Player of the Year, when you do not win them, go to made-up names rather than to the
+     league's leaders.
+  6. A quarterback's interceptions now lower his game grade (change 67): say if that is too harsh.
+  Things only a person with the device can judge: a real controller on the new switches, sound on a phone
+  speaker, the frame rate on an actual phone.
+  Next five: 81 the extra point, the two-point try, the safety and the end-zone interception read against the pro
+  rules; 82 the two-minute warning and the hurry-up; 83 the challenge: what can be challenged and what it costs;
+  84 fair catch and muffed punt; 85 a last regression; then the day's summary.
+- Change 81 (15:35), four more rules read in the code, nothing changed: the extra point is kicked from the 15 (a
+  33-yard kick); the two-point try is one play from the 2; an interception downed in the end zone comes out to the
+  20; after a safety the side that scored takes over near its own 35, standing in for the free kick.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
