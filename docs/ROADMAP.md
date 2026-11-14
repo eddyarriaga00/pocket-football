@@ -2250,6 +2250,33 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   camp; the first round follows under its own heading with each team's color beside its pick. Played on from it
   into a first game as a receiver. Audit empty at 320x568 and 390x844; fingerprint unchanged.
 
+- Change 87 (17:00), the last regression of the day, nothing changed: menus and all four modes audited at
+  320x568 and 390x844, empty; fingerprint as pinned; the rough test player through four exhibitions, six career
+  games and a rigged season to the championship game (runner-up); the single-file bundle loaded alone, gave the
+  pinned fingerprint and played an exhibition and a career game. The test browser's settings were put back and its
+  test careers and season cleared.
+- The day, 2026-11-14, in short (87 changes, artifact versions 110 to 135, 47 commits on main):
+  Screens redrawn with pictures, tiles, chips and switches in place of lines of text, nothing removed: Settings,
+  the pause sheet, How to play, training camp, the halftime and final sheets, scoring plays and leaders,
+  exhibition set-up, the playoff bracket, the career hub's header and finished-season card, the new-career builds,
+  the press conference, the retirement screen, the hall of fame, the draft screen, the after-touchdown sheet.
+  On the field: the rain's reflection, the benches (uneven, turned, one or two on a knee), the stage board in the
+  draft and hall of fame cutscenes fitted to an upright phone, dark team colors given an edge.
+  Lighter to draw: cutscenes and the instant replay no longer swap in the close-up model for the benches (replay
+  612,000 triangles to 499,000; cutscenes 537,000 to 231,000).
+  Football put right: sack yards come off net passing, not rushing; a recovered fumble's play belongs to the man
+  who fumbled; a missed field goal is spotted where it was kicked from; a quarterback's interceptions lower his
+  grade; All-League goes to the league's leader at the position; the draft is "of 32"; a season is "ten games".
+  Asked for during the day: up to eight saved careers; `js/online.js` and `docs/ONLINE.md` set up for multiplayer
+  and chat, nothing connected.
+  Tested: `tools/chaos.js`, a rougher test player (fourth downs, two-point tries, onside kicks, challenges, ties
+  into overtime, whole seasons); every rare ending seen; one fault of the day's own found and fixed (the final
+  sheet's score after a playoff settled past four overtimes).
+  For the owner: the six questions in the sixteenth stock-take (overtime, the kickoff touchback spot, tie-breaks,
+  how much the computer runs, made-up award winners, the interception penalty on the grade), the decisions in
+  `docs/ONLINE.md`, and three things only the device can show (a real controller on the switches, sound on a phone
+  speaker, frame rate on a phone).
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
