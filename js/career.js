@@ -804,9 +804,12 @@
     const opens = { Starter: 'you start from day one', Rotation: 'you open in the rotation', Backup: 'you open as a backup' }[roleOf()[1]];
     scr.innerHTML = `<div class="menu solid"><h1 class="sm">The <em>draft</em></h1>
   <p class="tag">${pre.dash?`Dash ${pre.dash.time.toFixed(2)} s, grade ${pre.dash.grade}${pre.work?` · drills grade ${pre.work.grade}`:''} · `:''}Draft grade ${grade}</p>
-  <table class="lg">${order.map((ti,n)=>n===pick-1?`<tr class="me"><td>${n+1}. ${full(ti)}</td><td>${esc(C.name)}, ${C.pos}</td></tr>`:`<tr><td>${n+1}. ${full(ti)}</td><td>${any(PG.NAMES)}, ${any(others)}</td></tr>`).join('')}</table>
-  <div class="nx"><small>Pick ${pick} of ${TEAMS.length}</small><h4>${full(tm)}</h4><p>${C.deal.years}-year contract at ${money(C.deal.pay)} a season · Signing bonus +${fmt(bonus)} XP · Coach trust ${C.trust}: ${opens}.</p></div>
-  <button class="go" id="camp">Report to camp</button></div>`;
+  <div class="nx"><small>Pick ${pick} of ${TEAMS.length}</small><h4>${full(tm)}</h4>
+  <div class="sdn" style="margin:8px 0 6px"><span><b>${C.deal.years} yr</b>Deal</span><span><b>${money(C.deal.pay)}</b>A season</span><span><b>+${fmt(bonus)}</b>Bonus XP</span><span><b>${C.trust}</b>Trust</span></div>
+  <p>Coach trust ${C.trust}: ${opens}.</p></div>
+  <button class="go" id="camp">Report to camp</button>
+  <h2>The first round</h2>
+  <table class="lg dft">${order.map((ti,n)=>{const d=`<i style="--c:${team(ti).c1}"></i>`;return n===pick-1?`<tr class="me"><td>${d}${n+1}. ${full(ti)}</td><td>${esc(C.name)}, ${C.pos}</td></tr>`:`<tr><td>${d}${n+1}. ${full(ti)}</td><td>${any(PG.NAMES)}, ${any(others)}</td></tr>`}).join('')}</table></div>`;
     $('#camp').onclick = () => showHub('up');
     if (played) return;  // the stage had the fanfare and the announcer
     PG.snd('fanfare');

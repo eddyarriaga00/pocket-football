@@ -2244,6 +2244,12 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   was run as change 80, forty minutes earlier, with nothing changed since but this.)
   Next: 86 onwards, small visual passes until 17:30; then the day's summary.
 
+- Change 86 (16:30), the draft order screen. What the screen is for (which team took you, the contract, the bonus,
+  where you open) was a paragraph under a 32-row table, a long scroll down. It is first now: the pick and team,
+  four tiles (the deal's length, pay a season, the signing bonus, the coach's trust), where you open, and Report to
+  camp; the first round follows under its own heading with each team's color beside its pick. Played on from it
+  into a first game as a receiver. Audit empty at 320x568 and 390x844; fingerprint unchanged.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.

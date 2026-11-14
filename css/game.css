@@ -852,3 +852,6 @@ tr.me td{color:var(--acc);font-weight:700}
 /* team color bars on team tiles and player cards: a faint edge, so navy and black still read on the dark panel */
 .tm i{box-shadow:0 0 0 1px rgba(255,255,255,.2)}
 .pc::before{box-shadow:inset -1px 0 0 rgba(255,255,255,.2)}
+
+/* the draft order: each team's color beside its pick */
+table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border-radius:50%;background:var(--c);box-shadow:0 0 0 1px rgba(255,255,255,.32)}
