@@ -2129,6 +2129,30 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   against a pro box score; 69 the play-by-play toasts' wording (first down, loss, no gain); 70 a full regression;
   then the fourteenth stock-take.
 
+- Change 66 (14:00), the career leaders boards after a ten-game season, nothing changed: the leaders' numbers are
+  what ten games of three-minute quarters would give (passing 1,941 yards and 13 touchdowns, rushing 856, 7.5
+  sacks, 3 interceptions, 70 tackles), the test player sat where his own line put him, and the rate boards (passer
+  rating, completion percentage) keep their minimum attempts.
+- Change 67 (14:10), the game grade. It is goals met (two each), a win (one) and the stat line (up to three), out
+  of ten; nothing in it counted against a quarterback's interceptions, so a three-interception day with the yards
+  and the goals was an A+. Each interception now takes a step off, three at most (`gradeOf`). Eight test games
+  graded A-, A+, A+, A+, C+, A-, F, A; the three with an interception were the A-, the C+ and the F. The grade
+  feeds the season average the awards use and the coach's trust, so a careless quarterback earns both more slowly.
+  It does not touch how a play runs: fingerprint unchanged.
+- Change 68 (14:15), the stat line's order, nothing changed: completions/attempts, yards, touchdowns,
+  interceptions, then carries; catches, yards, touchdowns, targets: the order a pro box score uses.
+- Change 69 (14:15), the play-result wording, nothing changed: "+7 yards", "+1 yard", "No gain", "Loss of 3",
+  "Sack!", "First down" read as they should.
+- Change 70 (14:25), a full regression: menus and all four modes audited at 320x568 and 390x844, empty; careers at
+  both positions, the rough test player through two exhibitions and three career games: clean; fingerprint
+  unchanged.
+- Fourteenth stock-take (14:25), after seventy changes. Changes 66 to 70: one more fault of football fixed (the
+  grade ignored interceptions), four checks. Three hours remain. Next five: 71 the coach's messages and the
+  headline after a game: do they match what happened (a loss with a great line, a win with a poor one); 72 the
+  commentary index: any line whose trigger cannot fire; 73 the README's controls table against the keys the game
+  binds; 74 the roadmap's How to test section brought up to date with the day's tools; 75 a full regression and
+  the bundle on its own; then the fifteenth stock-take and the day's summary.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.

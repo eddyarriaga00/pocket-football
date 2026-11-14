@@ -502,7 +502,9 @@
   function gradeOf(m, won, met) {
     const scale = { QB: 1, RB: 0.8, WR: 1, LB: 3.6, CB: 4.4 }[C.pos], k = C.ql / 120 * share();  // a part-time player is judged on part-time numbers
     const stat = xpFor(m, false).filter(([l]) => l !== 'Game played').reduce((t, [, v]) => t + v, 0) * scale / k;
-    const pts = met * 2 + (won ? 1 : 0) + (stat >= 650 ? 3 : stat >= 380 ? 2 : stat >= 170 ? 1 : 0);
+    /* a quarterback's interceptions cost a step each (three at most): a three-pick day is not an A+ whatever the yards */
+    const picks = C.pos === 'QB' ? Math.min(3, m.pint || 0) : 0;
+    const pts = Math.max(0, met * 2 + (won ? 1 : 0) + (stat >= 650 ? 3 : stat >= 380 ? 2 : stat >= 170 ? 1 : 0) - picks);
     return [pts, GRADES[Math.min(10, pts)]];
   }
 
