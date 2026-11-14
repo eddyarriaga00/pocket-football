@@ -2246,7 +2246,9 @@
   }
 
   function addYds(t, g, td, sack) {
-    if (ps.caught) G.stats[t].pass += g;
+    /* team totals the pro way: a sack's lost yards come off net passing, not rushing (a team no longer shows
+       minus rushing yards for having had its quarterback sacked) */
+    if (ps.caught || sack) G.stats[t].pass += g;
     else G.stats[t].rush += g;
     const who = ps.carrier;
     if (ps.caught) {

@@ -2067,6 +2067,25 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   settings each switched and a play run (shadows, glow, close-up models, replays, cutscenes off); 59 left-handed
   buttons at 320 wide; 60 a full regression; then the twelfth stock-take.
 
+- Change 56 (12:40), Season mode's Team and Roster tabs with five games played. The layout read well. The numbers
+  showed a fault of football, not of layout: the team had minus 91 rushing yards. A sack's lost yards were being
+  added to the team's rushing total (the college way); a player's own carries already left sacks out. Team totals
+  now take a sack off net passing, as the pro game does (`addYds`). Nothing about how a play runs changed: the
+  seeded run gives the same score, the same number of steps and the same trace of player positions as before, and
+  only the split of one team's 160 yards moved (166 passing and minus 6 rushing became 152 and 8). Because the
+  fingerprint string includes those totals it was pinned again; the old one is kept in the test browser as
+  `pg.fingerprint.before-sacks`. Shows on the halftime and final sheets, the quarter-break card, Season's team tab
+  and the Ground and pound milestone (80 rushing yards is no longer pulled down by sacks).
+- Change 57 (12:45), long games, nothing changed: three exhibitions with five-minute quarters through the rough
+  test player (20-22 in overtime, 42-31, 34-26 in overtime): no errors.
+- Change 58 (12:50), the graphics settings off, nothing changed: shadows, glow, close-up models, replays,
+  cutscenes and the cinematic camera all off and sharpness on Balanced, an exhibition audited at 390x844: clean
+  (about 115,000 triangles a frame with everything off).
+- Change 59 (12:55), buttons on the left at 320 wide, nothing changed: switched in Settings, an exhibition
+  audited, the pad looked at in a still: every button mirrored to the left edge, none under the play tag.
+  Audit empty at 320x568 and 390x844 after change 56; careers, season, exhibition and camp clean.
+  Next: 60 a full regression; then the twelfth stock-take.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
