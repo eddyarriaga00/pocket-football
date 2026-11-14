@@ -2910,7 +2910,7 @@
         sub = `${d}-yard attempt` + (ps.kick.post ? ' · off the upright' : '');
         stop = true;
         react(1 - off, 0.7, 2);
-        setBall(1 - off, off === 0 ? Math.min(los, 80) : Math.max(los, 20), FW / 2);
+        setBall(1 - off, off === 0 ? Math.min(los - 7, 80) : Math.max(los + 7, 20), FW / 2);  // a miss gives the other side the ball at the spot of the kick (seven yards behind the line), or at its own 20 if that is better
       }
     } else if (kind === 'kotb') {
       big = 'Touchback';

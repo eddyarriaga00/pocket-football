@@ -2179,6 +2179,32 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   unchanged.
   Next: 75 a full regression and the bundle on its own; then the fifteenth stock-take and the day's summary.
 
+- Change 75 (15:00), a full regression and the bundle on its own, nothing changed: menus and all four modes
+  audited at 320x568 and 390x844, empty; the rough test player through exhibitions, careers at both positions and a
+  rigged season; the single-file bundle loaded alone, gave the pinned fingerprint and played an exhibition and a
+  career game.
+- Fifteenth stock-take (15:00), after seventy-five changes. Changes 71 to 75 were one word of the coach's, the
+  README's controls and the test notes. With two and a half hours left the loop reads the rules of the game itself
+  against the pro game: 76 where a missed field goal is spotted; 77 the clock: what stops it and what does not;
+  78 penalties: yardage and whether the down is replayed; 79 the kickoff and punt touchback spots; 80 a full
+  regression; then the sixteenth stock-take and the day's summary at 17:30.
+- Change 76 (15:15), a missed field goal. The other side took over at the line of scrimmage (or its 20). The pro
+  rule gives it the ball at the spot of the kick, seven yards behind the line, or at its own 20 if that is better:
+  done. A miss from the 21 (a 38-yard try) now hands over the ball at the 28, not the 21, so a long miss costs
+  what it should. Seen in play: a miss with the line at the 79 gave the ball at the 72; one going the other way at
+  the 34 gave it at the 41. The seeded run has no missed field goal in it and is unchanged in every part; thirty
+  simulated games came out at 4.64 yards a carry, 59.9% complete, 2.1% intercepted and 44.1 points, inside the
+  ranges (a first batch of eight had read 49.9 points: batches of five range from 35 to 55, so short runs prove
+  little). Audit empty at 320x568 and 390x844.
+- Changes 77 to 79 (15:15), the rules read in the code, nothing changed. 77: the clock stops for an incompletion,
+  a ball carrier out of bounds, a score, a change of possession, a penalty and a time out, and runs after a tackle
+  in bounds (thirteen seconds come off, eight in the hurry-up, scaled to the short quarters). 78: holding is ten
+  yards from the old spot (half the distance near the goal line) and the down is replayed; defensive fouls that
+  carry one give an automatic first down; roughing is fifteen. 79: a punt into the end zone comes out to the 20;
+  a kickoff touchback is spotted at the 25. The pro game moved that to the 30 and then the 35 with its new kickoff
+  formation, which this game does not have: left at 25, for the owner to say.
+  Next: 80 a full regression; then the sixteenth stock-take.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
