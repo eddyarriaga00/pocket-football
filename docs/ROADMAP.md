@@ -2024,6 +2024,18 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   practice mini-games from the career hub; 49 the coin toss, intro and quarter-break cards in stills; 50 a full
   regression and the day's summary notes in the roadmap; then the tenth stock-take.
 
+- Change 46 (11:10), the combine and draft at 320 wide. The combine screen (two workout cards, skip) reads well.
+  Two faults in the draft cutscene: (1) its caption said "pick 18 of 8", a leftover from the eight-team league: it
+  counts the league's teams now ("pick 11 of 32"); (2) the stage board is 13 yards wide and a phone held upright saw
+  only its middle in the close shots, so a long team name ran off both edges ("HIGHLANDER"). The board is drawn
+  narrower on an upright screen (down to half, by the camera's aspect) and its lines are written pre-stretched and
+  sized to fit, so the letters keep their shape (`boardFit`, `boardLines` in `render3d.js`); landscape is unchanged.
+  The hall of fame ceremony uses the same board and gets the same fit (seen with a long name; its angled shot still
+  trims the first letter of "HALL OF FAME" a little). The draft order list after it reads well. Audit empty at
+  320x568 and 390x844; fingerprint unchanged.
+  Next: 47 the saves list with eight careers; 48 the practice mini-games; 49 the coin toss, intro and quarter-break
+  cards in stills; 50 a full regression and the day's summary notes; then the tenth stock-take.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.

@@ -908,6 +908,30 @@
     props = { g, walk: { tun, skin, rim, signC, signTex, smoke, flames }, champ: { stage, skirt, cup, bursts }, coin, draft: { board: draftBoard, boardC, boardTex, shirt, shirtC, shirtTex, key: '' }, press: { pod, podC, podTex, wall, wallC, wallTex, pops, key: '' }, hof: { bust, cloth, clothMat, plaqueC, plaqueTex, key: '' }, teamKey: '' };
   }
 
+  /* The stage board is 13 yards wide: on a phone held upright the close shots saw only its middle, and a long
+     team name ran off both edges. The board is drawn narrower there (down to half), and its lines are written
+     pre-stretched and sized to fit, so the letters keep their shape. */
+  const boardFit = () => Math.round(clamp((camera ? camera.aspect : 1) / 0.95, 0.5, 1) * 20) / 20;
+  function boardLines(x, lines) {
+    const k = boardFit();
+    props.draft.board.scale.x = k;
+    x.save();
+    x.translate(512, 0);
+    x.scale(1 / k, 1);
+    x.textAlign = 'center';
+    for (const [txt, px, wt, y, col] of lines) {
+      let size = px;
+      x.font = `${wt} ${size}px Archivo, Arial, sans-serif`;
+      while (size > 22 && x.measureText(txt).width > 940 * k) {
+        size -= 4;
+        x.font = `${wt} ${size}px Archivo, Arial, sans-serif`;
+      }
+      x.fillStyle = col;
+      x.fillText(txt, 0, y);
+    }
+    x.restore();
+  }
+
   function updateProps(sc, t0, P) {
     if (!sc) {
       if (props) props.g.visible = false;
@@ -962,7 +986,7 @@
     H.bust.visible = hof;
     if (hof) {
       Ch.skirt.color.set(t0.c1);
-      const key = 'hof|' + t0.ab + '|' + sc.o.name + '|' + sc.o.cls;
+      const key = 'hof|' + t0.ab + '|' + sc.o.name + '|' + sc.o.cls + '|' + boardFit();
       if (H.key !== key) {
         H.key = key;
         H.clothMat.color.set(t0.c1);
@@ -976,13 +1000,7 @@
         x.fillRect(0, 392, 1024, 28);
         x.textAlign = 'center';
         x.fillStyle = '#c9d3e6';
-        x.font = '700 40px Archivo, Arial, sans-serif';
-        x.fillText(`CLASS ${sc.o.cls}`, 512, 92);
-        x.fillStyle = '#ffffff';
-        x.font = '800 108px Archivo, Arial, sans-serif';
-        x.fillText('HALL OF FAME', 512, 228, 960);
-        x.font = '700 44px Archivo, Arial, sans-serif';
-        x.fillText(String(sc.o.name || '').toUpperCase(), 512, 300, 960);
+        boardLines(x, [[`CLASS ${sc.o.cls}`, 40, 700, 92, '#c9d3e6'], ['HALL OF FAME', 108, 800, 228, '#ffffff'], [String(sc.o.name || '').toUpperCase(), 44, 700, 300, '#ffffff']]);
         Dr.boardTex.needsUpdate = true;
         Dr.key = '';  // the draft redraws its own board next time
         const p = H.plaqueC.getContext('2d');
@@ -1011,7 +1029,7 @@
     Dr.shirt.visible = draft && !!sc.me && sc.me.act === 'hold';
     if (draft) {
       Ch.skirt.color.set(t0.c1);
-      const key = t0.ab + '|' + sc.o.pick + '|' + sc.o.num + '|' + sc.o.name;
+      const key = t0.ab + '|' + sc.o.pick + '|' + sc.o.num + '|' + sc.o.name + '|' + boardFit();
       if (Dr.key !== key) {
         Dr.key = key;
         // the board: the draft over the team, in its colors
@@ -1024,13 +1042,7 @@
         x.fillRect(0, 404, 1024, 16);
         x.textAlign = 'center';
         x.fillStyle = '#c9d3e6';
-        x.font = '700 40px Archivo, Arial, sans-serif';
-        x.fillText(`THE DRAFT \u00b7 ROUND 1 \u00b7 PICK ${sc.o.pick}`, 512, 92);
-        x.fillStyle = '#ffffff';
-        x.font = '800 112px Archivo, Arial, sans-serif';
-        x.fillText(t0.name.toUpperCase(), 512, 230, 960);
-        x.font = '700 44px Archivo, Arial, sans-serif';
-        x.fillText(t0.city.toUpperCase(), 512, 300, 960);
+        boardLines(x, [[`ROUND 1 \u00b7 PICK ${sc.o.pick}`, 40, 700, 92, '#c9d3e6'], [t0.name.toUpperCase(), 112, 800, 230, '#ffffff'], [t0.city.toUpperCase(), 44, 700, 300, '#ffffff']]);
         Dr.boardTex.needsUpdate = true;
         // the jersey: the team color, the name across the shoulders, the number under it
         const s = Dr.shirtC.getContext('2d');

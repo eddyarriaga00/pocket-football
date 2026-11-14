@@ -655,7 +655,7 @@
       const boss = { x: FW / 2 + 0.75, y: 49.6, vx: 0, vy: 0, team: 1, role: 'BOSS', num: 0, name: '', suit: true, act: 'stand', face: Math.PI / 2, lift: 0.45 };
       sc.me = me;
       sc.boss = boss;
-      sc.cap = `<small>The draft · pick ${o.pick} of 8</small><b>The ${esc(t.city)} ${esc(t.name)} select ${esc(o.name)}</b><span>${o.pos === 'WR' ? 'Wide receiver' : 'Quarterback'} · #${o.num}</span>`;
+      sc.cap = `<small>The draft · pick ${o.pick} of ${TEAMS.length}</small><b>The ${esc(t.city)} ${esc(t.name)} select ${esc(o.name)}</b><span>${o.pos === 'WR' ? 'Wide receiver' : 'Quarterback'} · #${o.num}</span>`;
       return [me, boss];
     },
     update(sc) {
