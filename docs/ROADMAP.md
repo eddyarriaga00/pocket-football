@@ -2228,6 +2228,15 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   33-yard kick); the two-point try is one play from the 2; an interception downed in the end zone comes out to the
   20; after a safety the side that scored takes over near its own 35, standing in for the free kick.
 
+- Changes 82 to 84 (15:45), more rules read in the code, nothing changed. 82: the two-minute warning stops the
+  clock at 2:00 of the second and fourth quarters (not in overtime, and not when a quarter is two minutes or less);
+  the hurry-up takes eight seconds between plays instead of thirteen, for a side level or behind late in the game
+  and for anybody in the last minute of the half. 83: a challenge is of the spot on a close first down; each side
+  has two, a wrong one costs a time out, and an overturned spot can take a first down away or turn the ball over on
+  downs. 84: a fair catch gives the ball where it lands with no return; a muffed punt is a live ball either side
+  can recover.
+  Next: 85 a last regression; then the day's summary.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
