@@ -2290,7 +2290,7 @@
     G.celeb = null;
     setBrief('');
     scr.innerHTML = `<div class="sheet"><div class="shd"><b>After the touchdown</b><span>${ab(0)} ${G.score[0]} · ${ab(1)} ${G.score[1]}</span></div>
-  <button class="go" id="p1">Kick the extra point</button><button class="btn2" id="p2" style="margin-top:8px">Go for two · one play from the 2-yard line</button></div>`;
+  <div class="cols"><button class="go sm" id="p1">Kick it<br><small>Extra point · 1</small></button><button class="go sm" id="p2">Go for two<br><small>One play from the 2</small></button></div></div>`;
     $('#p1').onclick = () => patKick(t);
     $('#p2').onclick = () => {
       G.pat = null;
@@ -2448,7 +2448,7 @@
   const tch = t => `<i class="tch" style="--c:${TEAMS[G.tm[t]].c1};color:${inkOn(TEAMS[G.tm[t]].c1)}">${ab(t)}</i>`;
   function scoringHtml(list) {
     if (!list || !list.length) return '';
-    return `<h4 class="sumh">Scoring</h4><ul class="evs">${list.map(e => `<li>${tch(e.team)}<span><em>${e.q > 4 ? 'OT' : 'Q' + e.q} · ${e.kind === 'TD' ? 'Touchdown' : e.kind === 'FG' ? 'Field goal' : 'Safety'}</em>${e.text}${e.drive ? `<small>${e.drive.plays} play${e.drive.plays === 1 ? '' : 's'}, ${e.drive.yds} yards, ${clockTxt(e.drive.secs)}</small>` : ''}</span><b>${e.score[0]} – ${e.score[1]}</b></li>`).join('')}</ul>`;
+    return `<h4 class="sumh">Scoring</h4><ul class="evs">${list.map(e => `<li>${tch(e.team)}<span><em>${e.q > 4 ? 'OT' : 'Q' + e.q} · ${e.kind === 'TD' ? 'Touchdown' : e.kind === 'FG' ? 'Field goal' : 'Safety'}</em>${e.text}${e.drive ? `<small>${e.drive.plays} play${e.drive.plays === 1 ? '' : 's'}, ${e.drive.yds} yard${Math.abs(e.drive.yds) === 1 ? '' : 's'}, ${clockTxt(e.drive.secs)}</small>` : ''}</span><b>${e.score[0]} – ${e.score[1]}</b></li>`).join('')}</ul>`;
   }
 
   /* the best passer, runner and receiver on each side so far, from the box score of the snaps that were played */
@@ -5356,7 +5356,7 @@
     if (!d || G.drill) return;
     setTimeout(() => {
       if (!G.ros || G.state === 'menu' || G.state === 'over') return;
-      toast(`${title} · ${d.plays} play${d.plays === 1 ? '' : 's'} · ${d.yds} yards · ${clockTxt(d.secs)}`);
+      toast(`${title} · ${d.plays} play${d.plays === 1 ? '' : 's'} · ${d.yds} yard${Math.abs(d.yds) === 1 ? '' : 's'} · ${clockTxt(d.secs)}`);
     }, 1700);
   }
 
@@ -5459,6 +5459,7 @@
     scr.innerHTML = '';
     setBrief('');
     $('#banner').classList.remove('on');
+    $('#toast').classList.remove('on');  // a toast from the last play does not follow you to the menu
     $('#meter').hidden = true;
     $('#rp').hidden = true;  // leaving in the middle of a replay used to leave its badge on the menu
     CONF.length = 0;
@@ -5833,7 +5834,7 @@
   function showTeams(sel, back) {
     back = back || showSettings;
     const o = load('pg.teams', {}) || {}, t = TEAMS[sel], clean = (v, n) => String(v || '').replace(/[<>&"]/g, '').trim().slice(0, n);
-    scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ Settings</button><h1 class="sm">Edit <em>teams</em></h1>
+    scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ ${back === showSettings ? 'Settings' : 'Back'}</button><h1 class="sm">Edit <em>teams</em></h1>
   <p class="tag">Rename any team on this device: what you type stays in this browser, and every mode (your career too) uses it. Pick a team, change it, save.</p>
   <div class="ted" style="--c:${t.c1}"><i></i><div><b>${esc(t.city)} ${esc(t.name)}</b><span>${esc(t.ab)} · ${PG.data.CONF[t.conf]} ${PG.data.DIV[t.div]}${o[sel] ? ' · renamed' : ''}</span></div></div>
   <div class="cols"><div><label class="lbl" for="tc">City</label><input id="tc" maxlength="16" autocomplete="off" value="${esc(t.city)}"></div>

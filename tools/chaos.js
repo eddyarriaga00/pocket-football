@@ -72,12 +72,12 @@ window.X = (() => {
   const pick = l => l[Math.random() * l.length | 0];
   return {
     seen, bad,
-    exh(games = 1, ql = 60) {
+    exh(games = 1, ql = 60, wx = '') {  // wx: 'rain', 'snow' or 'clear' for every game; left out, the weather is random
       const out = [];
       for (let i = 0; i < games; i++) {
         try {
           const n = PG.TEAMS.length, me = Math.random() * n | 0;
-          Object.assign(PG.SET, { me, opp: (me + 1 + (Math.random() * (n - 1) | 0)) % n, ql, diff: Math.random() * 3 | 0, tod: pick(['day', 'dusk', 'night']), wx: pick(['clear', 'rain', 'snow']) });
+          Object.assign(PG.SET, { me, opp: (me + 1 + (Math.random() * (n - 1) | 0)) % n, ql, diff: Math.random() * 3 | 0, tod: pick(['day', 'dusk', 'night']), wx: wx || pick(['clear', 'rain', 'snow']) });
           PG.showMenu();
           q('#mE').click();
           q('#go').click();

@@ -2005,6 +2005,25 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   Next: 43 the team editor at 320 wide; 44 rain and snow games through the rough test player; 45 the Special tab and
   the two-point sheet; then the ninth stock-take.
 
+- Change 43 (10:30), the team editor at 320 wide: laid out well (team card, four fields, two color wells, the list
+  of teams). One wrong label: opened from a career it said "‹ Settings" on a button that goes back to the career;
+  it says "‹ Back" there and "‹ Settings" only when opened from Settings.
+- Change 44 (10:40), rain and snow through the rough test player, nothing changed: `X.exh(n, ql, wx)` can now force
+  the weather; six games each in rain, snow and clear weather on random teams, two-minute quarters: no errors, no
+  bad numbers, an onside kick among them.
+- Change 45 (10:50), the Special tab and the after-touchdown sheet at 320 wide. Special (field goal, punt, kneel,
+  spike) reads well, left alone. After a touchdown the two choices were stacked and the second ran to two lines:
+  they are two buttons side by side, as on the fourth-down sheet ("Kick it · extra point, 1" and "Go for two · one
+  play from the 2"); a two-point try was then played through. The drive summary said "1 yards" for a one-yard
+  drive: singular now, in the toast and on the scoring list. A toast still showing when you leave a game is cleared
+  with the rest. Audit empty at 320x568 and 390x844 (a first run in a page where a game had just been played by hand
+  showed a card and a toast caught mid-fade: leftovers of the test, gone on a fresh page); fingerprint unchanged.
+- Ninth stock-take (10:50), after forty-five changes. Changes 41 to 45: retirement and hall of fame laid out, a
+  wrong back label, a clumsy sheet and a plural. The finds are getting smaller, which is the point of this stage.
+  Next five: 46 the draft and combine screens in stills; 47 the saves list with eight careers at 320 wide; 48 the
+  practice mini-games from the career hub; 49 the coin toss, intro and quarter-break cards in stills; 50 a full
+  regression and the day's summary notes in the roadmap; then the tenth stock-take.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
