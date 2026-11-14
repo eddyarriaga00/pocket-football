@@ -1222,7 +1222,7 @@
   function coachSays(m, grade, pts, won, met, role0, role1) {
     const any = a => a[Math.floor(Math.random() * a.length)], up = ROLES.findIndex(r => r[1] === role1) < ROLES.findIndex(r => r[1] === role0);
     let weak = '';
-    if (C.pos === 'QB') weak = m.pint > 0 ? 'the interceptions' : m.att >= 6 && m.comp / m.att < 0.5 ? 'the misses' : '';
+    if (C.pos === 'QB') weak = m.pint > 1 ? 'the interceptions' : m.pint === 1 ? 'the interception' : m.att >= 6 && m.comp / m.att < 0.5 ? 'the misses' : '';
     if (C.pos === 'RB') weak = m.car >= 5 && m.ryd / m.car < 3 ? 'your reads at the line' : '';
     if (C.pos === 'WR') weak = m.tgt >= 3 && m.rec / m.tgt < 0.5 ? 'the drops' : '';
     if (C.pos === 'LB') weak = m.tkl < 2 ? 'getting off blocks' : '';

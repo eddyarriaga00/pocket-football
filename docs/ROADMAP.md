@@ -48,6 +48,18 @@ what is next. Update it after every item.
    - `H.sim(12,180)` computer vs computer. Healthy ranges: 4 to 5 yards per carry, completions 53-62%,
      interceptions 1-3%, about 40-46 points per game combined (measured 2026-11-14), `errs` empty.
    - `H.exh(2,120)` scripted user in exhibition (exercises play calling, kicks, kickoffs). `errs` empty.
+   - The rougher test player, `tools/chaos.js` (load it after the harness, the same way): `X.exh(6,120)`,
+     `X.exh(6,120,'snow')`, `X.career('WR',6)`, `X.season(1,'potie')`. It goes for it on fourth down, tries for two,
+     kicks onside, challenges, picks random plays and ties games late; `X.bad` must stay empty. Run each in its own
+     call and reload between long runs (a season takes about ten seconds, three seasons of `H.careerSeasons` more
+     than forty-five).
+   - `H.fingerprint()` must equal `localStorage['pg.fingerprint']`. It was pinned again on 2026-11-14 when a sack's
+     yards moved from team rushing to net passing (the earlier one is kept as `pg.fingerprint.before-sacks`); a
+     change to the stat sheet that moves the totals needs the same treatment, after checking that score, steps and
+     trace are unchanged.
+   - Stepped tests leave things behind that a player never sees (a toast or card caught mid-fade, confetti, hit
+     rings): audit on a freshly loaded page, and put the test browser's settings back (sound, weather, graphics,
+     button side) and clear `pg.career*` and `pg.season*` when done.
    - `H.career('QB',2)` and `H.career('WR',2)` (a new career is a quarterback or a receiver). `errs` empty, stats non-zero.
    - `H.fingerprint()` must equal `localStorage['pg.fingerprint']` after any change that should not alter play. It pins
      the weather and the penalty switch itself, so what is saved in Settings cannot disturb it.
@@ -2152,6 +2164,20 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   commentary index: any line whose trigger cannot fire; 73 the README's controls table against the keys the game
   binds; 74 the roadmap's How to test section brought up to date with the day's tools; 75 a full regression and
   the bundle on its own; then the fifteenth stock-take and the day's summary.
+
+- Change 71 (14:30), the coach's message and the headline after a game, read against the rules that pick them. They
+  follow the grade, the result and the weakest part of the stat line, and fit what happened. One slip of grammar:
+  after a single interception the coach spoke of "the interceptions"; he says "the interception" for one.
+- Change 72 (14:40), the commentary index against the code, nothing changed: all 678 recorded lines belong to a
+  call the game can make (the numbered down-and-distance calls and the quarter-end lines are built from parts), and
+  every line the game asks for by name was recorded.
+- Change 73 (14:45), the README's controls table against the keys the game binds: three rows were missing (pump
+  fake and slide, B and N, LT and Y; pass protection, O, LT; fast forward and skip while watching a drive, F and K,
+  A and B). Added.
+- Change 74 (14:50), the roadmap's "How to test" now covers the rough test player, the fingerprint pinned on
+  2026-11-14 and why, and what a stepped test leaves behind. Audit empty at 320x568; careers clean; fingerprint
+  unchanged.
+  Next: 75 a full regression and the bundle on its own; then the fifteenth stock-take and the day's summary.
 
 ## Morning hand-off
 

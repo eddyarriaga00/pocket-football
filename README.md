@@ -291,6 +291,9 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
 | Juke / Spin / Power / Hurdle | The buttons | J / K / L / H | B / X / A / Y |
 | Switch / Dive / Hit / Strip (defense) | The buttons | Q / E / F / R | B / A / X / Y |
 | Audible / Flip / Hard count / Motion (before the snap) | The buttons | V / X / G / M | LB / RB / Y / X |
+| Pump fake / Slide (as quarterback) | Pump while passing; Slide once past the line of scrimmage | B / N | LT / Y |
+| Pass protection (before the snap, on a pass) | Protect | O | LT |
+| Watching a drive you are not in | Fast fwd / Skip drive | F / K | A / B |
 | Time out | Time out, right after the whistle or on the play-call sheet | T | View (Select) |
 | Fair catch | Fair catch, while a punt to you is in the air | Space | A |
 | Pause | The pause button under the scoreboard | P or Esc | Start |
