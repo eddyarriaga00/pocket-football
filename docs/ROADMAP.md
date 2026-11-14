@@ -2036,6 +2036,22 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   Next: 47 the saves list with eight careers; 48 the practice mini-games; 49 the coin toss, intro and quarter-break
   cards in stills; 50 a full regression and the day's summary notes; then the tenth stock-take.
 
+- Change 47 (11:25), the saves list with eight careers at 320 wide, nothing changed: eight cards (badge, name,
+  position, rating, team, where the season stands, Play or Continue, Delete), long double-barrelled names fit, the
+  one being played is marked, and at eight the New career button gives way to a line saying eight is the most.
+- Change 48 (11:30), practice from the career hub, nothing changed: six reps start at once on the play-call sheet,
+  the result sheet is four lines and the coach's trust. Played through by the test player.
+- Change 49 (11:35), the coin toss at 320 wide, nothing changed: the captains and the referee at midfield over a
+  sheet with Heads and Tails side by side. The quarter-break card was seen in change 22.
+- Change 50 (11:45), a full regression, nothing changed: menus and all four modes audited at 320x568 and 390x844,
+  empty; fingerprint unchanged; the rough test player through three exhibitions and six career games, clean.
+- Tenth stock-take (11:45), after fifty changes. Changes 46 to 50: the draft cutscene's two faults, and four checks
+  that found nothing. Every screen and sheet in the game has now been looked at in a still at 320 wide today.
+  The loop goes on in the same way, with what is left to look at: 51 the stadium and field in snow and rain from
+  the play camera; 52 a receiver's game from his own camera (routes, the Call button, the job card); 53 the
+  quarterback's pad on a pass (letters, power bar, Pump) at 320 wide; 54 the defense pad and the tackling prompts;
+  55 a whole-career run of three seasons at each position; then the eleventh stock-take.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
