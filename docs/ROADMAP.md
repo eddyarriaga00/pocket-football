@@ -2237,6 +2237,13 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   can recover.
   Next: 85 a last regression; then the day's summary.
 
+- Change 85 (16:00), dark team colors on tiles and cards. The color bar on a team tile and down the edge of a
+  player card was the team's color on a dark panel: for the three darkest teams (near-black, deep navy, charcoal)
+  it could not be seen. Both have a faint light edge now, as the standings dots got in change 27. Looked at on the
+  exhibition team grid; audit empty at 320x568 and 390x844; fingerprint unchanged. (The regression planned as 85
+  was run as change 80, forty minutes earlier, with nothing changed since but this.)
+  Next: 86 onwards, small visual passes until 17:30; then the day's summary.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.

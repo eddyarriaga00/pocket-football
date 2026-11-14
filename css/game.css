@@ -848,3 +848,7 @@ tr.me td{color:var(--acc);font-weight:700}
 
 /* hall of fame: room between the plaques */
 .pc.hof{margin-top:8px}
+
+/* team color bars on team tiles and player cards: a faint edge, so navy and black still read on the dark panel */
+.tm i{box-shadow:0 0 0 1px rgba(255,255,255,.2)}
+.pc::before{box-shadow:inset -1px 0 0 rgba(255,255,255,.2)}
