@@ -983,7 +983,7 @@
   function planMotion(kind, who) {
     if (AUTO || QUIET || G.drill || !ps || ps.mot || (ps.mode !== 'pass' && ps.mode !== 'run')) return null;
     const off = ps.offTeam, bx = ps.bx, los = ps.los, dir = G.dir, gun = Math.abs(ps.qb.sy - los) > 3;
-    const cand = who ? [who] : P.filter(p => p.team === off && p !== ps.runner && /^(X|Z|S|S2)$/.test(p.role) && Math.abs(p.sx - bx) >= 6);
+    const cand = who ? [who] : P.filter(p => p.team === off && p !== ps.runner && /^(X|Z|S|S2)$/.test(p.role) && Math.abs(p.sx - bx) >= 6 && Math.abs(p.sy - los) > 1);  // only a man already off the line: an end who left it would leave six on the line at the snap
     if (!cand.length) return null;
     const p = cand[Math.floor(Math.random() * cand.length)], side = Math.sign(p.sx - bx) || 1;
     if (!kind) {

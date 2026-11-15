@@ -46,7 +46,9 @@ what is next. Update it after every item.
    `await fetch('tools/harness.js?'+Date.now()).then(r=>r.text()).then(t=>(0,eval)(t))`
 3. Run:
    - `H.sim(12,180)` computer vs computer. Healthy ranges: 4 to 5 yards per carry, completions 53-62%,
-     interceptions 1-3%, about 40-46 points per game combined (measured 2026-11-14), `errs` empty.
+     interceptions 1-3%, about 35-44 points per game combined (measured 2026-11-14 evening, after the run share
+     went up to about 38%; batches of five games swing by ten points, so use thirty or more), `errs` empty.
+   - `node tools/playcheck.js` must say the playbook is legal after any change to formations or plays.
    - `H.exh(2,120)` scripted user in exhibition (exercises play calling, kicks, kickoffs). `errs` empty.
    - The rougher test player, `tools/chaos.js` (load it after the harness, the same way): `X.exh(6,120)`,
      `X.exh(6,120,'snow')`, `X.career('WR',6)`, `X.season(1,'potie')`. It goes for it on fourth down, tries for two,
@@ -2342,6 +2344,31 @@ six were done as the pro game has them; the choices where there was one are mine
   no letters after coming back to a yard behind. He can still throw on the move anywhere behind the line. The dive
   stays: it changed how a dive looks, not what it does. Audit empty at 320x568; exhibition, careers, camp clean;
   fingerprint unchanged.
+
+- The playbook against the rules and against real play design (the owner: "yes", to the offer of that audit).
+  A check was written for it, `node tools/playcheck.js`: seven men on the line in every formation, only the two
+  ends of the line and the men behind it eligible, every route and role a play names in its formation.
+  Found: six of the nine formations had eight men on the line (Singleback, I-Form, Pistol, Gun Trips, Gun Slot,
+  Jumbo). The flanker stood on the line outside the tight end, which covers the tight end and makes him
+  ineligible; fifteen plays threw to him (and Jumbo PA to the second tight end, covered by the split end). The
+  flanker (in Jumbo, the split end) is a step off the line now, so each formation has seven on the line and the
+  tight end is its end. Counted at the snap over a played game: seven on the line on all 68 snaps, eight
+  formations.
+  Three passing concepts did not match their names: Snag had the outside man on the corner and the slot on the
+  snag (it is the outside man who sits inside, the slot who runs the corner over him); Drive had its shallow cross
+  and its dig coming from opposite sides (they come from the same side, the dig behind the cross); Mills had the
+  slot on the post and the outside man on the dig (the post is the outside man's). RPO Bubble's slot ran a flat
+  route, not a bubble. All four corrected. The other plays were read and left: the runs, the quick game, the
+  screens, the bootleg and flood off play action, smash, dagger, levels, post-wheel, four verticals, the double
+  moves; and the thirteen defensive calls (their coverages are what their names say: two, three and four deep,
+  man with one or two deep, the five- and six-man pressures).
+  Motion: the man sent in motion could be an end, which leaves six on the line at the snap. Only a man already off
+  the line goes in motion now.
+  Play was meant to change, so the fingerprint was pinned again (`pg.fingerprint.before-formations`). Measured over
+  70 simulated games: 4.3 yards a carry, 56.7% complete, 1.8% intercepted, run share 39.5%, 37.5 points a game
+  combined. That is under the 40 to 46 written down in the morning, which was measured on the pass-first game;
+  with the running game nearer the pro share, scores are about a tenth lower. The range in "How to test" now reads
+  35 to 44. Audit empty at 320x568 and 390x844; exhibition, season, careers and all three camp drills clean.
 
 ## Morning hand-off
 

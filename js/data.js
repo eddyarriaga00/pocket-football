@@ -65,23 +65,26 @@
   const BASE = { QB: 7.3, RB: 8.7, FB: 7.5, TE: 8.0, X: 9.0, Z: 9.0, S: 8.9, LT: 5.6, LG: 5.6, C: 5.6, RG: 5.6, RT: 5.6, DE: 7.2, DT: 6.3, OLB: 8.1, MLB: 8.0, CB: 9.0, FS: 8.8, SS: 8.7 };
   const NUM = { QB: [1, 19], RB: [20, 39], FB: [40, 49], TE: [80, 89], X: [10, 19], Z: [80, 89], S: [10, 19], DE: [90, 99], DT: [90, 99], OLB: [50, 59], MLB: [50, 59], CB: [20, 39], FS: [20, 39], SS: [20, 39] };
 
-  /* formations: where each role lines up, as [yards right of the ball, yards behind the line] */
+  /* formations: where each role lines up, as [yards right of the ball, yards behind the line]. Each has seven men on
+     the line (the five linemen and the two ends, 0.6 back) and four behind it (1.4 or more). Only the ends and the
+     men behind the line are eligible, so where a tight end is the end of the line the receiver outside him is a
+     flanker, a step off it. `node tools/playcheck.js` checks every formation and play against this. */
   const FORM = {
-    single: { QB: [0, -1.6], RB: [0, -6.5], TE: [4.6, -0.6], X: [-14, -0.6], Z: [14, -0.6], S: [-8.5, -1.4] },
+    single: { QB: [0, -1.6], RB: [0, -6.5], TE: [4.6, -0.6], X: [-14, -0.6], Z: [14, -1.4], S: [-8.5, -1.4] },
     gun: { QB: [0, -5], RB: [1.9, -5], X: [-14, -0.6], Z: [14, -0.6], S: [-8.5, -1.4], S2: [8.5, -1.4] },
-    iform: { QB: [0, -1.6], FB: [0, -4.5], RB: [0, -7], TE: [4.6, -0.6], X: [-14, -0.6], Z: [14, -0.6] },
+    iform: { QB: [0, -1.6], FB: [0, -4.5], RB: [0, -7], TE: [4.6, -0.6], X: [-14, -0.6], Z: [14, -1.4] },
     /* three receivers to one side, the tight end inline among them, X alone on the other */
-    trips: { QB: [0, -5], RB: [-1.9, -5], TE: [4.6, -0.6], S2: [9.5, -1.4], Z: [15, -0.6], X: [-14, -0.6] },
+    trips: { QB: [0, -5], RB: [-1.9, -5], TE: [4.6, -0.6], S2: [9.5, -1.4], Z: [15, -1.4], X: [-14, -0.6] },
     /* nobody behind the quarterback: the back split out as a fifth receiver */
     empty: { QB: [0, -5], X: [-15, -0.6], S: [-9.5, -1.4], RB: [-4.6, -1.4], S2: [9, -1.4], Z: [15, -0.6] },
     /* the quarterback four yards back, the back straight behind him */
-    pistol: { QB: [0, -4], RB: [0, -6.8], TE: [4.6, -0.6], X: [-14, -0.6], Z: [14, -0.6], S: [-8.5, -1.4] },
+    pistol: { QB: [0, -4], RB: [0, -6.8], TE: [4.6, -0.6], X: [-14, -0.6], Z: [14, -1.4], S: [-8.5, -1.4] },
     /* three receivers stacked tight together, so they cross and rub at the snap */
     bunch: { QB: [0, -5], RB: [-1.9, -5], X: [-14, -0.6], Z: [9.5, -0.6], S: [8, -1.9], S2: [11, -1.9] },
     /* short yardage: two tight ends (the slot man lines up as the second), a fullback, X in tight */
-    heavy: { QB: [0, -1.6], FB: [0, -4.3], RB: [0, -6.8], TE: [4.6, -0.6], S: [-4.6, -0.6], X: [-11, -0.6] },
+    heavy: { QB: [0, -1.6], FB: [0, -4.3], RB: [0, -6.8], TE: [4.6, -0.6], S: [-4.6, -0.6], X: [-11, -1.4] },
     /* X moves inside to the slot, the slot man goes outside */
-    slot: { QB: [0, -5], RB: [1.9, -5], S: [-15, -0.6], X: [-9, -1.4], TE: [4.6, -0.6], Z: [14, -0.6] } };
+    slot: { QB: [0, -5], RB: [1.9, -5], S: [-15, -0.6], X: [-9, -1.4], TE: [4.6, -0.6], Z: [14, -1.4] } };
   const FNAME = { single: 'Singleback', gun: 'Shotgun', iform: 'I-Form', trips: 'Gun Trips', empty: 'Gun Empty', pistol: 'Pistol', bunch: 'Gun Bunch', heavy: 'Jumbo', slot: 'Gun Slot' };
 
   /* Routes as waypoints [across, upfield] from the receiver's spot. Across is mirrored for the left side unless abs is set;
@@ -128,7 +131,7 @@
     /* run-pass options: the back and the quarterback meet with the ball between them for a second. Throw to a lettered
        receiver in that second, or do nothing and the back takes it. rpo marks them; the computer never calls them. */
     { n: 'RPO Slant', cat: 'rpo', f: 'gun', rpo: 1, d: 'Shotgun · throw or hand off', run: { who: 'RB', path: [[0.8, -3.3], [0.6, -1], [1, 4]], push: 2.1 }, r: { X: 'slant', Z: 'slant' } },
-    { n: 'RPO Bubble', cat: 'rpo', f: 'gun', rpo: 1, d: 'Shotgun · throw or hand off', run: { who: 'RB', path: [[-0.8, -3.3], [-0.8, -1], [-1.2, 4]], push: 2.1 }, r: { S2: 'flatR', X: 'slant' } },
+    { n: 'RPO Bubble', cat: 'rpo', f: 'gun', rpo: 1, d: 'Shotgun · throw or hand off', run: { who: 'RB', path: [[-0.8, -3.3], [-0.8, -1], [-1.2, 4]], push: 2.1 }, r: { S2: 'bubble', X: 'slant' } },
     { n: 'RPO Glance', cat: 'rpo', f: 'trips', rpo: 1, d: 'Gun Trips · throw or hand off', run: { who: 'RB', path: [[-0.8, -3.3], [-0.8, -1], [-1.4, 4]], push: 2.1 }, r: { X: 'skinny', Z: 'hitch', S2: 'bubble' } },
     { n: 'RPO Peek', cat: 'rpo', f: 'pistol', rpo: 1, d: 'Pistol · throw or hand off', run: { who: 'RB', path: [[0.9, -4.4], [0.9, -1], [1.3, 4]], push: 2.1 }, r: { X: 'hitch', S: 'arrow', Z: 'slant' } },
     { n: 'Slants', cat: 'short', f: 'gun', rz: 1, r: { X: 'slant', Z: 'slant', S: 'out', S2: 'drag', RB: 'flatR' } },
@@ -138,9 +141,9 @@
     { n: 'HB Screen', cat: 'short', f: 'gun', d: 'Shotgun · screen', r: { RB: 'screenL', X: 'go', Z: 'go', S: 'go', S2: 'drag' } },
     { n: 'Bootleg', cat: 'short', f: 'single', pa: 1, roll: 7, d: 'Singleback · roll out', r: { TE: 'out', Z: 'corner', X: 'drag', S: 'in' } },
     { n: 'Spacing', cat: 'short', f: 'bunch', rz: 1, r: { Z: 'hitch', S: 'arrow', S2: 'curl', X: 'curl', RB: 'flatL' } },
-    { n: 'Snag', cat: 'short', f: 'trips', rz: 1, r: { Z: 'corner', S2: 'spot', TE: 'arrow', X: 'slant', RB: 'swingL' } },
+    { n: 'Snag', cat: 'short', f: 'trips', rz: 1, r: { Z: 'spot', S2: 'corner', TE: 'arrow', X: 'slant', RB: 'swingL' } },  // snag: the outside man sits inside, the slot runs the corner over him, the tight end to the flat
     { n: 'Quick Outs', cat: 'short', f: 'empty', rz: 1, r: { X: 'out', S: 'hitch', RB: 'arrow', S2: 'hitch', Z: 'out' } },
-    { n: 'Drive', cat: 'short', f: 'single', r: { X: 'drag', TE: 'in', Z: 'go', S: 'curl', RB: 'flatR' } },
+    { n: 'Drive', cat: 'short', f: 'single', r: { X: 'drag', S: 'in', Z: 'go', TE: 'hitch', RB: 'flatR' } },  // drive: the shallow cross and the dig behind it come from the same side
     { n: 'Bubble Screen', cat: 'short', f: 'gun', d: 'Shotgun · quick screens', r: { S: 'bubble', S2: 'bubble', X: 'hitch', Z: 'hitch' } },
     { n: 'Texas', cat: 'short', f: 'pistol', rz: 1, r: { RB: 'angle', TE: 'drag', X: 'curl', Z: 'out', S: 'in' } },
     { n: 'Levels', cat: 'short', f: 'slot', r: { X: 'in', S: 'drag', Z: 'go', TE: 'out', RB: 'flatR' } },
@@ -154,7 +157,7 @@
     { n: 'Dagger', cat: 'deep', f: 'gun', r: { S: 'go', X: 'in', Z: 'post', S2: 'drag', RB: 'flatR' } },
     { n: 'Post Wheel', cat: 'deep', f: 'gun', r: { S: 'wheel', X: 'post', Z: 'curl', S2: 'in', RB: 'flatR' } },
     { n: 'Sluggo', cat: 'deep', f: 'single', d: 'Singleback · double moves', r: { X: 'sluggo', Z: 'sluggo', S: 'hitch', TE: 'out', RB: 'flatR' } },
-    { n: 'Mills', cat: 'deep', f: 'slot', r: { X: 'post', S: 'in', Z: 'curl', TE: 'seam', RB: 'flatR' } },
+    { n: 'Mills', cat: 'deep', f: 'slot', r: { S: 'post', X: 'in', Z: 'curl', TE: 'seam', RB: 'flatR' } },  // mills: the outside man's post over the slot's dig
     { n: 'Trips Verts', cat: 'deep', f: 'trips', r: { X: 'go', Z: 'go', S2: 'seam', TE: 'hitch', RB: 'flatL' } },
     { n: 'PA Corner', cat: 'deep', f: 'iform', pa: 1, d: 'I-Form · PA', r: { X: 'skinny', Z: 'corner', TE: 'drag', FB: 'flatL' } },
     { n: 'Double Moves', cat: 'deep', f: 'empty', r: { X: 'outup', Z: 'stopgo', S: 'hitch', S2: 'hitch', RB: 'arrow' } },

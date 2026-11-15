@@ -135,6 +135,8 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   both, the next score wins. A kickoff touchback comes out to the 35. Computer teams run on about 37% of snaps.
 - Standings break a tie on head-to-head, then division record, then point difference. MVP and Offensive Player of
   the Year, when they are not yours, go to the league's leaders.
+- Every formation lines up seven on the line with the tight end as its end, so he is an eligible receiver; only a
+  man off the line goes in motion; a forward pass is legal only from behind the line of scrimmage.
 - A missed field goal gives the other side the ball at the spot of the kick, or at its own 20.
 - Team totals follow the pro game: a sack's lost yards come off net passing, not rushing.
 - On the sideline the reserves stand unevenly, each turned his own way, and one or two take a knee to watch.
