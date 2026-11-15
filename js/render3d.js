@@ -2135,6 +2135,7 @@
       wantY = -PUSH[1] * (far > most ? most / far : 1);
     }
     if (!(p.down || p.fell || flat || pileOn)) f.fall = 0;
+    if (!(p.dive > 0) && !(p.stun > 0)) f.dove = false;  // back on his feet after a dive
     f.ox = f.oy = 0;  // how far from the engine's spot he is drawn (a tackler closes up on his man)
     tg[PELY] = HIP;
     tg[EL] = 0.25;
@@ -2323,19 +2324,56 @@
       hy = p.vy;
       snap = true;
     } else if (p.dive > 0) {
+      /* A dive: he leaves his feet, laid out flat with both arms stretched at the man or the ball, and comes down on
+         his chest. u runs 0 to 1 over the flight: he launches off the back leg, is level by the middle, and is on
+         the turf at the end (the prone branch below takes over from there). */
       eyes = false;
-      tg[PELY] = 0.5;
-      tg[PELRX] = -1.35;
-      tg[SLX] = 2.9;
-      tg[SRX] = 2.9;
-      tg[EL] = 0.1;
-      tg[ER] = 0.1;
-      tg[HL] = 0.1;
-      tg[HR] = -0.1;
-      tg[KL] = -0.1;
-      tg[KR] = -0.2;
+      if (!f.dove) f.dvT = 0;
+      f.dove = true;
+      f.dvT += dt;
+      f.dvh = [p.vx, p.vy];
+      const u = clamp(f.dvT / 0.28, 0, 1), lay = smooth(Math.min(1, u * 1.8));
+      tg[PELY] = lerp(0.82, 0.24, u * u) + Math.sin(u * Math.PI) * 0.1;
+      tg[PELRX] = lerp(-0.7, -1.52, lay);
+      tg[CHRX] = -0.05;
+      tg[HEADRX] = 0.55 * lay;  // head up, eyes on what he is diving at
+      tg[SLX] = lerp(2.2, 3.0, lay);
+      tg[SRX] = lerp(2.2, 3.0, lay);
+      tg[SLZ] = -0.12;
+      tg[SRZ] = 0.12;
+      tg[EL] = 0.08;
+      tg[ER] = 0.08;
+      tg[HL] = lerp(0.5, 0.05, lay);  // the drive leg straightens behind him
+      tg[HR] = lerp(-0.5, -0.12, lay);
+      tg[KL] = lerp(-0.9, -0.08, lay);
+      tg[KR] = lerp(-0.2, -0.3, lay);
       hx = p.vx;
       hy = p.vy;
+      snap = true;
+    } else if (p.stun > 0 && f.dove) {
+      /* After a dive that missed: face down on the turf where he landed, then up through a knee to his feet over
+         the last third of a second (the game holds him out of the play for that long) */
+      eyes = false;
+      const rise = clamp(1 - p.stun / 0.34, 0, 1), a1 = Math.min(1, rise * 2), a2 = Math.max(0, rise * 2 - 1), e1 = a1 * a1 * (3 - 2 * a1), e2 = a2 * a2 * (3 - 2 * a2);
+      tg[PELY] = 0.2;
+      tg[PELRX] = -1.52;
+      tg[HEADRX] = 0.35;
+      tg[SLX] = 2.7;
+      tg[SRX] = 2.5;
+      tg[SLZ] = -0.3;
+      tg[SRZ] = 0.3;
+      tg[EL] = 0.7;
+      tg[ER] = 0.5;
+      tg[HL] = 0.05;
+      tg[HR] = -0.1;
+      tg[KL] = -0.1;
+      tg[KR] = -0.25;
+      if (rise > 0) for (let i = 0; i < NPOSE; i++) tg[i] = lerp(lerp(tg[i], KNEEL[i], e1), STAND[i], e2);
+      if (f.dvh) {
+        hx = f.dvh[0];
+        hy = f.dvh[1];
+      }
+      snap = true;
     } else if (p.stun > 0) {
       // lost his footing
       eyes = false;

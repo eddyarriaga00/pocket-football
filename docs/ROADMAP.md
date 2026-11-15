@@ -2314,6 +2314,25 @@ six were done as the pro game has them; the choices where there was one are mine
 - Not done: multiplayer and chat still need the owner's account and choices (docs/ONLINE.md); nothing was signed
   up for.
 
+- Later the same evening, the owner: "a dive is not a dive, also when ur already running as a qb still allow me to
+  throw to people".
+  The dive (my reading: the Dive button did not look like one). It was a body bent forward at half height for a
+  third of a second, and then the "lost his footing" stumble, standing. It is a dive now (`render3d.js`, the
+  `p.dive` branch and a new one after it): he leaves his feet, is laid out level with both arms stretched at the man
+  or the ball and his head up, and comes down on his chest; after a miss he lies face down where he landed and
+  gets up through a knee over the last third of a second the game already holds him out for. Every dive uses it
+  (yours, the computer's, a dive on a loose ball). How far and how fast a dive goes, and how long a miss costs, are
+  unchanged. Looked at in three stills taken off the 3D canvas itself (flight, landed, rising); the pane's own
+  screenshots ran a frame or more behind and could not be trusted for this.
+  The quarterback on the run (my reading: the letters went away as he reached the line). A pass was allowed until
+  he was a foot past the line of scrimmage; it is allowed until he is clearly past it (1.2 yards), which is where
+  the pad changes to the runner's buttons. Behind the line he could already throw on the move, with a second finger
+  on a letter or its button while the first steers. Designed quarterback runs (the draw, the zone read keeper) still
+  have no one running a route to throw to. Checked: the pad stays on the letters at 0.2 and 0.9 yards past the line
+  and changes at 1.5.
+  Audit empty at 320x568 and 390x844; exhibition, season, careers, camp (the tackling drill twice) clean;
+  fingerprint unchanged.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.

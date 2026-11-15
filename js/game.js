@@ -1707,7 +1707,7 @@
   }
 
   const userOnD = () => !AUTO && G.state === 'live' && (!G.lock || !!G.me) && (ps.fum && !ps.fum.scoop ? true : ps.carrier ? ps.carrier.team === 1 : !!(ps.air && ps.offTeam === 1));  // a loose ball is anyone's
-  const canPass = () => !AUTO && G.state === 'live' && (ps.mode === 'pass' || (ps.rpo && !ps.handoff)) && !ps.thrown && !ps.turnover && ps.carrier === ps.qb && userP(ps.qb) && (ps.qb.y - ps.los) * G.dir < 0.3;
+  const canPass = () => !AUTO && G.state === 'live' && (ps.mode === 'pass' || (ps.rpo && !ps.handoff)) && !ps.thrown && !ps.turnover && ps.carrier === ps.qb && userP(ps.qb) && (ps.qb.y - ps.los) * G.dir < 1.2;  // a quarterback on the run may still throw until he is clearly past the line (it was a foot: the letters went as he reached it)
 
   function resolvePass() {
     const a = ps.air, r = a.target, off = ps.offTeam, my = G.my, me = QUIET ? null : G.me, pm = !!me && ps.passer === me;
