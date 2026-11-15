@@ -180,7 +180,7 @@
   /* The limbs: one recipe each, built at two finenesses, so the gameplay model has the same muscle as the close one
      (until 2026-11-13 it was plain tapered tubes). Thigh with quadriceps and hamstring, a calf that swells behind the
      shin, biceps and triceps, a forearm that narrows to the wrist. */
-  const THIGH = [[0.116, 0], [0.124, -0.07], [0.12, -0.17], [0.107, -0.29], [0.093, -0.4], [0.087, -0.47]];
+  const THIGH = [[0.123, 0], [0.128, -0.07], [0.122, -0.17], [0.107, -0.29], [0.093, -0.4], [0.087, -0.47]];
   const mkThigh = (seg, pad) => merge([sculpt([[0.01, 0.056], [0.08, 0.04], ...THIGH], seg, (v, front, back) => {
     v.z += -0.018 * bell((v.y + 0.16) / 0.13) * front + 0.012 * bell((v.y + 0.2) / 0.15) * back;  // quadriceps and hamstring
   }), new T.SphereGeometry(0.089, seg, 8).translate(0, -0.5, 0), ...(pad ? [new T.SphereGeometry(0.05, 10, 6).scale(1, 1.15, 0.5).translate(0, -0.49, -0.07)] : [])]);  // the knee, and the pad over it
@@ -193,14 +193,20 @@
   const mkForeArm = seg => sculpt([[0.01, 0.04], [0.047, 0.03], [0.06, 0], [0.062, -0.06], [0.053, -0.15], [0.043, -0.23], [0.04, -0.262], [0.01, -0.275]], seg, (v, front, back) => {
     v.z += 0.007 * bell((v.y + 0.07) / 0.06) * back;
   });
-  const mkHips = seg => sculpt([[0.01, -0.245], [0.07, -0.24], [0.125, -0.205], [0.168, -0.11], [0.168, -0.02], [0.15, 0.03], [0.01, 0.06]], seg, (v, front, back) => {
-    v.z = v.z * 0.77 + 0.016 * bell((v.y + 0.13) / 0.06) * back;  // the seat, kept below the hem of the jersey
+  /* The hips, as football pants sit: a yoke wider than it is deep that wraps over the tops of both thighs, so the legs
+     come out of the pants instead of hanging under a ball (it was a near-sphere, and read as one from behind a lineman).
+     Shallow in front, a seat behind, and it stops higher between the legs. */
+  const mkHips = seg => sculpt([[0.01, -0.2], [0.065, -0.195], [0.135, -0.16], [0.186, -0.095], [0.192, -0.025], [0.176, 0.03], [0.12, 0.058], [0.01, 0.064]], seg, (v, front, back) => {
+    const side = Math.abs(v.x) / (Math.hypot(v.x, v.z) || 1);
+    v.x *= 1.12;  // out over the thighs
+    v.z = v.z * (0.6 + 0.06 * back) + 0.022 * bell((v.y + 0.1) / 0.07) * back * (1 - side * 0.6);  // flat in front, the seat behind
+    if (v.y < -0.1) v.y += 0.03 * (1 - side) * Math.min(1, (-0.1 - v.y) / 0.08);  // cut up between the legs
   });
   const mkNeck = seg => new T.CylinderGeometry(0.076, 0.092, 0.12, seg).translate(0, 0.69, 0);  // a football neck
 
   /* a cleat: toe box and heel as two flattened balls pressed onto one flat sole, and a collar where the sock goes in */
   function cleat(seg) {
-    const g = merge([new T.SphereGeometry(1, seg, 8).scale(0.056, 0.046, 0.092).translate(0, -0.466, -0.118), new T.SphereGeometry(1, seg, 8).scale(0.052, 0.05, 0.085).translate(0, -0.462, -0.02),
+    const g = merge([new T.SphereGeometry(1, seg, 8).scale(0.063, 0.05, 0.112).translate(0, -0.464, -0.126), new T.SphereGeometry(1, seg, 8).scale(0.058, 0.054, 0.09).translate(0, -0.46, -0.018),  // a real boot: it was a size too small under these legs
       new T.CylinderGeometry(0.052, 0.054, 0.05, seg).translate(0, -0.43, 0.002)]), p = g.attributes.position;
     for (let i = 0; i < p.count; i++) if (p.getY(i) < -0.507) p.setY(i, -0.507);
     return g.translate(0, ANKLE, 0);  // into the ankle joint's space
@@ -306,7 +312,7 @@
     upperArm: (x, y) => lerp(0.68, 1, ease(-0.02, -0.17, y)),  // in the sleeve
     foreArm: (x, y) => lerp(0.84, 1, ease(0.03, -0.06, y)),
     thigh: (x, y) => lerp(0.68, 1, ease(0.04, -0.11, y)),  // where the leg leaves the hips
-    shin: (x, y) => lerp(0.8, 1, ease(0.04, -0.05, y)),
+    shin: (x, y) => lerp(0.8, 1, ease(0.04, -0.05, y)) * (Math.abs(y + 0.075) < 0.012 || Math.abs(y + 0.105) < 0.012 ? 0.5 : 1),  // out of the pants; two bands round the top of the sock
     foot: (x, y, z, ny) => lerp(0.55, 1, ease(-0.9, -0.2, ny)),  // the sole
   };
   for (const table of [GEO, GEO_HI]) for (const name in table) {
@@ -628,10 +634,18 @@
     return o;
   }
 
+  /* Socks that show against the pants, as a uniform's do: team color under light pants, white under dark ones (they
+     were white at home and the pants' own color away, so half the time the leg was one color from hip to ankle). */
+  const lumOf = hex => {
+    const n = parseInt(String(hex).slice(1), 16);
+    return (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+  };
+  const sockFor = (pants, t) => lumOf(pants) > 0.6 ? (lumOf(t.c1) < 0.6 ? t.c1 : t.c2) : '#f1f1f1';
+
   function teamColors(t, home, skin) {
     return home
-      ? { jersey: t.c1, pants: t.c2, helmet: t.c2, stripe: t.c1, trim: t.c2, sock: '#f1f1f1', number: t.c2, skin, glove: '#f1f1f1', shoe: '#1b1b1f', mask: '#aeb6c2', visor: '#14161c' }
-      : { jersey: '#f1f1f1', pants: t.c1, helmet: t.c1, stripe: '#f1f1f1', trim: t.c1, sock: t.c1, number: t.c1, skin, glove: '#f1f1f1', shoe: '#1b1b1f', mask: '#aeb6c2', visor: '#14161c' };
+      ? { jersey: t.c1, pants: t.c2, helmet: t.c2, stripe: t.c1, trim: t.c2, sock: sockFor(t.c2, t), number: t.c2, skin, glove: '#f1f1f1', shoe: '#1b1b1f', mask: '#aeb6c2', visor: '#14161c' }
+      : { jersey: '#f1f1f1', pants: t.c1, helmet: t.c1, stripe: '#f1f1f1', trim: t.c1, sock: sockFor(t.c1, t), number: t.c1, skin, glove: '#f1f1f1', shoe: '#1b1b1f', mask: '#aeb6c2', visor: '#14161c' };
   }
 
   /* The height a pass is drawn at. The engine throws from 1.8 yards up to 1.2; the figures are drawn 1.6 times life

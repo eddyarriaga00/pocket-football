@@ -2370,6 +2370,19 @@ six were done as the pro game has them; the choices where there was one are mine
   with the running game nearer the pro share, scores are about a tenth lower. The range in "How to test" now reads
   35 to 44. Audit empty at 320x568 and 390x844; exhibition, season, careers and all three camp drills clean.
 
+- The owner, with the last of the week's usage: "work hard and use it for major bug fixes, major ui improvements or
+  more ... i expect character improvements model wise as well visually". The player model, looked at close from
+  eight angles first (stills taken off the 3D canvas):
+  the hips were a near-sphere the thighs hung under, which read as a ball from behind and worst on a lineman in
+  his stance. They are a yoke now, wider than it is deep, that wraps over the tops of both thighs, flat in front
+  with a seat behind, cut up between the legs (`mkHips`); the thigh is a little fuller at the top to meet it.
+  The boots were a size too small under those legs: longer and wider (`cleat`).
+  The leg was one color from hip to ankle half the time (white socks at home, the pants' own color away): socks
+  now contrast with the pants, team color under light pants and white under dark (`sockFor`), with two bands round
+  the top of the sock baked into its shading. A career player's own sock color still wins.
+  Same parts, same joints, same number of draws; both the gameplay model and the close-up one, since they share
+  the recipes. Audit empty at 320x568 and 390x844; exhibition, careers and camp clean; fingerprint unchanged.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
