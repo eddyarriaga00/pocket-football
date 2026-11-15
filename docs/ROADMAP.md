@@ -54,7 +54,7 @@ what is next. Update it after every item.
      call and reload between long runs (a season takes about ten seconds, three seasons of `H.careerSeasons` more
      than forty-five).
    - `H.fingerprint()` must equal `localStorage['pg.fingerprint']`. It was pinned again on 2026-11-14 when a sack's
-     yards moved from team rushing to net passing (the earlier one is kept as `pg.fingerprint.before-sacks`); a
+     yards moved from team rushing to net passing (the earlier one is kept as `pg.fingerprint.before-sacks`, and again that evening when overtime, the touchback spot and the computer's run rate changed (`pg.fingerprint.before-rules`)); a
      change to the stat sheet that moves the totals needs the same treatment, after checking that score, steps and
      trace are unchanged.
    - Stepped tests leave things behind that a player never sees (a toast or card caught mid-fade, confetti, hit
@@ -2276,6 +2276,43 @@ Queue (first five): 1 a bug-test sweep after the day's hub work (random players,
   how much the computer runs, made-up award winners, the interception penalty on the grade), the decisions in
   `docs/ONLINE.md`, and three things only the device can show (a real controller on the switches, sound on a phone
   speaker, frame rate on a phone).
+
+
+### After the loop, 2026-11-14 evening: the owner's go-ahead on the six questions
+
+The owner, shown the six questions of the sixteenth stock-take: "U can proceed tho i give u full permission". All
+six were done as the pro game has them; the choices where there was one are mine and are marked.
+
+- Overtime: both sides get the ball (`otCheck`, `G.otS` in `game.js`). The side that wins the toss has its
+  possession; if it scores, the other side gets one to answer. The game is over as soon as the second side is ahead
+  (a touchdown that beats a field goal, or a score by its defense), or the first side is ahead once the second has
+  had the ball. Level after both, the next score wins. A regular-season period that runs out level is still a tie;
+  a playoff game still plays on. The banner reads "Both sides get the ball"; the booth's overtime line said nothing
+  about sudden death and was kept. The milestone "Sudden death" is named "Overtime". Checked over 58 overtimes
+  (one- and three-minute periods): a field goal answered by a touchdown ended it at once, a touchdown and its kick
+  answered by a failed possession ended it, a field goal each went on to the next score or the end of the period;
+  in none did the first side win before the other had the ball.
+- Kickoff touchback: the 35 (my choice between the 30 of 2024 and the 35 of 2025: the current rule). A punt into
+  the end zone still comes out to the 20.
+- Computer play calling: about even run and pass on first down, a little under on second and long, mostly runs on
+  short yardage, seldom on third and long (it was 30% runs on first and ten). Teams now run on 37% of snaps, up
+  from 28% (the pro game is about 42%; the two-minute drill and playing from behind hold it under). A career
+  quarterback's coach still calls passes at about the old rate (55 attempts in four test games).
+- Together, measured over 35 simulated games: 4.63 yards a carry, 58.1% complete, 1.9% intercepted, 41.7 points a
+  game, inside the ranges. With the touchback moved and the old play calling it was 49.9 points; the two changes
+  balance each other.
+- Standings: level on record, the side that won more of their meetings ranks first, then the better record inside
+  the division, then point difference (`better`, `L.h2h`, `dw` / `dl` in `league.js`). Seen in a test season:
+  two sides level on record, the one that had beaten the other placed first with the worse point difference. A
+  season saved before this has no meetings on record and falls back to point difference until the next one starts.
+- Awards: MVP, when it is not yours, goes to the league's best passer and Offensive Player of the Year to its best
+  runner or receiver (the same seeded lines the leaders boards show), with the next two as nominees.
+- The interception penalty on the grade stays as it went in (change 67).
+- The fingerprint was pinned again, since play was meant to change (the old one is `pg.fingerprint.before-rules`
+  in the test browser). Audit empty at 320x568 and 390x844; careers at both positions, a rigged season through the
+  playoffs, exhibition and camp clean.
+- Not done: multiplayer and chat still need the owner's account and choices (docs/ONLINE.md); nothing was signed
+  up for.
 
 ## Morning hand-off
 

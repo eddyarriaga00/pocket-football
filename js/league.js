@@ -78,6 +78,7 @@
     L.prime = shuffle([...Array(L.sched.length - 1).keys()].map(i => i + 1)).slice(0, 3).sort((a, b) => a - b);  // three of your games under the lights, never the opener
     L.pend = null;
     L.tab = TEAMS.map(() => ({ w: 0, l: 0, t: 0, pf: 0, pa: 0 }));
+    L.h2h = {};  // who beat whom this season, for the tie-breaks
     L.po = null;
     L.around = [];
   }
@@ -98,6 +99,17 @@
       A.t++;
       B.t++;
     }
+    /* for the tie-breaks: who beat whom, and each side's record inside its own division (regular season only) */
+    if (L.phase === 'reg' && sa !== sb) {
+      const lo = Math.min(a, b), hi = Math.max(a, b), k = lo + '-' + hi, win = sa > sb ? a : b;
+      L.h2h = L.h2h || {};
+      L.h2h[k] = (L.h2h[k] || 0) + (win === lo ? 1 : -1);
+      if (divOf(a) === divOf(b)) {
+        const W = L.tab[win], X = L.tab[win === a ? b : a];
+        W.dw = (W.dw || 0) + 1;
+        X.dl = (X.dl || 0) + 1;
+      }
+    }
   }
 
   /* a simulated final score, on the same scale as played games */
@@ -112,10 +124,15 @@
     return x > y ? a : b;
   };
 
-  /* better record first, then points for minus points against */
+  /* better record first; level on record, the side that won more of their meetings, then the better record inside
+     the division, then points for minus points against (a season saved before the meetings were kept goes straight
+     to the points) */
   const better = L => (a, b) => {
-    const A = L.tab[a], B = L.tab[b];
-    return (B.w + B.t / 2) - (A.w + A.t / 2) || (B.pf - B.pa) - (A.pf - A.pa);
+    const A = L.tab[a], B = L.tab[b], rec = (B.w + B.t / 2) - (A.w + A.t / 2);
+    if (rec) return rec;
+    const lo = Math.min(a, b), hi = Math.max(a, b), net = (L.h2h && L.h2h[lo + '-' + hi]) || 0;
+    if (net) return (net > 0 ? lo : hi) === a ? -1 : 1;
+    return ((B.dw || 0) - (B.dl || 0)) - ((A.dw || 0) - (A.dl || 0)) || (B.pf - B.pa) - (A.pf - A.pa);
   };
   const seeds = L => ids(L).sort(better(L));
   /* a conference's playoff seeds: its four division winners, best record first */
@@ -344,7 +361,7 @@
     }, conf = (label, ds) => `<h3 class="dvh">${label}</h3><div class="dvg">${ds.map(card).join('')}</div>`;
     return `${bracketHtml(L)}<h2>${L.po && L.po.games ? 'Final standings' : 'Standings'}</h2>${table(mine)}
       ${conf(`Rest of the ${CONF[mc]}`, order.filter(d => d !== mine && d >> 2 === mc))}${conf(`${CONF[1 - mc]} Conference`, order.filter(d => d >> 2 !== mc))}
-      <p class="note">Record, then points for and against. The four division winners of each conference make the playoffs; a division's leader is marked.</p>${around}`;
+      <p class="note">Record, then head-to-head, division record and point difference. The four division winners of each conference make the playoffs; a division's leader is marked.</p>${around}`;
   }
 
   PG.league = { home, prime, preWeek, start, fix, record, simScore, simWinner, seeds, confSeeds, recTxt, label, short, weekNo, stage, nextOpp, advance, standingsHtml, bracketHtml, divTeams, divName, divOf, full: full2, schedule };

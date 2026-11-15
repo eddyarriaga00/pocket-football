@@ -333,6 +333,16 @@
       if (who === 'rookie' && C.season !== 1) continue;
       const wins = bar(avg, finish), close = wins || bar(avg + 1.2, finish), pos = () => who === 'pos' ? C.pos : OTHER_POS[Math.floor(r() * OTHER_POS.length)];
       let others = [somebody(pos()), somebody(pos()), somebody(pos())];
+      /* MVP and Offensive Player of the Year, when they are not yours, go to the men whose seasons earned them: the
+         league's best passers for MVP, its best runner and receivers for the offensive award (the same seeded lines
+         the leaders boards show), not to strangers */
+      if (who === 'any') {
+        const line = (i, p) => i === C.team && p === C.pos ? null : { ...starter(i, p), ab: TEAMS[i].ab, pos: p };
+        const pool = name === 'League MVP'
+          ? TEAMS.map((_, i) => line(i, 'QB')).filter(Boolean).map(x => ({ x, v: x.pyd + x.ptd * 25 - x.pint * 30 }))
+          : TEAMS.flatMap((_, i) => [line(i, 'RB'), line(i, 'WR')]).filter(Boolean).map(x => ({ x, v: x.pos === 'RB' ? x.ryd + x.rtd * 20 : x.recyd * 1.1 + x.rectd * 20 }));
+        others = pool.sort((a, b) => b.v - a.v).slice(0, 3).map(({ x }) => ({ name: x.name, ab: x.ab, pos: x.pos })).concat(others).slice(0, 3);
+      }
       /* All-League at your position goes to the men who led the league there (the leaders table), not to strangers:
          the passing champion is not left off the All-League team */
       if (who === 'pos') others = L.rows.filter(x => !x.me).slice(0, 3).map(x => ({ name: x.name, ab: x.ab, pos: C.pos, riv: x.riv })).concat(others).slice(0, 3);

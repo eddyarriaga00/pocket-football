@@ -114,10 +114,27 @@
 
   const hash = x => clamp(x, FW / 2 - 3.1, FW / 2 + 3.1);
 
+  /* Overtime, the way the pro game plays it now: both sides get the ball. The side that received (first) has its
+     possession; if it scores, the other side gets one to answer. The game is over as soon as the second side is
+     ahead (a touchdown that beats a field goal, or a score by its defense), or the first side is ahead once the
+     second has had its possession. Level after both: the next score wins. */
+  function otCheck() {
+    const o = G.otS;
+    if (!G.ot || !o || G.final || G.score[0] === G.score[1]) return;
+    const lead = G.score[0] > G.score[1] ? 0 : 1;
+    if (lead !== o.first || o.b) G.final = true;
+  }
+
   function setBall(t, y, x) {
     y = clamp(y, 1, 99);
     if (t !== G.poss) G.possN = (G.possN || 0) + 1;  // a new possession
+    if (G.otS) {
+      // overtime: note when each side has had the ball (see otCheck)
+      if (G.poss === G.otS.first && t !== G.otS.first) G.otS.a = true;
+      else if (G.otS.a && G.poss !== G.otS.first && t === G.otS.first) G.otS.b = true;
+    }
     G.poss = t;
+    otCheck();
     G.los = y;
     G.bx = hash(x);
     G.down = 1;
@@ -134,8 +151,9 @@
     if (td) m.krtd = (m.krtd || 0) + 1;
   }
 
+  const KTB = window.PG_KTB || 35;  // a kickoff touchback comes out to the 35, as the pro game has it now (PG_KTB: a test hook for measuring other spots)
   const kickoff = t => {
-    setBall(t, t === 0 ? 25 : 75, FW / 2);
+    setBall(t, t === 0 ? KTB : 100 - KTB, FW / 2);
     G.pendKO = t;
   };  // the ball is spotted for a touchback; a live return can move it
   const ab = t => TEAMS[G.tm[t]].ab, tname = t => TEAMS[G.tm[t]].name;
@@ -2812,7 +2830,7 @@
         const ez = t === 0 ? y <= 0 : y >= 100, ry = Math.max(0, Math.round((y - ps.land) * dir));
         big = ez ? 'Touchback' : ps.punt ? 'Punt return' : 'Kick return';
         sub = ez ? tname(t) + ' ball' : `${c.name} · ${ry} yard${ry===1?'':'s'}`;
-        setBall(t, ez ? (t === 0 ? 25 : 75) : y, x);
+        setBall(t, ez ? (ps.punt ? (t === 0 ? 20 : 80) : t === 0 ? KTB : 100 - KTB) : y, x);  // a punt downed in the end zone still comes out to the 20
         if (ry >= 30) react(t, 0.8, 2.5);
         if (me && c === me && !ez) retStat(ry, false);
       } else if (t !== off && ps.fum && ps.fum.scoop) {
@@ -2916,7 +2934,7 @@
       big = 'Touchback';
       sub = tname(off) + ' ball';
       stop = true;
-      setBall(off, off === 0 ? 25 : 75, FW / 2);
+      setBall(off, off === 0 ? KTB : 100 - KTB, FW / 2);
     } else if (kind === 'punt') {
       big = 'Punt';
       sub = arg.tb ? 'Touchback' : `${arg.fair?'Fair catch':arg.d+' yards'} · ${tname(1-off)} ball at ${spotTxt(arg.y)}`;
@@ -2937,7 +2955,7 @@
     G.clock -= G.runoff;
     twoMinute();
     cpuTimeout();
-    if (G.ot && score) G.final = true;
+    if (G.ot && score) G.otS ? otCheck() : (G.final = true);  // a game already in overtime when this rule came in keeps the old one
     G.last = sub === 'Turnover on downs' ? sub : big;
     if (ps.third != null && !ps.thirdDone) {
       ps.thirdDone = true;
@@ -3152,7 +3170,8 @@
           G.clock = G.ql;
           const otr = rnd() < .5 ? 0 : 1;
           kickoff(otr);
-          banner('Overtime', `Next score wins · ${tname(otr)} won the toss`, 1600);
+          if (!G.otS) G.otS = { first: otr, a: false, b: false };  // after the kickoff, so that is not counted as a change of possession
+          banner('Overtime', `Both sides get the ball · ${tname(otr)} won the toss`, 1600);
           if (!AUTO && !QUIET && PG.audio) PG.audio.pa(`The ${tname(otr)} have won the toss, and will receive.`, { wait: 2.2, clips: ['ref.toss.' + tab(otr)] });
           vo('ot', { pri: 2 });
         } else {
@@ -3433,7 +3452,10 @@
       if (toGoal + 17 <= 52 && !(desp && ld < -3)) c.fixed = OFF.find(p => p.n === 'Field Goal');
       else if (!(desp || (G.togo <= 1.5 && toGoal < 60))) c.fixed = OFF.find(p => p.n === 'Punt');
     }
-    let pr = G.togo > 7 ? 0.3 : G.togo < 3 ? 0.65 : 0.45;
+    /* how often he runs: about even on first down, a little under on second and long, mostly runs on short yardage,
+       seldom on third and long. (It was 30% on first and ten: teams ran on 28% of their snaps, well under the pro
+       game's two in five.) PG_RUN scales it, for measuring. */
+    let pr = (G.down === 1 ? (G.togo > 7 ? 0.57 : 0.64) : G.togo > 7 ? 0.41 : G.togo < 3 ? 0.78 : 0.57) * (window.PG_RUN || 1);
     if (G.down >= 3 && G.togo > 4) pr = 0.12;
     pr = clamp(pr * (1 + (S.run || 0) * 2), 0.03, 0.85);  // a running team runs a little more
     const two = G.clock < 100 && (G.q === 2 || (G.q >= 4 && ld < 0));  // the two-minute drill: throw, and look deep
@@ -3444,6 +3466,7 @@
     c.rpoQ = (star === 'QB' || star === 'X') && G.togo >= 3 && G.togo <= 10 ? 0.12 : 0;  // your coach likes an option now and then (never for a computer-only game)
     if (star === 'RB') pr = Math.max(pr, G.down >= 3 && G.togo > 6 ? 0.3 : 0.5);  // measured: at 0.6 a back's team scored too little to win
     else if (star === 'X') pr *= G.drill ? 0 : 0.5;
+    else if (star === 'QB') pr *= 0.7;  // your coach still lets his quarterback throw
     const foe = G.lock && t === 1 && !AUTO ? G.lock : null;  // and the opponent tests a defender
     if (foe === 'MLB') pr = Math.min(0.75, pr + 0.15);
     else if (foe === 'CB1') pr *= 0.75;

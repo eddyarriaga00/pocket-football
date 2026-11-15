@@ -131,6 +131,10 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   and controller; training camp shows stars over a bar with the three marks; Settings is a card a group with
   switches; the playoff bracket shows each team's color and seed; a new career's builds show their ratings as bars;
   the press conference has a legend for the tones and tiles for what your answers did.
+- Overtime gives both sides the ball: if the first scores, the second gets a possession to answer; level after
+  both, the next score wins. A kickoff touchback comes out to the 35. Computer teams run on about 37% of snaps.
+- Standings break a tie on head-to-head, then division record, then point difference. MVP and Offensive Player of
+  the Year, when they are not yours, go to the league's leaders.
 - A missed field goal gives the other side the ball at the spot of the kick, or at its own 20.
 - Team totals follow the pro game: a sack's lost yards come off net passing, not rushing.
 - On the sideline the reserves stand unevenly, each turned his own way, and one or two take a knee to watch.

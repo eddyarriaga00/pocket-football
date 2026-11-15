@@ -13,7 +13,7 @@
     ['air', 'Air show', 'Throw for 200 yards in a game', g => g.stats[0].pass >= 200],
     ['gnd', 'Ground and pound', 'Run for 80 yards in a game', g => g.stats[0].rush >= 80],
     ['take', 'Ball hawks', 'Take the ball away twice in a game', g => g.stats[1].to >= 2],
-    ['ot', 'Sudden death', 'Win a game in overtime', g => g.won && g.ot],
+    ['ot', 'Overtime', 'Win a game in overtime', g => g.won && g.ot],
     ['wx', 'Mudder', 'Win a game in rain or snow', g => g.won && (g.weather === 'rain' || g.weather === 'snow')],
     ['pro', 'Giant killer', 'Win on All-Pro difficulty', g => g.won && g.diff === 2],
     ['ten', 'Season ticket', 'Finish ten games', () => S.games >= 10],
