@@ -2333,6 +2333,16 @@ six were done as the pro game has them; the choices where there was one are mine
   Audit empty at 320x568 and 390x844; exhibition, season, careers, camp (the tackling drill twice) clean;
   fingerprint unchanged.
 
+- The owner, after that: "you stick to the real game of football, make sure my requests and the game are faithful
+  the nfl rules and plays". So where a request and the rules disagree, the rules win, and I say so. The one thing
+  shipped that evening that broke a rule was mine: letting a quarterback throw from 1.2 yards past the line of
+  scrimmage. Put right, and tightened to the whole rule: a forward pass is legal only from behind the line (a foot
+  of allowance for a body straddling it), and a quarterback who has been past the line may not come back behind it
+  and throw (`canPass`, `ps.past`). Checked: letters at 3 yards behind and 0.2 past; runner's buttons at 0.9 past;
+  no letters after coming back to a yard behind. He can still throw on the move anywhere behind the line. The dive
+  stays: it changed how a dive looks, not what it does. Audit empty at 320x568; exhibition, careers, camp clean;
+  fingerprint unchanged.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
