@@ -5929,7 +5929,7 @@
     toMenu();
     const cs = PG.career && PG.career.summary(), camp = PG.camp, offer = !!camp && camp.fresh() && !cs && !(PG.season && PG.season.summary());
     const ss = PG.season && PG.season.summary(), ct = cs && PG.career.data ? PG.career.data.team : null, st = ss && PG.season.data ? PG.season.data.team : null;
-    scr.innerHTML = `<div class="menu"><h1>Pocket<br><em>Gridiron</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p>
+    scr.innerHTML = `<div class="menu home fill"><h1>Pocket<br><em>Gridiron</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p>
   ${offer?'<div class="offer"><b>First time here?</b><span>Training camp teaches passing, running and tackling in three short drills.</span><div class="row2"><button class="go sm" id="oY">Start camp</button><button class="btn2" id="oN">Not now</button></div></div>':''}
   <button class="mode main" id="mC">${menuBadge(ct, 'career')}<b>Career</b><span>${cs||'Create a player, lock in at your position, and build a legacy one season at a time.'}</span><i>›</i></button>
   <button class="mode" id="mSe">${menuBadge(st, 'season')}<b>Season</b><span>${ss||'Take one team through ten games and the playoffs.'}</span><i>›</i></button>

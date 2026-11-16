@@ -942,3 +942,81 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 @keyframes grow{from{width:0}}
 @media (prefers-reduced-motion:reduce){.pcd.poll .pbar i,.post .pmeta .lk.on svg{animation:none}}
 .spost .seg.wrap button{flex-basis:40%}
+
+/* ---------- screens that fill a tall phone ----------
+   A short screen (the menu, the camp, milestones, the hall, the press conference) is a column whose main cards
+   stretch into the room a tall phone has, instead of leaving the bottom half empty. On a short phone nothing grows
+   and the screen scrolls as before. */
+.menu.fill{display:flex;flex-direction:column}
+.menu.fill>*{flex-shrink:0}
+.menu.fill>.back{align-self:flex-start}
+.fill .mode{align-content:center}
+.home .mode{flex:1 0 auto;max-height:150px}
+.campm .cmd{flex:1 0 auto;max-height:220px}
+.fill>.tro{flex:1 0 auto;grid-auto-rows:1fr}
+.fill .tro div{display:flex;flex-direction:column;justify-content:center}
+.fill .tro div::before{top:calc(50% - 9.5px)}
+.hallp .pc.hof{flex:1 0 auto;max-height:220px}
+.pc.hof.ghost{display:grid;place-items:center;min-height:96px;background:none;border:1.5px dashed var(--line)}
+.pc.hof.ghost::before{display:none}
+.pc.hof.ghost i{width:44px;height:58px;opacity:.5;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 58'%3E%3Cg fill='%2327354f'%3E%3Cellipse cx='22' cy='9' rx='8' ry='8.5'/%3E%3Cpath d='M8 20c4-3 9-4 14-4s10 1 14 4l2 16h-6l-1 22h-6l-1-14h-4l-1 14h-6l-1-22H6z'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat}
+.wall{position:relative;background:linear-gradient(160deg,var(--w1),var(--w2))}
+.wall::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--wall) 0 0/230px 80px repeat;pointer-events:none}
+.wall>*{position:relative}
+.fill.press .pq{flex:1 0 auto;display:flex;flex-direction:column;border-color:rgba(255,255,255,.1)}
+.fill.press .pq p{flex:1;display:flex;align-items:center;color:#fff}
+.fill.press .pq .rpt span:not(.av){color:rgba(255,255,255,.72)}
+.fill.press .prh.wall{flex:1 0 auto;min-height:92px;display:flex;flex-direction:column;justify-content:flex-start;margin:0 0 12px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.1)}
+.fill.press .prh.wall small{color:rgba(255,255,255,.75)}
+.fill.press .prh.wall h3{font-size:24px;color:#fff}
+@media (min-height:760px){
+  .home h1{font-size:46px}
+  .home .mode{padding:14px 16px}
+  .home .mode .mi{width:52px;height:52px}
+  .home .mode .mi svg{width:25px;height:25px}
+  .home .mode b{font-size:17px}
+  .home .mode span{font-size:13px}
+  .campm .cmd{grid-template-columns:48px 1fr auto;padding:14px 16px}
+  .campm .cmd .dic{width:48px;height:48px;border-radius:13px}
+  .campm .cmd b{font-size:17px}
+  .campm .cmd span{font-size:13px}
+  .campm .cmd .stars{font-size:20px}
+  .campm .cmd .dic svg{width:24px;height:24px}
+  .fill .tro b{font-size:14px}
+  .fill .tro span{font-size:12px}
+  .hallp .pc.hof.k .kit{width:66px;height:88px}
+  .fill.press .pq p{font-size:19px;line-height:1.4}
+}
+@media (min-height:880px){
+  .home .mode .mi{width:60px;height:60px;font-size:14px}
+  .home .mode .mi svg{width:28px;height:28px}
+  .home .mode b{font-size:19px}
+  .home .mode span{font-size:14px}
+  .campm .cmd{grid-template-columns:64px 1fr auto;column-gap:16px}
+  .campm .cmd .dic{width:64px;height:64px;border-radius:16px}
+  .campm .cmd .dic svg{width:30px;height:30px}
+  .campm .cmd b{font-size:20px}
+  .campm .cmd span{font-size:14px}
+  .campm .cmd .stars{font-size:26px}
+  .hallp .pc.hof.k .kit{width:105px;height:140px}
+  .hallp .pc.hof h3{font-size:22px}
+}
+
+.prh.wall .fx3{margin-top:auto;padding-top:14px}
+.prh.wall .fx3 span{padding:12px 2px;background:rgba(6,10,19,.6);border-color:rgba(255,255,255,.12);color:rgba(255,255,255,.82)}
+.prh.wall .fx3 b{font-size:26px;color:#fff}
+.prh.wall .fx3 small{color:rgba(255,255,255,.72)}
+.cmbm .cmb{position:relative;overflow:hidden;flex:1 0 auto;max-height:240px;display:flex;flex-direction:column;justify-content:center}
+.cmbm .cmb>*:not(.cbi){position:relative}
+.cmb .cbi{position:absolute;right:-14px;bottom:-18px;width:120px;height:120px;color:var(--acc);opacity:.13}
+.cmb .cbi svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.dashm #tap{flex:1 0 auto;height:auto;min-height:112px;font-size:19px;background:repeating-linear-gradient(180deg,transparent 0 46px,rgba(255,255,255,.22) 46px 48px),var(--acc)}
+@media (min-height:760px){
+  .cmbm .cmb h4{font-size:19px}
+  .cmbm .cmb p{font-size:13.5px}
+  .cmb .cbi{width:150px;height:150px}
+  .dashm .dash b{font-size:72px}
+  .dashm #tap{font-size:24px}
+}
+.awm .nx.aw{flex:1 0 auto;max-height:210px;display:flex;flex-direction:column;justify-content:center}
+@media (min-height:760px){.awm .nx.aw h4{font-size:18px}}

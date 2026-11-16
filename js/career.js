@@ -713,15 +713,21 @@
   /* ---------- the combine and the draft ----------
      Two workouts set a draft grade. A high pick goes to a weak team with a big bonus and the coach's trust;
      a late pick lands on a strong team and has to earn his snaps. */
+  /* big faint pictures behind the two workouts: a stopwatch, a football */
+  const CMB_ICON = {
+    dash: '<svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V9.5M10 3h4M18.2 7.3l1.3-1.3"/></svg>',
+    drill: '<svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="5.2" transform="rotate(-35 12 12)"/><path d="M9.2 14.8l5.6-5.6M10.8 10.6l1.4 1.4M12.6 9l1.4 1.4M9.2 12.4l1.4 1.4"/></svg>',
+  };
+
   function showCombine() {
     const pre = C.pre, on = (id, f) => {
       const el = $('#' + id);
       if (el) el.onclick = f;
     };
-    scr.innerHTML = `<div class="menu solid"><button class="back" id="bk">‹ Menu</button><h1 class="sm">The <em>combine</em></h1>
+    scr.innerHTML = `<div class="menu solid fill cmbm"><button class="back" id="bk">‹ Menu</button><h1 class="sm">The <em>combine</em></h1>
   <p class="tag">Two workouts in front of every team. The better you do, the earlier you are drafted: a bigger signing bonus, and a coach who trusts you from day one.</p>
-  <div class="nx"><small>Workout 1</small><h4>40-yard dash</h4><p>${pre.dash?`${pre.dash.time.toFixed(2)} seconds · grade ${pre.dash.grade}`:'Tap as fast as you can.'}</p>${pre.dash?'':'<button class="go sm" id="d1">Run the dash</button>'}</div>
-  <div class="nx"><small>Workout 2</small><h4>${POS[C.pos].label} drills</h4><p>${pre.work?`${line(pre.work.m)} · grade ${pre.work.grade}`:'Five live reps at your position.'}</p>${pre.dash&&!pre.work?'<button class="go sm" id="d2">Start the drills</button>':''}</div>
+  <div class="nx cmb"><i class="cbi" aria-hidden="true">${CMB_ICON.dash}</i><small>Workout 1</small><h4>40-yard dash</h4><p>${pre.dash?`${pre.dash.time.toFixed(2)} seconds · grade ${pre.dash.grade}`:'Tap as fast as you can.'}</p>${pre.dash?'':'<button class="go sm" id="d1">Run the dash</button>'}</div>
+  <div class="nx cmb"><i class="cbi" aria-hidden="true">${CMB_ICON.drill}</i><small>Workout 2</small><h4>${POS[C.pos].label} drills</h4><p>${pre.work?`${line(pre.work.m)} · grade ${pre.work.grade}`:'Five live reps at your position.'}</p>${pre.dash&&!pre.work?'<button class="go sm" id="d2">Start the drills</button>':''}</div>
   ${pre.dash&&pre.work?'<button class="go" id="d3">Go to the draft</button>':'<div class="stack"><button class="btn2" id="skip">Skip the combine</button></div>'}</div>`;
     $('#bk').onclick = PG.showMenu;
     on('d1', showDash);
@@ -734,9 +740,9 @@
   function showDash() {
     const vmax = 9.6 + (C.attrs.spd - 60) * 0.06;
     let x = 0, v = 0, t0 = 0, last = 0, timer = 0, done = false;
-    scr.innerHTML = `<div class="menu solid"><h1 class="sm">40-yard <em>dash</em></h1><p class="tag">Tap the button as fast as you can. The clock starts on your first tap.</p>
+    scr.innerHTML = `<div class="menu solid fill dashm"><h1 class="sm">40-yard <em>dash</em></h1><p class="tag">Tap the button as fast as you can. The clock starts on your first tap.</p>
   <div class="dash"><div class="lane"><i id="dr"></i></div><b id="dt">0.00</b><span id="dy">0 of 40 yards</span></div>
-  <button class="go" id="tap" data-quiet style="height:112px;font-size:19px">Tap!</button></div>`;
+  <button class="go" id="tap" data-quiet>Tap!</button></div>`;
     const finish = time => {
       done = true;
       clearInterval(timer);
@@ -1173,8 +1179,8 @@
     const so = social(), o = nextOpp(), wk = LG.short(C);
     const ctx = { name: C.name, pos: C.pos, team: C.team, opp: o, next: o, m: ZERO(), us: 0, them: 0, won: false, pts: 7, star: false, rival: C.rival, rivalGame: true, fol: so.fol, mates: so.mates, coachName: so.coachName, week: C.log.length, wk };
     const q = PG.media.mediaDay(ctx), trust0 = C.trust, hype0 = so.hype, fol0 = so.fol, [f, l] = q.by.split(' ');
-    scr.innerHTML = `<div class="menu solid press"><div class="prh"><small>Media day \u00b7 ${esc(wk)} \u00b7 rival week</small><h3>One question</h3></div>
-  <div class="pq"><div class="rpt"><span class="av" style="--c:#2f6fb5">${esc(f[0] + l[0])}</span><div><b>${esc(q.by)}</b><span>${esc(q.outlet)}</span></div></div><p>\u201c${esc(q.q)}\u201d</p></div>
+    scr.innerHTML = `<div class="menu solid press fill"><div class="prh"><small>Media day \u00b7 ${esc(wk)} \u00b7 rival week</small><h3>One question</h3></div>
+  <div class="pq wall" style="${wallCss()}"><div class="rpt"><span class="av" style="--c:#2f6fb5">${esc(f[0] + l[0])}</span><div><b>${esc(q.by)}</b><span>${esc(q.outlet)}</span></div></div><p>\u201c${esc(q.q)}\u201d</p></div>
   <div class="pa">${q.answers.map((a, k) => `<button class="ans" data-k="${k}"><span class="tone t-${a.tone}">${PG.media.TONE[a.tone]}</span>${esc(a.t)}</button>`).join('')}</div>
   <button class="btn2" id="mdback">Not today</button></div>`;
     $('#mdback').onclick = () => showHub('up');
@@ -1222,9 +1228,9 @@
       C.coachPress = walked ? 'You walked past the podium. Next time you face them. That is part of the job.' : PG.media.coachOnPress(net, tones, ctx.pts >= 7);
       persist();
       const lead = posts.filter(p => p.kind === 'trend' || p === posts[0]), all = PG.media.stamp(lead.concat(said, posts.filter(p => !lead.includes(p)))), dFol = so.fol - fol0 + dFol0;  // the game first, then what you said, then everyone else
-      scr.innerHTML = `<div class="menu solid press"><div class="prh"><small>Press conference \u00b7 ${esc(ctx.wk)}</small><h3>${walked ? 'No comment' : 'On the record'}</h3></div>
+      scr.innerHTML = `<div class="menu solid press fill"><div class="prh wall" style="${wallCss()}"><small>Press conference \u00b7 ${esc(ctx.wk)}</small><h3>${walked ? 'No comment' : 'On the record'}</h3>
+  <div class="fxs fx3"><span><b>${signed(net)}</b>Coach trust<small>now ${C.trust}</small></span><span><b>${signed(so.hype - hype0)}</b>Hype<small>now ${so.hype}</small></span><span><b>${dFol >= 0 ? '+' : '\u2212'}${short(Math.abs(dFol))}</b>Followers<small>${short(so.fol)}</small></span></div></div>
   ${picks.length ? `<ul class="quotes">${picks.map(p => `<li><span class="tone t-${p.tone}">${PG.media.TONE[p.tone]}</span>\u201c${esc(p.t)}\u201d</li>`).join('')}</ul>` : '<p class="note">You walked out without answering a question. The reporters wrote about that instead.</p>'}
-  <div class="fxs fx3"><span><b>${signed(net)}</b>Coach trust<small>now ${C.trust}</small></span><span><b>${signed(so.hype - hype0)}</b>Hype<small>now ${so.hype}</small></span><span><b>${dFol >= 0 ? '+' : '\u2212'}${short(Math.abs(dFol))}</b>Followers<small>${short(so.fol)}</small></span></div>
   <p class="coach"><small>${esc(so.coachName)}</small>${esc(C.coachPress)}</p>${calloutHtml()}
   <button class="go" id="prgo">See the reaction</button></div>`;
       $('#prgo').onclick = () => {
@@ -1235,8 +1241,8 @@
     };
     const draw = () => {
       const q = qs[i], [f, l] = q.by.split(' ');
-      scr.innerHTML = `<div class="menu solid press"><div class="prh"><small>Press conference \u00b7 ${esc(ctx.wk)}</small><h3>Question ${i + 1} of ${qs.length}</h3><div class="dots">${qs.map((_, k) => `<i class="${k < i ? 'd' : k === i ? 'on' : ''}"></i>`).join('')}</div></div>
-  <div class="pq"><div class="rpt"><span class="av" style="--c:#2f6fb5">${esc(f[0] + l[0])}</span><div><b>${esc(q.by)}</b><span>${esc(q.outlet)}</span></div></div><p>\u201c${esc(q.q)}\u201d</p></div>
+      scr.innerHTML = `<div class="menu solid press fill"><div class="prh"><small>Press conference \u00b7 ${esc(ctx.wk)}</small><h3>Question ${i + 1} of ${qs.length}</h3><div class="dots">${qs.map((_, k) => `<i class="${k < i ? 'd' : k === i ? 'on' : ''}"></i>`).join('')}</div></div>
+  <div class="pq wall" style="${wallCss()}"><div class="rpt"><span class="av" style="--c:#2f6fb5">${esc(f[0] + l[0])}</span><div><b>${esc(q.by)}</b><span>${esc(q.outlet)}</span></div></div><p>\u201c${esc(q.q)}\u201d</p></div>
   <div class="pa">${q.answers.map((a, k) => `<button class="ans" data-k="${k}"><span class="tone t-${a.tone}">${PG.media.TONE[a.tone]}</span>${esc(a.t)}</button>`).join('')}</div>
   ${i === 0 ? '<button class="btn2" id="nocom">No comment \u00b7 walk out</button><div class="tlg"><p><span class="tone t-humble">Humble</span><span class="tone t-team">Team first</span><b>trust \u2191</b></p><p><span class="tone t-confident">Confident</span><span class="tone t-trash">Trash talk</span><b>hype \u2191 \u00b7 trust \u2193 unless you play like it</b></p><p><span class="tone t-guarantee">Callout</span><b>follows you into the next game</b></p></div>' : ''}</div>`;
       scr.querySelectorAll('.ans').forEach(b => b.onclick = () => {
@@ -1445,7 +1451,7 @@
     persist();
     const who = x => `${esc(x.name)} <span class="aw-t">${x.ab}${x.me ? ' · you' : x.riv ? ' · your rival' : ''}</span>`;
     const noms = x => [x.w, ...x.n].map(n => esc(n.name) + (n.me ? ' (you)' : '')).sort().join(', ');
-    scr.innerHTML = `<div class="menu solid" id="awn"><h1 class="sm">Awards <em>night</em></h1>
+    scr.innerHTML = `<div class="menu solid fill awm" id="awn"><h1 class="sm">Awards <em>night</em></h1>
   <p class="tag">Season ${C.season} is in the books. The league hands out its awards.</p>
   ${list.map((x, k) => `<div class="nx aw sealed" data-k="${k}"><small>${esc(x.a)}</small><h4 class="aw-w">${who(x.w)}</h4><p class="aw-s">Nominees: ${noms(x)}</p>
   <p class="aw-r">${x.stat ? esc(x.stat) + ' · ' : ''}${x.n.length ? 'Also nominated: ' + x.n.map(who).join(', ') : ''}${x.xp ? `<br><b>+${fmt(x.xp)} XP</b>` : ''}</p></div>`).join('')}
@@ -1522,12 +1528,13 @@
       for (const h of e.honors || []) n[h] = (n[h] || 0) + 1;
       return Object.entries(n).map(([k, v]) => v > 1 ? `${v}x ${k}` : k).join(', ');
     };
-    scr.innerHTML = `<div class="menu solid"><button class="back" id="bk">‹ Back</button><h1 class="sm">Hall of <em>fame</em></h1>
+    scr.innerHTML = `<div class="menu solid fill hallp"><button class="back" id="bk">‹ Back</button><h1 class="sm">Hall of <em>fame</em></h1>
   <p class="tag">${ins} enshrined${hall.length > ins ? ` · ${hall.length - ins} more retired` : ''}. Retire a career to put it to the vote: a case of 70 gets in.</p>
   ${fresh ? `<div class="nx aw${fresh.inducted ? ' won' : ''}"><small>The vote · class of ${fresh.cls}</small><h4>${fresh.inducted ? `${esc(fresh.name)} is a hall of famer` : `${esc(fresh.name)} falls short`}</h4>
   <p>${esc(fresh.verdict)} · case ${fresh.score}${fresh.inducted ? '' : ' of the 70 it takes'}</p></div>` : ''}
   ${hall.length ? hall.map(e => `<div class="pc hof${hofKit(e) ? ' k' : ''}" style="--c:${e.c1}">${hofKit(e)}<div><h3>${esc(e.name)}</h3><p>#${e.num} · ${esc(e.pos)} · ${esc(e.team)}<br>${esc(e.line)}${e.honors && e.honors.length ? `<br>${esc(honors(e))}` : ''}</p><div class="pcc"><span>${e.seasons} season${e.seasons === 1 ? '' : 's'}</span><span>${e.games} game${e.games === 1 ? '' : 's'}</span><span>${e.rings} title${e.rings === 1 ? '' : 's'}</span>${e.age ? `<span>retired at ${e.age}</span>` : ''}</div></div><div class="ovr">${e.score}<small>${e.inducted ? 'HOF' : 'CASE'}</small></div></div>`).join('')
     : '<p class="note">Nobody yet. A career you retire from its Retire screen is put to the vote here.</p>'}
+  ${'<div class="pc hof ghost" aria-hidden="true"><i></i></div>'.repeat(Math.max(0, 3 - hall.length))}
   ${fresh ? '<button class="go" id="hnew">Start a new career</button>' : ''}</div>`;
     $('#bk').onclick = fresh ? () => showCreate() : () => PG.showMenu();
     if ($('#hnew')) $('#hnew').onclick = showCreate;
@@ -1562,6 +1569,15 @@
   /* your player in his team's home uniform, when the 3D renderer is running */
   /* a hall-of-famer in the kit he retired in (found by the team's name, so an entry from before the team was renamed
      keeps its plain card) */
+  /* the team's step-and-repeat wall behind the podium (the press cutscene has one): its short name and its name in
+     the second color, faint, over a dark wash of the first */
+  function wallCss() {
+    const t = TEAMS[C.team], x = s => String(s).replace(/[&<>"']/g, ''), nm = x(t.name).toUpperCase(), ab = x(t.ab);
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='230' height='80'><g font-family='Arial,Helvetica,sans-serif' font-weight='800' fill='${t.c2}' fill-opacity='.08'><text x='10' y='30' font-size='20'>${ab}</text><text x='66' y='30' font-size='13'>${nm}</text><text x='10' y='70' font-size='13'>${nm}</text><text x='150' y='70' font-size='20'>${ab}</text></g></svg>`;
+    const dark = k => !/^#[0-9a-f]{6}$/i.test(t.c1) ? '#151f33' : '#' + [1, 3, 5].map(i => Math.round(parseInt(t.c1.slice(i, i + 2), 16) * k).toString(16).padStart(2, '0')).join('');  // the first color toward black
+    return `--wall:url(&quot;data:image/svg+xml,${encodeURIComponent(svg)}&quot;);--w1:${dark(0.42)};--w2:${dark(0.18)}`;
+  }
+
   function hofKit(e) {
     const ti = e.ti != null && TEAMS[e.ti] && `${TEAMS[e.ti].city} ${TEAMS[e.ti].name}` === e.team ? e.ti : TEAMS.findIndex(t => `${t.city} ${t.name}` === e.team);
     const url = ti >= 0 && PG.r3d && PG.r3d.portrait ? PG.r3d.portrait(TEAMS[ti], true, e.num, e.look || null) : null;

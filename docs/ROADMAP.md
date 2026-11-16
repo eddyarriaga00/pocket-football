@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `3eb0ab4`, before short screens filled tall phones (menu, camp, milestones, hall, press, combine, dash, awards) (2026-11-16, from the Mac).
   - `7f53b89`, before the interface pass: grade chip on one line, tile marks, ability locks, hall pictures, standings labels (2026-11-16, from the Mac).
   - `199ae80`, before a career receiver's route was painted bright on the field as he runs it (2026-11-16, from the Mac).
   - `3b38a41`, before the social feed's pictures: faces, score and stat cards, polls, likes, photos (2026-11-16, from the Mac).
@@ -2525,6 +2526,18 @@ six were done as the pro game has them; the choices where there was one are mine
   wraps inside the screen instead of running off its side at 320 wide. Fingerprint unchanged; audit empty at
   320x568 and 390x844 (the hall, the milestones and a long toast included); whole seasons at both positions, a
   receiver career and a season with the rough test player clean.
+
+- The owner: "don't leave a lot of empty space though". Measured every screen at 440x956 (his iPhone 16 Pro Max): the
+  menu, training camp, milestones, the hall of fame, the press conference (question and summary), the combine, the
+  40-yard dash and awards night left 300 to 550 pixels empty under their content. Those screens are now a column
+  (`.menu.fill`) whose main cards grow into the room (they never shrink: a short phone scrolls as before), with
+  bigger badges, icons and type above 760 and 880 pixels of height. The press conference asks its question on the
+  team's step-and-repeat wall (its short name and name, faint, tiled over a dark wash of its color, the colors
+  worked out in code so the audit can read them), answers below near the thumb; the summary's wall carries the
+  three results in large figures. The combine's two workouts have a faint stopwatch and football; the dash's tap
+  pad fills the screen with faint yard lines; the hall shows dashed open spots up to three. The rest of each of
+  those screens is now under 80 pixels (the bottom margin). Audit empty at 320x568, 390x844 and 440x956;
+  fingerprint unchanged; a receiver season, careers and a season with the rough test player clean.
 
 ## Morning hand-off
 

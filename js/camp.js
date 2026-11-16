@@ -59,7 +59,7 @@
   function open() {
     PG.toMenu();
     const n = totalStars();
-    scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ Menu</button><h1 class="sm">Training camp</h1>
+    scr.innerHTML = `<div class="menu read fill campm"><button class="back" id="bk">‹ Menu</button><h1 class="sm">Training camp</h1>
   <p class="tag">Three short drills, five plays each. Earn up to three stars in every one.</p>
   <div class="cmt" role="img" aria-label="${n} of 9 stars"><div>${DRILLS.map(d=>`<span>${[0,1,2].map(i=>`<u class="${i<bestStars(d)?'on':''}"></u>`).join('')}</span>`).join('')}</div><b>${n}<small> / 9</small></b></div>
   ${DRILLS.map(d=>`<button class="mode cmd" data-d="${d.id}">${dIcon(d)}<b>${d.name}</b><span>${S.best[d.id]?S.best[d.id].text:d.what}</span>${starsHtml(bestStars(d))}</button>`).join('')}
