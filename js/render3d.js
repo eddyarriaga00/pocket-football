@@ -30,7 +30,8 @@
      the sun goes to the other side. The rest of the bowl is the same from either end. ends is which way round it
      stands now; endsT times the crane shot that covers the change. */
   let ends = 0, endsWant = 0, endsT = 9, lastEnv = null, lastTeams = null;
-  const shadowSets = [], towerGlow = [], towerPanels = [], refs = [];
+  const shadowSets = [], towerGlow = [], towerPanels = [], towerPoles = [], refs = [];
+  let roof = null;  // the roof over a domed stadium (buildRoof), shown only when the game's env says roof
   let teamsKey = '', lastPs = null, time = 0, cheer = 0, debugCam = null, zoom = 1, flashes = null, menuShot = -1, nearModel = false, camDist = 0;
   const FLASHES = 48, flashLife = new Float32Array(FLASHES);
   const TOWERS = [[-70, -78], [FW + 70, -78], [-70, 178], [FW + 70, 178]];  // the four light towers, as field [x, y]
@@ -3622,7 +3623,7 @@
     const lampTex = new T.CanvasTexture(lampC);
     lampTex.colorSpace = T.SRGBColorSpace;
     for (const [x, y] of TOWERS) {
-      box(2.2, 78, 2.2, 0x1a2338, x, 39, -y, true);
+      towerPoles.push(box(2.2, 78, 2.2, 0x1a2338, x, 39, -y, true));
       const panel = new T.Mesh(new T.BoxGeometry(20, 9, 1), new T.MeshBasicMaterial({ color: 0xf2f6ff, map: lampTex }));
       panel.position.set(x, 80, -y);
       scene.add(panel);
@@ -3635,6 +3636,7 @@
       towerPanels.push(panel);
       towerGlow.push(sp);
     }
+    buildRoof(glowTex, lampTex);
     /* camera flashes in the lower bowl: a few all night, a burst when the crowd erupts */
     const fg = new T.BufferGeometry();
     fg.setAttribute('position', new T.BufferAttribute(new Float32Array(FLASHES * 3).fill(-999), 3));
@@ -3901,6 +3903,73 @@
       stars: 0, cloud: 0.45, cloudCol: '#ffffff', rim: ['#d4e3ff', 0.3] },
   };
 
+  /* A roof for the eleven stadiums with one (data.js CLIM 'dome'; the game's env.roof): a shallow vault of steel
+     panels from the rim of the bowl up to a crown over midfield, its underside ruled into panels by the trusses, and
+     a ring of lights hung under it round the field. Built once, hidden outdoors. */
+  function buildRoof(glowTex, lampTex) {
+    const g = new T.Group(), X0 = -89, X1 = FW + 89, Y0 = -99, Y1 = 199, H0 = 55.6, RISE = 44, N = 28;
+    const pos = [], uv = [], idx = [];
+    for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
+      const u = i / N, v = j / N, h = H0 + RISE * Math.cos(Math.PI / 2 * Math.abs(2 * u - 1)) * Math.cos(Math.PI / 2 * Math.abs(2 * v - 1));
+      pos.push(lerp(X0, X1, u), h, -lerp(Y0, Y1, v));
+      uv.push(u * 10, v * 13);
+    }
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const a = j * (N + 1) + i, b = a + 1, c = a + N + 1, d = c + 1;
+      idx.push(a, c, b, b, c, d);
+    }
+    const geo = new T.BufferGeometry();
+    geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+    geo.setIndex(idx);
+    geo.computeVertexNormals();
+    // the underside: dark steel panels, the trusses between them a little lighter
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const x = c.getContext('2d');
+    x.fillStyle = '#1b2232';
+    x.fillRect(0, 0, 128, 128);
+    x.fillStyle = '#2b3448';
+    x.fillRect(0, 0, 128, 6);
+    x.fillRect(0, 0, 6, 128);
+    x.strokeStyle = '#252e40';
+    x.lineWidth = 2;
+    x.beginPath();
+    x.moveTo(6, 6);
+    x.lineTo(128, 128);
+    x.moveTo(128, 6);
+    x.lineTo(6, 128);
+    x.stroke();
+    const tex = new T.CanvasTexture(c);
+    tex.colorSpace = T.SRGBColorSpace;
+    tex.wrapS = tex.wrapT = T.RepeatWrapping;
+    tex.anisotropy = 4;
+    g.add(new T.Mesh(geo, new T.MeshBasicMaterial({ map: tex, side: T.DoubleSide })));
+    // the ring of lights: a catwalk round the field under the roof, lamp banks along it facing down, each with a glow
+    const RX0 = -34, RX1 = FW + 34, RY0 = -44, RY1 = 144, RH = 70, walk = new T.MeshBasicMaterial({ color: 0x2a3142 });
+    for (const [w, d, cx, cy] of [[RX1 - RX0, 1.4, (RX0 + RX1) / 2, RY0], [RX1 - RX0, 1.4, (RX0 + RX1) / 2, RY1], [1.4, RY1 - RY0, RX0, (RY0 + RY1) / 2], [1.4, RY1 - RY0, RX1, (RY0 + RY1) / 2]]) {
+      const m = new T.Mesh(new T.BoxGeometry(w, 1, d), walk);
+      m.position.set(cx, RH, -cy);
+      g.add(m);
+    }
+    const lamp = new T.MeshBasicMaterial({ color: 0xf2f6ff, map: lampTex, fog: false }), glow = new T.SpriteMaterial({ map: glowTex, blending: T.AdditiveBlending, depthWrite: false, transparent: true, fog: false, opacity: 0.5 });
+    const spots = [];
+    for (let k = 0; k <= 6; k++) spots.push([lerp(RX0, RX1, k / 6), RY0], [lerp(RX0, RX1, k / 6), RY1]);
+    for (let k = 1; k < 9; k++) spots.push([RX0, lerp(RY0, RY1, k / 9)], [RX1, lerp(RY0, RY1, k / 9)]);
+    for (const [lx, ly] of spots) {
+      const pn = new T.Mesh(new T.BoxGeometry(7, 0.6, 3.2), lamp);
+      pn.position.set(lx, RH - 0.8, -ly);
+      g.add(pn);
+      const sp = new T.Sprite(glow);
+      sp.position.set(lx, RH - 1.6, -ly);
+      sp.scale.setScalar(11);
+      g.add(sp);
+    }
+    g.visible = false;
+    scene.add(g);
+    roof = g;
+  }
+
   function applyEnv(e) {
     lastEnv = e;
     const sx = ends ? -1 : 1;  // the sun is on the other side once the stadium has turned round
@@ -3939,6 +4008,19 @@
       sp.material.opacity = lamps;
     }
     for (const pn of towerPanels) pn.material.color.set(lamps > 0 ? '#f2f6ff' : '#5d6675');
+    /* under a roof: no sky, no stars, no light towers in the corners (the ring of lights under the roof instead) */
+    const covered = !!e.roof;
+    if (roof) roof.visible = covered;
+    for (const m of [...towerPoles, ...towerPanels, ...towerGlow]) if (covered) m.visible = false;
+    if (!covered) {
+      for (const m of [...towerPoles, ...towerPanels]) m.visible = true;
+      for (const sp of towerGlow) sp.visible = lamps > 0;
+    }
+    if (covered) {
+      su.uStars.value = 0;
+      su.uCloud.value = 0;
+      scene.fog.color.set('#121826');
+    }
     const fu = fieldMat.uniforms;
     fu.uTint.value.setRGB(t.field[0] * dim, t.field[1] * dim, t.field[2] * dim);
     fu.uWet.value = wet ? 1 : 0;
@@ -4150,7 +4232,7 @@
   function render(s, dt) {
     time += dt;
     const G = s.G, P = s.P, ps = s.ps, t0 = s.teams[G.tm[0]], t1 = s.teams[G.tm[1]];
-    const lg = G.mode === 'career' || G.mode === 'season', key = G.tm[0] + '-' + G.tm[1] + '-' + (G.home || 0) + (lg ? 'L' : ''), e = s.env || NIGHT, ek = e.time + '|' + e.weather;
+    const lg = G.mode === 'career' || G.mode === 'season', key = G.tm[0] + '-' + G.tm[1] + '-' + (G.home || 0) + (lg ? 'L' : ''), e = s.env || NIGHT, ek = e.time + '|' + e.weather + '|' + (e.roof ? 'roof' : '');
     if (ek !== envKey) {
       envKey = ek;
       applyEnv(e);

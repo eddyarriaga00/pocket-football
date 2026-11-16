@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `aa77596`, before the roof over the roofed stadiums (2026-11-16 night).
   - `1e549e8`, before the injury scene (trainers out, helped off, the cart for the worst) (2026-11-16 night).
   - `634d2d2`, before the tackle drive (tackler and runner carried on through the hit together) (2026-11-16 night).
   - `5ddc9bc`, before the record book (league single-game and season marks, a card when one falls) (2026-11-16 night).
@@ -2654,6 +2655,18 @@ six were done as the pro game has them; the choices where there was one are mine
   endings run to the end); whole seasons at both positions, careers at both, exhibitions and a season with the rough
   test player clean.
 
+- Tonight, round 7 (04:52): a roof over the roofed stadiums. The eleven cities with one (data.js CLIM 'dome') already
+  played indoors (no rain or snow, the lights on: env.roof) under an open night sky with stars and the four corner
+  light towers. Now render3d's buildRoof() puts a shallow vault over the bowl, from its rim (55.6 yards up) to a crown
+  44 higher over midfield, its underside dark steel ruled into panels by lighter trusses (a canvas texture), and a
+  ring of lights hung under it round the field (a catwalk with 30 lamp banks and soft glows). applyEnv shows it when
+  the env says roof and then hides the corner towers, the stars and the clouds and darkens the fog to the roof's;
+  outdoors everything is as it was. The env key now includes the roof, so a change between games redraws. Seen in
+  play from the game camera (the roof overhead, the lamps along it) and from a wide shot; switched back to an open
+  stadium the stars and towers return. Exhibitions take their weather from the settings and stay outdoors; seasons
+  and careers get the home city's. Drawing only: fingerprint unchanged. Audit empty at 320x568, 390x844 and 440x956;
+  whole seasons at both positions, careers at both, exhibitions and a season with the rough test player clean.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3018,7 +3031,7 @@ NFL rules first, every item checked the full way before it ships.
   career player breaks one.
 - [x] The form tackle as a paired motion: tackler and runner keyed to each other (wrap, drive, fall together).
 - [x] Injuries, the rest: the trainers jog out and a hurt man is helped off (a short scene), the cart for the worst.
-- [ ] A roof over the roofed stadiums: the sky and light towers give way to a dome and a ring of lights.
+- [x] A roof over the roofed stadiums: the sky and light towers give way to a dome and a ring of lights.
 - [ ] An all-star game after the season for each conference's best (a career player who makes it plays it).
 - [ ] Yards after the catch, part 3: the receiver still runs about 8 yards before the first hand touches him (NFL about
   3 to 4) and 9.3 in all; at the catch the nearest defenders are mostly linemen behind him. Look at how underneath
