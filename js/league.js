@@ -357,7 +357,7 @@
        record and points for and against are on the page, in a fraction of the room eight full tables took */
     const mc = TEAMS[L.team].conf, card = d => {
       const ts = divTeams(d >> 2, d & 3).sort(better(L));
-      return `<div class="dvc"><small>${DIV[d & 3]}</small>${ts.map((i, n) => `<p class="${played && n === 0 ? 'ld' : ''}"><i style="--c:${TEAMS[i].c1}"></i><b>${TEAMS[i].ab}</b><span>${recTxt(L, i)}</span><u>${L.tab[i].pf}\u2013${L.tab[i].pa}</u></p>`).join('')}</div>`;
+      return `<div class="dvc"><small>${DIV[d & 3]}<em>W-L · PF-PA</em></small>${ts.map((i, n) => `<p class="${played && n === 0 ? 'ld' : ''}"><i style="--c:${TEAMS[i].c1}"></i><b>${TEAMS[i].ab}</b><span>${recTxt(L, i)}</span><u>${L.tab[i].pf}\u2013${L.tab[i].pa}</u></p>`).join('')}</div>`;
     }, conf = (label, ds) => `<h3 class="dvh">${label}</h3><div class="dvg">${ds.map(card).join('')}</div>`;
     return `${bracketHtml(L)}<h2>${L.po && L.po.games ? 'Final standings' : 'Standings'}</h2>${table(mine)}
       ${conf(`Rest of the ${CONF[mc]}`, order.filter(d => d !== mine && d >> 2 === mc))}${conf(`${CONF[1 - mc]} Conference`, order.filter(d => d >> 2 !== mc))}

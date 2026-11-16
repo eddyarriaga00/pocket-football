@@ -1314,10 +1314,10 @@
     /* the three slots drawn as slots (what is in each, which are open, and the rating that opens the next), then the
        abilities as cards two across, the equipped ones outlined */
     const slot = i => i < on.length ? `<div class="on"><small>Slot ${i + 1}</small><b>${on[i]}</b></div>` : i < n ? `<div class="open"><small>Slot ${i + 1}</small><b>Open</b></div>` : `<div class="lock"><small>Slot ${i + 1}</small><b>${SLOT_AT[i] ? SLOT_AT[i] + ' OVR' : 'Locked'}</b></div>`;
-    return `<h2>Abilities · ${on.length} of ${n} slot${n===1?'':'s'} used</h2><div class="slts">${[0, 1, 2].map(slot).join('')}</div><div class="pkg">`
+    return `<h2>Abilities · ${n ? `${on.length} of ${n} slot${n===1?'':'s'} used` : 'no slot open yet'}</h2><div class="slts">${[0, 1, 2].map(slot).join('')}</div><div class="pkg">`
       + PERKS[C.pos].map(([name, what]) => {
         const eq = on.includes(name), full2 = !eq && on.length >= n;
-        return `<div class="pk${eq?' eq':''}"><b>${name}</b><span>${what}</span><button data-p="${name}" class="${eq?'on':''}" ${full2?'disabled':''}>${eq?'Equipped':n?'Equip':'Locked'}</button></div>`;
+        return `<div class="pk${eq?' eq':''}"><b>${name}</b><span>${what}</span>${n ? `<button data-p="${name}" class="${eq?'on':''}" ${full2?'disabled':''}>${eq?'Equipped':'Equip'}</button>` : `<span class="pkl">Opens at ${SLOT_AT[0]} OVR</span>`}</div>`;
       }).join('')
       + `</div><p class="note">${nextAt?`Next slot opens at ${nextAt} overall.`:'All three slots are open.'}</p>`;
   }
@@ -1508,7 +1508,7 @@
 
   function retireToHall() {
     const fame = fameCase(), hall = load(HOF, []), t = team(C.team);
-    const e = { name: C.name, num: C.num, pos: POS[C.pos].label, team: `${t.city} ${t.name}`, c1: t.c1, seasons: C.season, age: age(), games: C.career.g, line: line(C.career), rings: C.rings,
+    const e = { name: C.name, num: C.num, pos: POS[C.pos].label, team: `${t.city} ${t.name}`, ti: C.team, look: C.look || null, c1: t.c1, seasons: C.season, age: age(), games: C.career.g, line: line(C.career), rings: C.rings,
       honors: (C.awards || []).map(a => a.name), score: fame.score, verdict: fame.verdict, inducted: fame.score >= 70, cls: hall.length + 1 };
     hall.push(e);
     save(HOF, hall);
@@ -1526,7 +1526,7 @@
   <p class="tag">${ins} enshrined${hall.length > ins ? ` · ${hall.length - ins} more retired` : ''}. Retire a career to put it to the vote: a case of 70 gets in.</p>
   ${fresh ? `<div class="nx aw${fresh.inducted ? ' won' : ''}"><small>The vote · class of ${fresh.cls}</small><h4>${fresh.inducted ? `${esc(fresh.name)} is a hall of famer` : `${esc(fresh.name)} falls short`}</h4>
   <p>${esc(fresh.verdict)} · case ${fresh.score}${fresh.inducted ? '' : ' of the 70 it takes'}</p></div>` : ''}
-  ${hall.length ? hall.map(e => `<div class="pc hof" style="--c:${e.c1}"><div><h3>${esc(e.name)}</h3><p>#${e.num} · ${esc(e.pos)} · ${esc(e.team)}<br>${esc(e.line)}${e.honors && e.honors.length ? `<br>${esc(honors(e))}` : ''}</p><div class="pcc"><span>${e.seasons} season${e.seasons === 1 ? '' : 's'}</span><span>${e.games} games</span><span>${e.rings} title${e.rings === 1 ? '' : 's'}</span>${e.age ? `<span>retired at ${e.age}</span>` : ''}</div></div><div class="ovr">${e.score}<small>${e.inducted ? 'HOF' : 'CASE'}</small></div></div>`).join('')
+  ${hall.length ? hall.map(e => `<div class="pc hof${hofKit(e) ? ' k' : ''}" style="--c:${e.c1}">${hofKit(e)}<div><h3>${esc(e.name)}</h3><p>#${e.num} · ${esc(e.pos)} · ${esc(e.team)}<br>${esc(e.line)}${e.honors && e.honors.length ? `<br>${esc(honors(e))}` : ''}</p><div class="pcc"><span>${e.seasons} season${e.seasons === 1 ? '' : 's'}</span><span>${e.games} game${e.games === 1 ? '' : 's'}</span><span>${e.rings} title${e.rings === 1 ? '' : 's'}</span>${e.age ? `<span>retired at ${e.age}</span>` : ''}</div></div><div class="ovr">${e.score}<small>${e.inducted ? 'HOF' : 'CASE'}</small></div></div>`).join('')
     : '<p class="note">Nobody yet. A career you retire from its Retire screen is put to the vote here.</p>'}
   ${fresh ? '<button class="go" id="hnew">Start a new career</button>' : ''}</div>`;
     $('#bk').onclick = fresh ? () => showCreate() : () => PG.showMenu();
@@ -1560,6 +1560,14 @@
   }
 
   /* your player in his team's home uniform, when the 3D renderer is running */
+  /* a hall-of-famer in the kit he retired in (found by the team's name, so an entry from before the team was renamed
+     keeps its plain card) */
+  function hofKit(e) {
+    const ti = e.ti != null && TEAMS[e.ti] && `${TEAMS[e.ti].city} ${TEAMS[e.ti].name}` === e.team ? e.ti : TEAMS.findIndex(t => `${t.city} ${t.name}` === e.team);
+    const url = ti >= 0 && PG.r3d && PG.r3d.portrait ? PG.r3d.portrait(TEAMS[ti], true, e.num, e.look || null) : null;
+    return url ? `<img class="kit" src="${url}" alt="">` : '';
+  }
+
   function kit() {
     const url = PG.r3d && PG.r3d.portrait ? PG.r3d.portrait(TEAMS[C.team], true, C.num, C.look || null) : null;
     return url ? `<img class="kit" src="${url}" alt="">` : '';

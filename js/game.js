@@ -5351,7 +5351,7 @@
     hudKey = '';
     const el = $('#pgr');
     if (!el) return;
-    el.className = v >= 3.6 ? 'hi' : v >= 2.6 ? 'ok' : v >= 1.6 ? 'mid' : 'lo';
+    el.className = v >= 3.6 ? 'g-hi' : v >= 2.6 ? 'g-ok' : v >= 1.6 ? 'g-mid' : 'g-lo';  // own names: .mid is the score bug's middle
     el.innerHTML = `<b>${gr}</b><span>${why}</span>`;
     el.hidden = false;
     clearTimeout(gradeSnap.t);

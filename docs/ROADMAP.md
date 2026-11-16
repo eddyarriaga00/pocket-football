@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `7f53b89`, before the interface pass: grade chip on one line, tile marks, ability locks, hall pictures, standings labels (2026-11-16, from the Mac).
   - `199ae80`, before a career receiver's route was painted bright on the field as he runs it (2026-11-16, from the Mac).
   - `3b38a41`, before the social feed's pictures: faces, score and stat cards, polls, likes, photos (2026-11-16, from the Mac).
   - `f3f4ee8`, before the live play grade, teammate chemistry and the wider social feed (2026-11-16, from the Mac).
@@ -2510,6 +2511,20 @@ six were done as the pro game has them; the choices where there was one are mine
   Steering through a cut with the stick now counts it as run (within a yard and a half of it, or past it along the
   stem): before, letting go of the stick sent him back to a cut he had already gone by. Fingerprint unchanged
   (careers only); audit empty at 320x568 and 390x844; a receiver season, careers and the rough test player clean.
+
+- The owner: "make the ui better overall everywhere". Toured every screen at 390x844 (menu, settings, how to play,
+  exhibition, season hub, camp, milestones, hall of fame, career hub and tabs, play calling, the field, the result
+  sheet). Most read well already; fixed what did not. The live snap-grade chip stacked its letter over its words: a
+  global `.mid` rule (the score bug's middle) caught the chip's "mid" grade class, so the chip's classes are now
+  g-hi, g-ok, g-mid, g-lo and it is one line. Milestone and career trophy tiles carry a round mark, a check when
+  earned and a lock when not, and the milestones page has the progress bar the trophies had. Career abilities with no
+  slot open show a small lock and "Opens at 74 OVR" in place of a dead "Locked" button, and the heading says "no slot
+  open yet" instead of "0 of 0 slots used". Hall of fame cards show the player in the kit he retired in (found by
+  the team's name; new entries also keep the team and the look), and "1 games" is "1 game". The small division
+  cards in the standings name their two figures (W-L, PF-PA), which both read "0-0" before a game. A long toast
+  wraps inside the screen instead of running off its side at 320 wide. Fingerprint unchanged; audit empty at
+  320x568 and 390x844 (the hall, the milestones and a long toast included); whole seasons at both positions, a
+  receiver career and a season with the rough test player clean.
 
 ## Morning hand-off
 

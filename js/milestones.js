@@ -46,7 +46,8 @@
       PG.toMenu();
       scr.innerHTML = `<div class="menu solid"><button class="back" id="bk">‹ Menu</button><h1 class="sm">Milestones</h1>
   <p class="tag">${count()} of ${LIST.length} earned. They count in every mode and are kept on this device.</p>
-  <div class="tro" style="margin-top:14px">${LIST.map(([id,name,how])=>`<div class="${S.got[id]?'on':''}"><b>${name}</b><span>${how}</span></div>`).join('')}</div>
+  <div class="trp" style="margin-top:12px"><i style="width:${count() / LIST.length * 100}%"></i></div>
+  <div class="tro">${LIST.map(([id,name,how])=>`<div class="${S.got[id]?'on':''}"><b>${name}</b><span>${how}</span></div>`).join('')}</div>
   <p class="note">${S.games} game${S.games===1?'':'s'} finished.</p></div>`;
       $('#bk').onclick = PG.showMenu;
     },
