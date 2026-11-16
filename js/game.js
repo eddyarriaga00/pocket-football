@@ -1671,6 +1671,9 @@
   /* Your throw: holding a receiver's letter (on the field, on the pad, or its number key) fills the power bar, and
      letting go throws with that much on the ball. A quick tap floats it; a full bar fires it. */
   const CHARGE = 0.55;  // seconds from an empty bar to a full one
+  /* the power for a hold of t seconds: the bar fills fast at first and slower near the top, so a quick tap is a
+     touch pass rather than a ball that hangs for the defense (a straight fill made a natural tap an extreme lob) */
+  const pwOf = t => Math.pow(clamp(t / CHARGE, 0, 1), 0.6);
   const RPO_T = 0.7;  // how long the quarterback holds a run-pass option before the back takes the ball
 
   /* The pump fake: the arm goes through the start of a throw and comes back. For those four tenths of a second he
@@ -1729,7 +1732,7 @@
     if (!c || (i !== undefined && i !== c.i)) return;
     G.chg = null;
     if (!canPass() || !ps.recs[c.i]) return;
-    const pw = clamp(c.t / CHARGE, 0, 1);
+    const pw = pwOf(c.t);
     G.pwShow = { pw, t: 1.1 };  // the bar stays up for a moment, showing what was thrown
     throwTo(ps.recs[c.i], null, pw);
     if (ps.air && ps.air.target) Object.assign(G.pwShow, { q: ps.air.q, ideal: ps.air.ideal });  // and how close it was to the right ball
@@ -1763,7 +1766,6 @@
     const q = ps.qb;
     if (!q || r.down) return 0;
     const [tx, ty, T] = aimAt(q, r, 1);
-    r.openDep = (ty - ps.los) * G.dir;  // how far past the line he would catch it: the ring is faint for a check-down
     if (hyp(tx - q.x, ty - q.y) > armRange(q)) return 0;
     let room = 99;
     const rx = 0.32 * (q.team === 0 ? 1 - 0.2 * hard() : 1);  // their usual reaction to a throw, quicker on the harder settings (defAI)
@@ -1784,7 +1786,7 @@
     const ideal = r ? idealPow(q, r) : 0.5, mine = typeof type === 'number';
     const pw = mine ? clamp(type, 0, 1) : type === 'bullet' ? 1 : type === 'lob' ? 0 : 0.5;
     const tq = !r ? 0 : mine ? throwQ(pw - ideal) : throwQ((rnd() - rnd()) * (2 + (85 - (q.thr ?? q.rt)) * 0.015));
-    const sf = pw < 0.5 ? lerp(0.84, 1, pw * 2) : lerp(1, 1.22, pw * 2 - 1), hf = pw < 0.5 ? lerp(1.45, 1, pw * 2) : lerp(1, 0.55, pw * 2 - 1);
+    const sf = pw < 0.5 ? lerp(0.9, 1, pw * 2) : lerp(1, 1.22, pw * 2 - 1), hf = pw < 0.5 ? lerp(1.35, 1, pw * 2) : lerp(1, 0.55, pw * 2 - 1);
     if (r) {
       const range = armRange(q);
       [tx, ty, T] = aimAt(q, r, sf);
@@ -1801,7 +1803,7 @@
       /* Now and then a throw gets away from him: behind the man, at his feet, over his head. Likelier on a long
          ball, with the rush on him, and the weaker the arm; a perfect throw (tq) never does. NFL passers miss their
          man on something like one throw in eight. */
-      const offP = (0.05 + Math.max(0, d - 10) * 0.003 + (pr ? 0.12 : 0) + Math.max(0, 85 - (q.thr ?? q.rt)) * 0.003) * (1 - tq) * (q.team === 1 ? 1 - 0.25 * hard() : 1);
+      const offP = (0.05 + Math.max(0, d - 10) * 0.003 + (pr ? 0.12 : 0) + Math.max(0, 85 - (q.thr ?? q.rt)) * 0.003) * (1 - tq) * (q.team === 1 ? 1 - 0.25 * hard() : 1) * (mine ? [0.3, 0.45, 0.55, 0.7, 0.85][G.diff ?? 2] ?? 0.55 : 1);  // yours miss less, by the difficulty: a miss you did nothing to cause feels random
       if (rnd() < offP) {
         const ang = rnd(6.283), by = rnd(2.6, 4);
         offT = { ix: tx, iy: ty };
@@ -2049,7 +2051,7 @@
     if (dr > 2.2 && ndd < 1.6) ip = 0.4;
     if (ud) ip += 0.2;
     ip *= 1 - 0.75 * tq * tq;  // put where only he can get it, it is rarely picked
-    if (off === 0) ip *= 1 + 0.35 * hard();  // your throw: the computer's hands are surer the harder the setting
+    if (off === 0) ip *= 1 + 0.2 * hard();  // your throw: the computer's hands are surer the harder the setting
     /* Both feet in. A ball caught at the sideline or the end line counts only when the receiver comes down in bounds:
        caught with him already over the line it is incomplete, and within a yard of it he has to drag his toes, which
        sure hands manage more often (NFL: two feet or another body part down in bounds, no force-outs). */
@@ -7099,13 +7101,12 @@
       ctx.fillText(p.let, x, by + 0.5);
       if (G.state === 'live' && !G.chg) {
         // open: a green ring round his letter, held a moment so it does not flicker
-        const on = roomFor(p) >= 2.4;
-        p.opn = lerp(p.opn || 0, on ? 1 : 0, Math.min(1, FDT * 10));
-        if (on) p.opd = p.openDep >= 4 ? 2 : 1;  // 2: open downfield, bright; 1: open short of 4 yards (a check-down), faint
+        // one ring, bright for any open man (a faint one for check-downs was tried and taken out: the owner liked one better)
+        p.opn = lerp(p.opn || 0, roomFor(p) >= 2.4 ? 1 : 0, Math.min(1, FDT * 10));
         if (p.opn > 0.05) {
-          ctx.globalAlpha = p.opn * (p.opd === 2 ? 1 : 0.45);
+          ctx.globalAlpha = p.opn;
           ctx.strokeStyle = '#3ddc84';
-          ctx.lineWidth = p.opd === 2 ? 2.5 : 1.6;
+          ctx.lineWidth = 2.5;
           ctx.beginPath();
           ctx.arc(x, by, 14.5, 0, 7);
           ctx.stroke();
@@ -7123,7 +7124,7 @@
         ctx.strokeStyle = '#3ddc84';
         ctx.lineWidth = 3.5;
         ctx.beginPath();
-        ctx.arc(x, by, 15, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(G.chg.t / CHARGE, 0.02, 1));
+        ctx.arc(x, by, 15, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.02, pwOf(G.chg.t)));
         ctx.stroke();
       }
     }
@@ -7226,7 +7227,7 @@
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     if (R3) {
       ctx.clearRect(0, 0, W, H);
-      R3.render({ G, P, ps, cam, scene: G.state === 'scene' ? G.scene : null, teams: TEAMS, acc: ACC, shake, isCtl, down: G.dnTxt || '', plain: SET.cin === false, env: G.env, shadows: SET.shad !== false, fx: SET.fx !== false, zoom: SET.zoom, detail: SET.detail !== false, charge: G.chg && G.state === 'live' ? clamp(G.chg.t / CHARGE, 0, 1) : -1 }, FDT);
+      R3.render({ G, P, ps, cam, scene: G.state === 'scene' ? G.scene : null, teams: TEAMS, acc: ACC, shake, isCtl, down: G.dnTxt || '', plain: SET.cin === false, env: G.env, shadows: SET.shad !== false, fx: SET.fx !== false, zoom: SET.zoom, detail: SET.detail !== false, charge: G.chg && G.state === 'live' ? pwOf(G.chg.t) : -1 }, FDT);
       if (shake > 0) shake -= FDT;
     } else {
       if (shake > 0) {
@@ -7341,14 +7342,13 @@
     playTag();
     // the open ring on the field's letters (p.opn), on the pad's throw buttons too
     if (G.pad === 'pass') for (const b of pad.querySelectorAll('.pb.rc')) {
-      const r = ps.recs && ps.recs[+b.dataset.i], on = !!r && (r.opn || 0) > 0.5, lo = on && r.opd !== 2;
+      const r = ps.recs && ps.recs[+b.dataset.i], on = !!r && (r.opn || 0) > 0.5;
       if (b.classList.contains('open') !== on) b.classList.toggle('open', on);
-      if (b.classList.contains('lo') !== lo) b.classList.toggle('lo', lo);
     }
     const pwEl = $('#pw'), pwOn = G.state === 'live' && (G.chg || G.pwShow);
     if (pwEl.hidden === !!pwOn) pwEl.hidden = !pwOn;
     if (pwOn) {
-      const v = G.chg ? clamp(G.chg.t / CHARGE, 0, 1) : G.pwShow.pw, key = Math.round(v * 100);
+      const v = G.chg ? pwOf(G.chg.t) : G.pwShow.pw, key = Math.round(v * 100);
       const r = G.chg && ps.recs[G.chg.i], ideal = r && ps.qb ? idealPow(ps.qb, r) : G.pwShow && G.pwShow.ideal, sq = !G.chg && G.pwShow && G.pwShow.q;
       // the band where the throw is perfect, and after the throw what it was
       const verdict = sq === undefined || sq === false || G.chg ? '' : sq >= 0.99 ? 'Perfect' : sq >= 0.4 ? 'Good' : '', zk = ideal ? Math.round(ideal * 100) : -1;
@@ -7631,6 +7631,7 @@
     /* test hooks: tools/harness.js drives the game through these */
     dbg: {
       idealPow,  // the right power for a throw (the perfect band); the test player can aim for it
+      CHARGE, holdFor: pw => CHARGE * Math.pow(clamp(pw, 0, 1), 1 / 0.6),  // how long to hold for a power
       roomFor,  // how open a receiver would be if thrown to now (the green ring); tools/passcheck.js checks it against what happens
       set hang(v) {
         HANG = v;

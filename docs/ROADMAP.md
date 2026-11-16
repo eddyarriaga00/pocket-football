@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `83eb868`, before the single ring again, the reshaped power bar and fewer off-target misses on your throws (2026-11-16 night).
   - `d6ec7b5`, before receivers winning at the break, shifting zones and the two ring strengths (2026-11-16 night).
   - `0e2e039`, before the throwing rebalance from the human-player tests (2026-11-16 night).
   - `7d4de40`, before the harder kickoff power (2026-11-16 night).
@@ -2965,6 +2966,19 @@ six were done as the pro game has them; the choices where there was one are mine
   ever faint; on the same play call the first bright man is the same one 68% of the time. League 76% completions,
   1.6% picks, 35 points; the human player at Pro 77%, deep 79%. Fingerprint re-pinned (old in
   pg.fingerprint.before-breaks); careers, the rough player, drills and the audit clean.
+
+- 2026-11-16 (night, "keep improving the throwing and catching and improving the green things on the buttons make it
+  like before it was better than now"). The ring is one bright green ring again for any open man (the faint
+  check-down ring is out; receivers still win at the break and zones still shift). Throwing, from 231 throws by the
+  human test player at Pro and All-Pro: a third of the misses were throws off target (a miss the player did nothing
+  to cause), floated balls were caught 54% against 92% for firm ones, and All-Pro picks ran to 8%. Now: your own
+  throws miss their man less, by the difficulty (0.3 of the computer's rate at Rookie, 0.55 at Pro, 0.85 at Legend;
+  the computer's quarterbacks unchanged); the power bar fills fast at first and slower near the top (power = hold
+  fraction to the 0.6, `pwOf`), so a natural quick tap is a touch pass, not an extreme lob; the floater's slowest
+  speed and highest arc are milder (0.9 and 1.35, were 0.84 and 1.45); and the harder settings add 20% to the
+  computer's hands on your throws at the top (was 35%). After, 256 throws: Pro 87% with no picks, All-Pro 82%, picks
+  3.6%, floated balls 72%. Fingerprint unchanged (all of it is your throws only); the passing drill 4 to 5 (3 stars);
+  careers, the rough player and the audit clean. Test hooks: dbg.CHARGE, dbg.holdFor.
 
 ## Morning hand-off
 

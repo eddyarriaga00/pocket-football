@@ -47,7 +47,7 @@ window.HP = (() => {
     });
     const r = ps.recs[best], C = 0.55;
     let t;
-    if (o.learned && D().idealPow) t = Math.max(0.02, D().idealPow(qb, r) * C + gauss() * 0.06);
+    if (o.learned && D().idealPow) t = Math.max(0.02, (D().holdFor ? D().holdFor(D().idealPow(qb, r)) : D().idealPow(qb, r) * C) + gauss() * 0.06);
     else {
       const u = Math.random();
       t = u < 0.35 ? 0.03 + Math.random() * 0.12 : u < 0.75 ? 0.18 + Math.random() * 0.22 : 0.42 + Math.random() * 0.3;
@@ -82,7 +82,7 @@ window.HP = (() => {
           if (!think(o)) H.bot();
           D().step(0.02);
           const ps = D().ps, a = ps && ps.air;
-          if (a && a.target && a.dist !== undefined && ps.thrown && !cur && ps.offTeam === 0) cur = { a, d: a.dist, c0: D().G.stats[0].comp, q: a.q };
+          if (a && a.target && a.dist !== undefined && ps.thrown && !cur && ps.offTeam === 0) cur = { a, d: a.dist, c0: D().G.stats[0].comp, q: a.q, off: !!a.off, T: a.T };
           if (!cur) continue;
           if (a === cur.a) {
             cur.nd = Math.min(...D().P.filter(p => p.team !== 0 && !p.down).map(p => Math.hypot(p.x - a.x1, p.y - a.y1)));
@@ -108,6 +108,7 @@ window.HP = (() => {
     for (const x of rec) if (!x.comp) why[x.why] = (why[x.why] || 0) + 1;
     const pct = f => Math.round(rec.filter(f).length / n * 100);
     const tight = rec.filter(x => x.nd < 1.6);
+    HP.rec = rec;
     return { throws: rec.length, comp: pct(x => x.comp), int: rec.filter(x => x.int).length, deep: rec.filter(x => x.d > 20).length,
       deepComp: Math.round(rec.filter(x => x.d > 20 && x.comp).length / (rec.filter(x => x.d > 20).length || 1) * 100),
       tight: tight.length, tightComp: Math.round(tight.filter(x => x.comp).length / (tight.length || 1) * 100),

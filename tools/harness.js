@@ -22,7 +22,7 @@ window.H = (() => {
   function bot() {
     const G = d().G, ps = d().ps;
     if (throwKey) {
-      const want = window.H_HOLD === 'perfect' && G.chg && ps.recs[G.chg.i] ? d().idealPow(ps.qb, ps.recs[G.chg.i]) * 0.55 : window.H_HOLD ?? 0.3;
+      const want = window.H_HOLD === 'perfect' && G.chg && ps.recs[G.chg.i] ? (d().holdFor ? d().holdFor(d().idealPow(ps.qb, ps.recs[G.chg.i])) : d().idealPow(ps.qb, ps.recs[G.chg.i]) * 0.55) : window.H_HOLD ?? 0.3;
       if (!G.chg || G.chg.t >= want || G.state !== 'live') {  // H_HOLD: how long the test player holds (0.55 is a full bar), or 'perfect': into the perfect band
         // also let go when the play dies under him, or the key would be held for ever
         dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit1', key: throwKey }));
