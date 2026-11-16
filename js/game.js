@@ -1199,10 +1199,11 @@
     seek(p, c.x + c.vx * t, c.y + c.vy * t, 1, true);
   }
 
-  function openField(a, b) {
+  function openField(a, b, rallied) {
     if (ps.open) return;
     ps.open = true;
-    for (const d of P) if (d.team !== ps.offTeam) d.rd = d === G.me ? 0.05 : rnd(a, b) + (/CB|FS|SS/.test(d.role) ? 0.25 : 0) + (d.asg === 'man' ? 0.3 : 0);
+    // rallied: they were already running to the ball in the air, so a catch costs them no extra beat (no turn and find it)
+    for (const d of P) if (d.team !== ps.offTeam) d.rd = d === G.me ? 0.05 : rnd(a, b) + (rallied ? 0 : (/CB|FS|SS/.test(d.role) ? 0.25 : 0) + (d.asg === 'man' ? 0.3 : 0));
   }
 
   function release(d) {
@@ -1334,8 +1335,10 @@
     const a = ps.air, c = ps.carrier;
     if (a) {
       if (a.t < d.rx) return;
+      /* Everybody breaks on the throw: the men near it go for the ball, the rest rally toward where it comes down
+         (they used to stand still beyond nine yards, and a catch then ran for fifteen more on average). */
       if (hyp(a.x1 - d.x, a.y1 - d.y) < 9 || d.man === a.target) seek(d, a.x1, a.y1, 1, true);
-      else d.dvx = d.dvy = 0;
+      else seek(d, a.x1, a.y1 + G.dir * 5, 0.9, true);  // to a spot past it: they take the angle to tackle, not to catch
       return;
     }
     if (!c) {
@@ -1388,7 +1391,7 @@
       const dx = p.x - o.x, ay = (o.y - p.y) * td, d = hyp(dx, o.y - p.y);
       if (d > 9 || ay < -1.5) continue;
       vx += (dx >= 0 ? 1 : -1) * (9 - d) / 9 * (o.eng ? 0.4 : 1) * 1.6 * (Math.abs(dx) < 4 ? 1 : 0.4);
-      if (d < 1.8 && p.jcd <= 0 && rnd() < 2.5 * SDT) doJuke(p, dx >= 0 ? 1 : -1);  // a rate, so it is the same at any frame rate
+      if (d < 1.8 && p.jcd <= 0 && rnd() < 1.8 * SDT) doJuke(p, dx >= 0 ? 1 : -1);  // a rate, so it is the same at any frame rate
       else if (d < 2.2 && ay > 0.5 && p.pcd <= 0 && p.juke <= 0 && rnd() < 1.1 * SDT) doPower(p);
     }
     if (p.x < 5) vx += (5 - p.x) * 0.5;
@@ -1668,7 +1671,11 @@
       if (dist(r, q) > range) continue;
       let open = 99;
       for (const o of P) if (o.team !== q.team && !o.down) open = Math.min(open, dist(o, r));
-      const sc = Math.min(open, 7) + clamp((r.y - ps.los) * G.dir, -3, 25) * 0.05 + rnd(1.2) + (r === me ? (me.role === 'RB' ? 1.2 : 3.5 + chemOf(q, r) * 0.03) : 0) + (hot && r === hot ? 2.2 : 0);
+      /* A real read goes downfield first: how open he is counts for less past a few yards of room, and depth counts
+         for more, most of all past the sticks on a late down; a dump-off behind the line is the last resort, not
+         the first look (completions behind the line were 63% here against about 20% in the NFL). */
+      const dep = (r.y - ps.los) * G.dir, sticks = dep >= G.togo ? (G.down >= 3 ? 1.6 : 0.6) : 0;
+      const sc = Math.min(open, 5) + clamp(dep, -3, 25) * 0.16 + sticks - (dep < 0 ? 1 : 0) + rnd(1.2) + (r === me ? (me.role === 'RB' ? 1.2 : 3.5 + chemOf(q, r) * 0.03) : 0) + (hot && r === hot ? 2.2 : 0);
       if (sc > bsc) {
         bsc = sc;
         best = r;
@@ -1799,7 +1806,7 @@
     cp *= G.wx.cat;  // a wet or frozen ball is harder to hold
     if (dr <= 2.2) cp += chemOf(ps.passer, r) * 0.001;  // up to five points either way between a career player and his partner
     ps.cpT = cp;  // how catchable it was, for the play grade (a drop is a catchable ball not caught)
-    let ip = ndd < 1.5 ? 0.38 * (1 + ((nd.bsk ?? nd.rt) - 75) * 0.02) : 0;
+    let ip = ndd < 1.5 ? 0.3 * (1 + ((nd.bsk ?? nd.rt) - 75) * 0.02) : 0;  // 0.38 until the reads went downfield (2026-11-16 night): more balls are contested now, and picks ran at 4% of throws against the NFL's 2.2%
     if (dr > 2.2 && ndd < 1.6) ip = 0.4;
     if (ud) ip += 0.2;
     /* Both feet in. A ball caught at the sideline or the end line counts only when the receiver comes down in bounds:
@@ -1832,7 +1839,7 @@
       credit(ps.passer, 'att', 1);
       credit(ps.passer, 'comp', 1);
       credit(r, 'rec', 1);
-      openField(0.05, 0.3);
+      openField(0.05, 0.2, true);
       if (ps.rpo) for (const o of P) if (o.team !== off && o.eng && !o.eng.isOL) {
         // an option pass is not a called screen: the receivers were blocking for a run, and the defense comes off those blocks to the ball
         release(o);
@@ -2109,7 +2116,9 @@
         if (o.eng) pr *= 0.42;
         if (o.dive > 0) pr += 0.2;
         for (const q of P) if (q.team === o.team && q !== o && !q.down && q.stun <= 0 && dist(q, c2) < 2.2) pr += 0.15;
-        if (c2.juke > 0) pr *= 0.22;
+        /* a juke: yours (your timing) leaves him grabbing air; the computer's works as well as the runner is elusive
+           (it used to be the same 0.22 for both, and computer runners juked on most catches and broke nearly all of them) */
+        if (c2.juke > 0) pr *= isCtl(c2) ? 0.22 : clamp(0.45 - ((c2.jk ?? 75) - 75) * 0.01, 0.3, 0.65);
         if (ps.mode === 'run' && G.op.run && G.op.run.fast && ps.t < 0.8) pr *= 0.3;  // a sneak goes in behind the wedge: hard to stop for the first step or two
         if (c2.hurdle > 0) {
           if (o.dive > 0 && o.hit <= 0) continue;  // sailed over the diving tackler

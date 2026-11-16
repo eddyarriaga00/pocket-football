@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `17446bf`, before the downfield reads, defenders rallying on the throw and the juke rework (2026-11-16 night).
   - `14895e9`, before both feet in: catches out of bounds incomplete, toe taps at the line (2026-11-16 night).
   - `808b4a6`, before player heroes and the podium scene replaced the stretched cards on short screens (2026-11-16, from the Mac).
   - `3eb0ab4`, before short screens filled tall phones (menu, camp, milestones, hall, press, combine, dash, awards) (2026-11-16, from the Mac).
@@ -2568,6 +2569,28 @@ six were done as the pro game has them; the choices where there was one are mine
   re-pinned; the old value is kept in pg.fingerprint.before-feet. Audit empty at 320x568, 390x844 and 440x956; whole
   seasons at both positions, a receiver career, exhibitions and a season with the rough test player clean.
 
+- Tonight, round 2 (02:23): the league's numbers against the NFL's. Measured over 16 to 40 simulated games (3-minute
+  quarters, so per play, not per game): 63% of completions were thrown behind the line (NFL about 20%) at 0.6 air
+  yards a catch (NFL about 6) with 15 yards after the catch (NFL about 5.3), and a quarter of them gained 15+ after
+  the catch. Three causes, three fixes in game.js:
+  1. The quarterback's read (qbAI) went to whoever was most open, depth counting for almost nothing, so the back in
+     the flat won. Now openness counts to 5 yards of room (was 7), depth 0.16 a yard (was 0.05), a man past the sticks
+     gets a bonus (1.6 on third or fourth down, 0.6 earlier), a dump-off behind the line a penalty.
+  2. Defenders more than nine yards from where a throw comes down stood still until the catch, then waited up to
+     0.85 s more. Now everybody breaks on the throw (defAI: the far ones rally toward a spot five yards past the
+     landing point, the tackling angle) and a catch costs them no extra beat (openField's new `rallied` flag).
+  3. A computer runner's juke cut the tackle chance to 0.22 and he juked on most catches. Now a juke you make keeps
+     0.22; the computer's works as well as he is elusive (0.45 for a 75, held to 0.3-0.65) at 1.8 a second (was 2.5).
+  The contested-ball interception chance came down from 0.38 to 0.30 (deeper reads meant more contested balls and
+  picks at 4%). Front-seven speeds closer to the combine's ratios were tried and taken out again: they cut the run
+  game to 3.3 a carry and barely moved yards after the catch.
+  After, over 40 games: 4.46 a carry (NFL 4.4), 64% completions (65), 4.9 air yards a catch, 28% behind the line,
+  5.0% sacks (about 6.5), 3.0% interceptions (2.2), 0.51 points a play (0.53 before; NFL about 0.37). Still off:
+  10.6 yards after the catch, from loose coverage (the nearest defender is 4.8 yards away at the catch against
+  about 3); it is the next item. Play changed: fingerprint re-pinned, the old value in pg.fingerprint.before-reads.
+  Also the like button's touch area was 43 px wide with a short count: 44 now. Audit empty at 320x568, 390x844 and
+  440x956; whole seasons at both positions, careers at both, exhibitions and a season with the rough player clean.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -2924,8 +2947,10 @@ NFL rules first, every item checked the full way before it ships.
 - [x] Sideline and end-line catches: both feet in bounds or the pass is incomplete (today a receiver who catches it out
   of bounds keeps it); a toe tap at the line drawn and called, and the receivers and their quarterbacks working to keep
   a ball near the line catchable in bounds.
-- [ ] League numbers against the NFL's: points, completion rate, yards a pass and a carry, sacks, turnovers and
+- [x] League numbers against the NFL's: points, completion rate, yards a pass and a carry, sacks, turnovers and
   penalties a game from `H.sim`, tuned where they are well off (the fingerprint re-pinned if play changes).
+- [ ] Coverage at the catch: the nearest defender is 4.8 yards off at the catch (NFL about 3) and a catch still runs
+  for 10.6 more (NFL about 5.3); tighter zone matching and trail technique, measured the same way (round 2's log).
 - [ ] A record book: the league's single-game and season marks, kept as careers play; the booth and a card when a
   career player breaks one.
 - [ ] The form tackle as a paired motion: tackler and runner keyed to each other (wrap, drive, fall together).

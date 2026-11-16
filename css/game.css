@@ -892,7 +892,7 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 .post .pmeta span,.post .pmeta .lk{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--mute)}
 .post .pmeta svg{width:13px;height:13px;flex:none}
 .post .pmeta .lk{height:22px}
-.post .pmeta .lk::after{content:"";position:absolute;inset:-11px -10px}
+.post .pmeta .lk::after{content:"";position:absolute;inset:-11px -12px}
 .post .pmeta .lk svg{fill:none;stroke:currentColor;stroke-width:1.4}
 .post .pmeta .lk svg path{fill:none}
 .post .pmeta .lk.on{color:#ff5a8a}
