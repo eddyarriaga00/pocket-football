@@ -46,10 +46,12 @@
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v, hyp = Math.hypot, lerp = (a, b, t) => a + (b - a) * t;
   const dist = (a, b) => hyp(a.x - b.x, a.y - b.y), pick = a => a[Math.floor(rnd(a.length))];
 
+  /* a saved value, or d when there is none. A damaged save reads as none: when d is a list or a table, what was
+     stored has to be the same kind (a cut-off write or a hand edit can leave a number, null or the other kind) */
   function load(k, d) {
     try {
-      const v = localStorage.getItem(k);
-      return v ? JSON.parse(v) : d;
+      const v = localStorage.getItem(k), o = v ? JSON.parse(v) : d, kind = x => Array.isArray(x) ? 'list' : x && typeof x === 'object' ? 'table' : '';
+      return d && typeof d === 'object' && kind(o) !== kind(d) ? d : o;
     } catch (_) {
       return d;
     }
@@ -3293,8 +3295,13 @@
      good every time, all game, which let a team save time it should not have had.) */
   const lateClock = () => (G.q === 2 && G.clock <= WARN) || (G.q === 4 && G.clock <= 300) || (G.q >= 5 && G.clock <= WARN);
 
+  /* the periods with a two-minute warning: the end of each half, the regular season's one overtime period, and in the
+     playoffs the second and fourth overtime periods (each pair of them is played as a half). Not when the period is
+     no longer than the warning itself. */
+  const warnHere = () => (G.q === 2 || G.q === 4 ? G.ql : G.ot && !G.mustWin ? Math.round(G.ql * 2 / 3) : G.ot && G.q % 2 === 0 ? G.ql : 0) > WARN;
+
   function twoMinute() {
-    if (G.drill || G.ot || G.ql <= WARN || !(G.q === 2 || G.q === 4) || G.clock > WARN || G.clock <= 0 || (G.warned && G.warned[G.q])) return;
+    if (G.drill || !warnHere() || G.clock > WARN || G.clock <= 0 || (G.warned && G.warned[G.q])) return;
     G.warned = Object.assign({}, G.warned, { [G.q]: 1 });
     if (G.clock + G.runoff > WARN) G.clock = WARN;  // it ran down to 2:00 between plays: stopped right there
     G.runoff = 0;
@@ -3307,7 +3314,7 @@
     if (!G.warnNow) return;
     G.warnNow = false;
     if (AUTO || QUIET) return;
-    banner('Two-minute warning', `${G.q === 2 ? '2nd' : '4th'} quarter · clock stopped`, 1700);
+    banner('Two-minute warning', `${G.ot ? 'Overtime' : G.q === 2 ? '2nd quarter' : '4th quarter'} · clock stopped`, 1700);
     snd('whistle');
     if (PG.audio) PG.audio.pa('Two minute warning.', { clips: ['ref.twomin'], wait: 0.4 });
     vo('twomin', { pri: 1, ttl: 6 });
@@ -3417,17 +3424,32 @@
         if (!QUIET && !AUTO) G.half = true;
         else banner('Halftime', tname(1 - G.first) + ' ball', 1600);
       } else if (G.q >= 4) {
-        if (tie && (G.q === 4 || (G.mustWin && G.q < 8))) {
+        /* a playoff game goes on while it is level, and while the side that kicked off in overtime still has its
+           possession to come or under way: the clock running out does not take it away */
+        if (G.q === 4 ? tie : G.mustWin && G.q < 8 && (tie || (G.otS && !G.otS.b))) {
           G.q++;
           G.ot = true;
           /* NFL overtime: in the regular season one period of ten minutes (two thirds of a quarter) with two timeouts
              a side; in the playoffs fifteen-minute periods, three timeouts a side for each pair of them. (It was a
              full quarter every time, with whatever timeouts were left from the fourth.) */
           G.clock = G.mustWin ? G.ql : Math.round(G.ql * 2 / 3);
+          if (G.q === 6 || G.q === 8) {
+            /* the second and fourth periods follow on as the second quarter does: the same ball, down and distance,
+               the ends changed. Only the third starts again, as a half does, with a toss and a kickoff. */
+            banner(`End of the ${G.q === 6 ? 'first' : 'third'} overtime period`, 'The teams switch ends', 1800);
+            return false;
+          }
           if (G.q === 5 || (G.mustWin && G.q === 7)) G.to = G.mustWin ? [3, 3] : [2, 2];
           const otr = rnd() < .5 ? 0 : 1;
+          if (G.otS) {
+            /* the third period starts as a second half does: the side that lost the first toss has the choice, and
+               takes the ball */
+            kickoff(1 - G.otS.first);
+            banner('Third overtime period', `${tname(1 - G.otS.first)} ball`, 1600);
+            return false;
+          }
           kickoff(otr);
-          if (!G.otS) G.otS = { first: otr, a: false, b: false };  // after the kickoff, so that is not counted as a change of possession
+          G.otS = { first: otr, a: false, b: false };  // after the kickoff, so that is not counted as a change of possession
           banner('Overtime', `Both sides get the ball · ${tname(otr)} won the toss`, 1600);
           if (!AUTO && !QUIET && PG.audio) PG.audio.pa(`The ${tname(otr)} have won the toss, and will receive.`, { wait: 2.2, clips: ['ref.toss.' + tab(otr)] });
           vo('ot', { pri: 2 });

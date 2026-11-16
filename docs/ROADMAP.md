@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `c432a89`, before safe save reading and the playoff overtime and two-minute warning fixes (2026-11-16 afternoon).
   - `e68b326`, before the chat was connected to the owner's Firebase project (2026-11-16).
   - `477b88b`, before the Online screen and global chat (2026-11-16).
   - `4ec74d0`, before the dash-timer and booth-key guards (2026-11-16 morning).
@@ -2843,6 +2844,18 @@ six were done as the pro game has them; the choices where there was one are mine
   a line without its slow-mode stamp, reading or writing the ban list and reading the whole database all refused, so
   the published rules are the right ones; one line posted through the screen ("Setup check: Chat is open. Say hi!",
   his to delete); leaving the screen closed the connection. No console errors.
+
+- 2026-11-16 (afternoon, "keep improving things bug fix and test more"): a test sweep (fingerprint, 30-game sims,
+  the rough player in exhibitions, snow, careers at both positions and playoff-tie seasons, the three drills, the audit
+  at 320x568 and 440x956, leaving a game from the pause sheet at random moments in all four modes, a hand-played
+  drive at 440x956) and three fixes. 1: a damaged save (cut off, a number, null, or a list where a table belongs)
+  crashed the Hall of Fame screen and would have crashed the record book; `load` now reads any save of the wrong
+  kind as none (checked with six kinds of damage on every key: every screen opens, no errors). 2: playoff overtime
+  re-kicked with a new toss at the start of every period; now the second and fourth periods carry on with the same
+  ball, down and distance (ends changed), the third starts with a kickoff to the side that lost the first toss, and a
+  period running out no longer ends the game while the second side's guaranteed possession is still to come or under
+  way. 3: the two-minute warning now comes in the regular season's overtime period and in the second and fourth
+  playoff periods (when the period is longer than two minutes). Fingerprint unchanged; X.bad empty; no console errors.
 
 ## Morning hand-off
 
