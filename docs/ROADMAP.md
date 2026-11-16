@@ -10,6 +10,10 @@ what is next. Update it after every item.
 - **Branch:** commit on `main` and push `main`. The owner wrote "always push to main" on 2026-11-12 at about
   07:10 (until then the work sat on `ui-refresh`, which is now merged and no longer used). Every push redeploys
   the live GitHub Pages site, so run the regression in "How to test" before pushing.
+  On 2026-11-16 the owner, working from a phone, wrote "always merge to main, allow easy rollback". So before
+  every push to `main`, tag the commit `main` is on with `rollback/<date>-<what comes next>` and push the tag.
+  To go back: `git checkout main && git reset --hard <tag> && git push --force-with-lease origin main` (or, to keep
+  the history, `git revert --no-edit <tag>..main` and push). `git tag -l 'rollback/*'` lists the points.
 - **Technology:** the owner also wrote "use more complex languages and change code and anything if needed".
   Shaders (GLSL), modules and rewrites are welcome where they buy visible quality. The site is still static
   hosting, so everything must end up as files a browser loads directly.
