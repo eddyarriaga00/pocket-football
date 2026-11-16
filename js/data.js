@@ -53,8 +53,24 @@
     SEA: 'wet', SF: 'wet', WAS: 'wet', TEN: 'wet', CAR: 'wet', MIA: 'warm', TB: 'warm', JAX: 'warm' };
   for (const t of TEAMS) t.clim = CLIM[t.ab] || 'wet';
 
-  /* surnames for generated players */
-  const SUR = ['Carter', 'Reyes', 'Okafor', 'Lindqvist', 'Tran', 'Baptiste', 'Mendez', 'Holloway', 'Park', 'Achebe', 'Sullivan', 'Vega', 'Kowalski', 'Brooks', 'Nakamura', 'Diaz', 'Freeman', 'Petrov', 'Haddad', 'Whitaker', 'Osei', 'Marsh', 'Castillo', 'Rhodes', 'Ibarra', 'Quinn', 'Dalton', 'Singh', 'Moreau', 'Tucker'];
+  /* surnames for generated players: enough that a game's 48 men need never share one (mkRoster keeps them apart) */
+  const SUR = ['Carter', 'Reyes', 'Okafor', 'Lindqvist', 'Tran', 'Baptiste', 'Mendez', 'Holloway', 'Park', 'Achebe',
+    'Sullivan', 'Vega', 'Kowalski', 'Brooks', 'Nakamura', 'Diaz', 'Freeman', 'Petrov', 'Haddad', 'Whitaker', 'Osei',
+    'Marsh', 'Castillo', 'Rhodes', 'Ibarra', 'Quinn', 'Dalton', 'Singh', 'Moreau', 'Tucker', 'Abernathy', 'Adeyemi',
+    'Aguilar', 'Alvarez', 'Ambrose', 'Anand', 'Archer', 'Arroyo', 'Asante', 'Atwood', 'Avery', 'Bain', 'Banks',
+    'Barlow', 'Barrera', 'Beckett', 'Bell', 'Benoit', 'Bishop', 'Blackwell', 'Boateng', 'Bolden', 'Bowen', 'Boyd',
+    'Brennan', 'Briggs', 'Bryant', 'Burke', 'Calloway', 'Camacho', 'Cantrell', 'Carver', 'Chen', 'Clayton',
+    'Coleman', 'Conway', 'Cordero', 'Crane', 'Crowder', 'Cruz', 'Dagher', 'Darby', 'Delgado', 'Dempsey', 'Dixon',
+    'Donovan', 'Duarte', 'Dunbar', 'Easley', 'Ellison', 'Emery', 'Espinoza', 'Farrow', 'Fenwick', 'Figueroa',
+    'Fitch', 'Fleming', 'Foley', 'Fontaine', 'Franco', 'Fuentes', 'Gallo', 'Garrison', 'Gibbs', 'Goode', 'Grady',
+    'Graves', 'Guerrero', 'Hale', 'Hamada', 'Harlan', 'Hayes', 'Herrera', 'Hicks', 'Holt', 'Hooper', 'Ingram',
+    'Jansen', 'Jeffers', 'Kamara', 'Keane', 'Kimura', 'Kinney', 'Lacroix', 'Landry', 'Larkin', 'Leblanc', 'Lowell',
+    'Lyons', 'Macklin', 'Maddox', 'Malone', 'Marquez', 'Mbeki', 'Mercer', 'Molina', 'Monroe', 'Mosley', 'Murillo',
+    'Nash', 'Navarro', 'Nolan', 'Novak', 'Nwosu', 'Ochoa', 'Odell', 'Okoye', 'Olsen', 'Ortega', 'Pace', 'Paxton',
+    'Pena', 'Pierce', 'Pruitt', 'Quintero', 'Ramos', 'Rankin', 'Reese', 'Rios', 'Roche', 'Rowe', 'Salas', 'Sandoval',
+    'Sato', 'Sawyer', 'Serrano', 'Shaw', 'Silva', 'Slade', 'Soto', 'Stokes', 'Strand', 'Suarez', 'Tate', 'Thorne',
+    'Toussaint', 'Underwood', 'Valdez', 'Vance', 'Varga', 'Wade', 'Walsh', 'Ware', 'Watts', 'Webb', 'Wilder',
+    'Yamada', 'Yates', 'Zamora', 'Zielinski'];
 
   /* roster slots: the five linemen, then every offensive and defensive role the engine knows */
   const OLR = ['LT', 'LG', 'C', 'RG', 'RT'], OLX = { LT: -3, LG: -1.5, C: 0, RG: 1.5, RT: 3 };

@@ -100,14 +100,25 @@
   const inp = { x: 0, y: 0, manual: false, sprint: false }, stick = { id: null, ox: 0, oy: 0, x: 0, y: 0 }, keys = {};
   const FX = [], CONF = [];
 
-  function mkRoster(ti, delta, ovr) {
+  /* a surname nobody in `used` has: one draw, then the next free one along the list (no further draws, so the game's
+     generator runs exactly as it did when names could repeat) */
+  function freeName(used, R = rnd) {
+    let i = Math.floor(R(SUR.length));
+    for (let k = 0; used.has(SUR[i]) && k < SUR.length; k++) i = (i + 1) % SUR.length;
+    used.add(SUR[i]);
+    return SUR[i];
+  }
+  const namesOf = ros => new Set(ros ? Object.values(ros).map(p => p && p.name).filter(Boolean) : []);
+
+  /* `used`: surnames already in the game (the other side's), so no two men on the field share one */
+  function mkRoster(ti, delta, ovr, used = new Set()) {
     const o = (ovr ?? TEAMS[ti].ovr) + (delta || 0), r = {}, worn = new Set();
     for (const role of [...OFFR, ...DEFR]) {
       const g = role === 'S2' ? 'S' : role.replace(/\d/, ''), rt = Math.round(clamp(o + rnd(-9, 7), 58, 99)), nr = NUM[g] || [60, 79];
       let num = Math.floor(rnd(nr[0], nr[1] + 1));
       for (let i = 0; worn.has(num) && i < 12; i++) num = Math.floor(rnd(nr[0], nr[1] + 1));  // no two players in the same number
       worn.add(num);
-      r[role] = { rt, spd: BASE[g] * (1 + (rt - 80) * 0.004), num, name: pick(SUR) };
+      r[role] = { rt, spd: BASE[g] * (1 + (rt - 80) * 0.004), num, name: freeName(used) };
     }
     return r;
   }
@@ -177,7 +188,7 @@
   /* opt: {a,b,ql,diff,mode,lock,hero,ovr,mustWin,onEnd,onQuit} */
   function startGame(o) {
     const lock = o.lock || null, first = o.mode && o.mode !== 'exh' && rnd() < 0.5 ? 1 : 0;  // exhibition always opens with the user receiving
-    G = { state: 'dead', mode: o.mode || 'exh', tm: [o.a, o.b], ros: [o.ros0 || mkRoster(o.a, 0, o.ovr && o.ovr[0]), mkRoster(o.b, [-6, 0, 5][o.diff ?? 1], o.ovr && o.ovr[1])],
+    G = { state: 'dead', mode: o.mode || 'exh', tm: [o.a, o.b], ros: (r0 => [r0, mkRoster(o.b, [-6, 0, 5][o.diff ?? 1], o.ovr && o.ovr[1], namesOf(r0))])(o.ros0 || mkRoster(o.a, 0, o.ovr && o.ovr[0])),
       score: [0, 0], q: 1, ql: o.ql || 180, diff: o.diff ?? 1, clock: o.ql || 180, stats: [0, 1].map(() => ({ pass: 0, rush: 0, comp: 0, att: 0, to: 0 })), stam: 1, pad: null, deadT: 0, ot: false, final: false,
       sel: null, me: null, preT: 0, meter: 0, lock, lockSide: lock ? (OFFR.includes(lock) ? 'off' : 'def') : null, first, drill: o.drill ? { n: o.drill, left: o.drill, side: o.side || (lock && !OFFR.includes(lock) ? 'def' : 'off'), script: o.script || null, dcall: o.dcall || null, title: o.title || 'Practice', reps: [] } : null, lineFn: o.line || null, goalsFn: o.goals || null, mustWin: !!o.mustWin, home: o.away ? 1 : 0, kr: !!o.kr && !!lock, liveP: null, prime: !!o.prime, around: o.around || null, highs: o.highs || null, recs: o.recs || null, onEnd: o.onEnd || null, onQuit: o.onQuit || null, paused: false, last: '', box: {}, scores: [], lastScore: null, drive: null, potd: null, hl: null, rpEnd: null, pat: null, try2: null, introT: 0, to: [3, 3], runoff: 0, share: o.share === undefined ? 1 : o.share, possN: 0, benchN: -1, sit: false, env: o.env || { time: SET.tod || 'night', weather: SET.wx || 'clear' },
       my: { att: 0, comp: 0, pyd: 0, ptd: 0, pint: 0, car: 0, ryd: 0, rtd: 0, rec: 0, recyd: 0, rectd: 0, tgt: 0, tkl: 0, sack: 0, int: 0, pbu: 0 } };
@@ -195,6 +206,17 @@
       if (dup) dup[1].num = r.num;  // whoever wore his number takes the old one
       r.name = m.name;
       r.num = m.num;
+    }
+    /* and nobody else on the field shares a surname with a career player or his named teammates: a generated man who
+       does takes the next free one along the list (no draws from the game's generator) */
+    if (lock || (o.mates && o.mates.length)) {
+      const last = n => String(n || '').trim().split(/\s+/).pop(), fixed = new Set([lock, ...(o.mates || []).map(m => m.role)]);
+      const used = new Set(Object.entries(G.ros[0]).filter(([k]) => fixed.has(k)).map(([, x]) => last(x && x.name)));
+      for (const [ti, ros] of [[0, G.ros[0]], [1, G.ros[1]]]) for (const [k, x] of Object.entries(ros)) {
+        if (!x || (ti === 0 && fixed.has(k))) continue;
+        if (used.has(x.name)) x.name = freeName(used, () => Math.max(0, SUR.indexOf(x.name)));
+        else used.add(x.name);
+      }
     }
     G.mate = o.mate || null;
     G.mateLog = { att: 0, comp: 0, yds: 0, td: 0, int: 0, drop: 0 };
@@ -2842,7 +2864,7 @@
     const orig = G.ros[c.team][c.role];
     if (!orig) return;
     H.push({ team: c.team, role: c.role, orig, left: 3 + Math.floor(Math.random() * 4) });
-    G.ros[c.team][c.role] = { ...orig, name: PG.NAMES[Math.floor(Math.random() * PG.NAMES.length)], num: (orig.num * 7 + 13) % 89 + 1, spd: orig.spd * 0.97, rt: orig.rt - 6 };
+    G.ros[c.team][c.role] = { ...orig, name: freeName(new Set([...namesOf(G.ros[0]), ...namesOf(G.ros[1])]), a => Math.random() * a), num: (orig.num * 7 + 13) % 89 + 1, spd: orig.spd * 0.97, rt: orig.rt - 6 };
     c.flat = 4;  // he stays down
     G.deadT += 2.6;
     G.runoff = 0;  // an injury timeout: the clock waits

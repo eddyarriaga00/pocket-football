@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `4be9e17`, before 180 surnames and no two men in a game sharing one (2026-11-16 night).
   - `a2e755a`, before the modern two-point chart (2026-11-16 night).
   - `6d70c24`, before the kicking game by the numbers (punt outcomes, the coffin corner, field goal rates) (2026-11-16 night).
   - `a51cc01`, before the computer's modern fourth-down calls (2026-11-16 night).
@@ -2776,6 +2777,19 @@ six were done as the pro game has them; the choices where there was one are mine
   surname (both leading rushers were "Moreau" in one game), which reads oddly in the leaders; a polish item, not
   touched.
 
+- Tonight, round 15 (08:53): surnames. There were 30 for the 48 men in a game, so at least 18 repeated in every
+  game, on the same team too ("2-yd pass from Dalton to Dalton"). Now data.js has 180 (the original 30 kept first,
+  ordinary surnames, none recorded by the booth, which says no player names), and mkRoster() hands them out so no two
+  men on the field share one: the second side's roster is drawn with the first side's names taken. freeName() makes
+  one draw, as pick() did, then walks along the list to the next free name, so the game's generator runs exactly as
+  before. A career's own name and its named teammates go in after the rosters, so a pass after them moves any
+  generated man sharing a surname with them to the next free one, with no draws; an injured man's replacement also
+  takes a free one. Measured: 0 repeats in 40 sim games, and 0 across a QB season (10 games) and a WR season (12
+  games, the playoffs included). A season saved before this keeps its roster as it was. Seen on screen: the leaders on
+  a game summary, six different names. Play untouched: fingerprint unchanged. Audit empty at 320x568, 390x844 and
+  440x956; whole seasons at both positions, careers at both, exhibitions and a season with the rough test player
+  clean; the playbook check passes.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3157,5 +3171,5 @@ NFL rules first, every item checked the full way before it ships.
   corner, returns of about nine yards) and its field goals make the league's rates by distance.
 - [x] The two-point chart: the computer and a career's coach go for two the modern way (down 2, 5, 8 and 10, up
   1, 4, 5 and 12 in the fourth quarter; down 2 or 5 and up 1 in the third).
-- [ ] Players on different teams sharing a surname (one game had both leading rushers named the same): keep
+- [x] Players on different teams sharing a surname (one game had both leading rushers named the same): keep
   surnames apart across the two sides of a game, or show a first initial where they clash.
