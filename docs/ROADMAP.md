@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `199ae80`, before a career receiver's route was painted bright on the field as he runs it (2026-11-16, from the Mac).
   - `3b38a41`, before the social feed's pictures: faces, score and stat cards, polls, likes, photos (2026-11-16, from the Mac).
   - `f3f4ee8`, before the live play grade, teammate chemistry and the wider social feed (2026-11-16, from the Mac).
   - `381dfb4`, before uniforms picked up grass stains through the game (2026-11-16, from the Mac).
@@ -2499,6 +2500,16 @@ six were done as the pro game has them; the choices where there was one are mine
   WebGL context (it read back noise, or an old picture, and was kept): no picture instead. Fingerprint unchanged;
   audit empty at 320x568 and 390x844, a page with every card type included; whole seasons at both positions,
   exhibition, season and the rough test player clean.
+
+- The owner: "make it so if u are a wide receiver, when ur running or doing whatever, that u can see the lines of the
+  route on the field". The route was painted already, but at 45% and thin, from where the route began, so in play it
+  hardly showed. Now a career receiver's route is drawn bright and thick from where he is to where it ends, with a
+  white dot on each cut still to come and an arrow at the end (past the last cut of a route that keeps going, an arrow
+  the way it goes); the part already run is a faint trail. It shows before the snap and through the route until the
+  ball is thrown, the catch, or he goes down; on a run play (he blocks) no route is shown, on an option it is.
+  Steering through a cut with the stick now counts it as run (within a yard and a half of it, or past it along the
+  stem): before, letting go of the stick sent him back to a cut he had already gone by. Fingerprint unchanged
+  (careers only); audit empty at 320x568 and 390x844; a receiver season, careers and the rough test player clean.
 
 ## Morning hand-off
 

@@ -2012,6 +2012,11 @@
       if (!me.eng) {
         manual(me);
         me.manT = 0.6;
+        if (me.route && me.wp < me.route.pts.length && ps.mode === 'pass' && !ps.open) {
+          // steering through a cut counts it as run: let go and he carries on to the next one, not back to this one
+          const w = me.route.pts[me.wp], pv = me.wp ? me.route.pts[me.wp - 1] : [me.sx, me.sy], sx = w[0] - pv[0], sy = w[1] - pv[1], L = hyp(sx, sy) || 1;
+          if (hyp(w[0] - me.x, w[1] - me.y) < 1.5 || ((me.x - pv[0]) * sx + (me.y - pv[1]) * sy) / L > L) me.wp++;
+        }
         if ((ps.open || ps.mode === 'run' || !me.route) && me.beat <= 0) for (const o of P) if (o.team !== 0 && !o.down && !o.eng && o.stun <= 0 && o.immune <= 0 && o.dive <= 0 && dist(me, o) < 1.3) {
           engage(me, o, passPro());
           break;
@@ -6669,10 +6674,10 @@
   function drawArtField(alpha) {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
-    const poly = (pts, col, w) => {
+    const poly = (pts, col, w, a = alpha, tip = true) => {
       ctx.strokeStyle = col;
       ctx.lineWidth = w;
-      ctx.globalAlpha = alpha;
+      ctx.globalAlpha = a;
       ctx.beginPath();
       let on = false, lastQ = null, prev = null;
       for (const [x, y] of pts) {
@@ -6690,7 +6695,7 @@
       ctx.strokeStyle = col;
       ctx.lineWidth = w;
       ctx.stroke();
-      if (lastQ && prev) {
+      if (tip && lastQ && prev) {
         const an = Math.atan2(lastQ.y - prev.y, lastQ.x - prev.x);
         ctx.fillStyle = col;
         ctx.beginPath();
@@ -6702,8 +6707,36 @@
       ctx.globalAlpha = 1;
     };
     const solo = G.lock && G.me !== ps.qb;
+    /* a career receiver's own route, painted bright from where he is now to where it ends, a dot on each cut still to
+       come; the part already run stays as a faint trail. Past the last cut of a route that keeps going, an arrow on
+       the way it goes. */
+    const mine = p => {
+      const r = p.route, k = Math.min(p.wp, r.pts.length), live = G.state === 'live', from = live ? [p.x, p.y] : [p.sx, p.sy];
+      let ahead = [from, ...r.pts.slice(k)];
+      if (ahead.length < 2 && !r.stop) ahead = [from, [p.x + r.lx * 4, p.y + r.ly * 4]];
+      if (live) poly([[p.sx, p.sy], ...r.pts.slice(0, k), from], ACC, 3, 0.22, false);
+      if (ahead.length > 1) poly(ahead, ACC, 5, live ? 0.92 : alpha);
+      ctx.globalAlpha = live ? 0.92 : alpha;
+      for (const [x, y] of r.pts.slice(k, -1)) {
+        const q = pj(x, y);
+        if (!q) continue;
+        ctx.fillStyle = 'rgba(4,10,20,.5)';
+        ctx.beginPath();
+        ctx.arc(q.x, q.y, 6.5, 0, 7);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(q.x, q.y, 4, 0, 7);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    };
     for (const p of P) {
       if (p.team !== 0 || (solo && p !== G.me)) continue;
+      if (solo && p.route) {
+        if (ps.mode === 'pass' || ps.rpo) mine(p);  // on a run he blocks: no route to show
+        continue;
+      }
       if (p.route && (ps.mode === 'pass' || ps.rpo || solo)) poly([[p.sx, p.sy], ...p.route.pts], solo ? ACC : p.col || '#fff', solo ? 4 : 3);
       if (p.path) poly([[p.sx, p.sy], ...p.path], '#ff9f43', 4);
     }
@@ -6745,7 +6778,7 @@
     }
     if (ps && !AUTO) {
       const me = G.me, lk = G.lock;
-      if (ps.offTeam === 0 && (G.state === 'pre' || (G.state === 'live' && lk && me && me !== ps.qb && !ps.thrown && !ps.open))) drawArtField(G.state === 'pre' ? 0.85 : 0.45);
+      if (ps.offTeam === 0 && (G.state === 'pre' || (G.state === 'live' && lk && me && me !== ps.qb && !ps.thrown && !ps.open && !me.down))) drawArtField(G.state === 'pre' ? 0.85 : 0.45);
       if (lk && me && ps.offTeam === 1 && (G.state === 'pre' || (G.state === 'live' && !ps.open && !ps.air))) drawAssign(me);
     }
     if (ps && R3) {

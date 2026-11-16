@@ -144,6 +144,8 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   your top receiver) builds over seasons: he looks your way more and the ball between you is caught more often.
   The social feed has stat accounts, local radio, former players and opponents, and reacts to streaks, road wins,
   primetime, the playoffs, the weather, playing hurt and your chemistry.
+- As a receiver, your route is painted on the field before the snap and as you run it: bright from where you are to
+  the end, a dot on each cut to come, the part already run fading behind you. Steer through a cut and it counts.
 - The feed is drawn as well as written: players post with their helmet as a face, the final is a scoreboard, stat
   lines are big figures, the team names a player of the game with your picture, fans run a poll each week (vote and
   see the bars), follower milestones get a post, and a tap on the heart likes a post. "Post a photo" is one of the
