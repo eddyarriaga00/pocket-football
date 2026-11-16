@@ -2510,9 +2510,15 @@
   }
 
   /* the usual chart, late in the game: go for two when one point would leave you a score short */
+  /* The modern two-point chart, by the lead after the touchdown: in the second half, down 2 (to tie), down 5 (to make it
+     a field goal) and up 1 (so a field goal cannot beat you); from the fourth quarter on also down 8 (the "down 14"
+     play: make it and the next touchdown and kick wins, miss it and two still ties), down 10 (to make it one score),
+     up 4 (so two field goals only tie), up 5 (to make it 7) and up 12 (to make it 14). (It was the fourth quarter's last 60% only, without down 8: about
+     one try in fifteen games, against the league's one in two.) */
   function wantsTwo(t) {
-    if (G.q < 4 || G.clock > G.ql * 0.6) return false;
-    return [-2, -5, -10, -13, 1, 5, 12].includes(G.score[t] - G.score[1 - t]);
+    const ld = G.score[t] - G.score[1 - t];
+    if (G.q >= 4) return [-2, -5, -8, -10, 1, 4, 5, 12].includes(ld);
+    return G.q === 3 && [-2, -5, 1].includes(ld);
   }
 
   /* After your touchdown: kick for one, or play a single snap from the two-yard line for two */
@@ -2977,7 +2983,7 @@
       let tryTxt = '';
       if (t === 0 && !AUTO && !QUIET && !G.drill && (!G.lock || !wantsTwo(t))) G.pat = t;  // your extra point is kicked by you (a career's coach still decides when to go for two)
       else if (wantsTwo(t)) {
-        const ok = rnd() < 0.45;
+        const ok = rnd() < 0.48;  // the league converts a little under half
         if (ok) G.score[t] += 2;
         tryTxt = ok ? ' · two-point try is good' : ' · two-point try fails';
         tryRes = ok ? 'two.good' : 'two.miss';

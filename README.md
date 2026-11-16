@@ -153,6 +153,8 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   result sheet and the league's own account say so. Your season so far is drawn against each season mark.
 - The kicking game plays like the league's: punts are fair caught, downed inside the 10 or returned, punters
   pin you deep from short fields, and field goals go in at the real rates by distance.
+- Computer coaches go for two by the modern chart (down 2, 5, 8 or 10, up 1, 4, 5 or 12 late; earlier in the
+  second half down 2 or 5, or up 1).
 - Computer coaches make modern fourth-down calls: they go for it on 4th and 1 past their own 35, on 4th and short
   near midfield and on 4th and goal from the 2, and play it safe when ahead late.
 - Kickoffs follow the current rules: a touchback comes out to the 35, and a kick that lands short of the landing

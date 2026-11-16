@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `a2e755a`, before the modern two-point chart (2026-11-16 night).
   - `6d70c24`, before the kicking game by the numbers (punt outcomes, the coffin corner, field goal rates) (2026-11-16 night).
   - `a51cc01`, before the computer's modern fourth-down calls (2026-11-16 night).
   - `64ee905`, before the kickoff landing zone (a short kick gives the ball at the 40) (2026-11-16 night).
@@ -2761,6 +2762,20 @@ six were done as the pro game has them; the choices where there was one are mine
   Audit empty at 320x568, 390x844 and 440x956; whole seasons at both positions, careers at both, exhibitions and a
   season with the rough test player clean; the playbook check passes.
 
+- Tonight, round 14 (08:23): the list was done, so the next realism item was added and done: the two-point chart.
+  The computer (and a career's coach) went for two only in the last 60% of the fourth quarter, at a lead after the
+  touchdown of -2, -5, -10, -13, +1, +5 or +12: over 30 sim games, 2 tries in 134 touchdowns (0.07 a game; the league
+  is about one in two games). Now wantsTwo() follows the modern chart: in the third quarter at -2, -5 and +1; from
+  the fourth on, all of it, at -2, -5, -8 (the "down 14" play: make it and the next touchdown and kick wins, miss it
+  and two still ties), -10, +1, +4, +5 and +12 (-13 is a kick now, as the newer charts have it). The quick try's
+  success went from 45% to 48%, the league's rate. Over 120 games after: 32 tries in 494 touchdowns (0.27 a game),
+  13 made. Seen on screen: a game summary with "15-yd pass ... (two-point try good)", a try down 5 in the third
+  quarter. Play changed: fingerprint re-pinned, the old value in pg.fingerprint.before-two. Audit empty at 320x568,
+  390x844 and 440x956; whole seasons at both positions, careers at both, exhibitions and a season with the rough
+  test player clean; the playbook check passes. Noticed on the way: two teams can carry a player of the same
+  surname (both leading rushers were "Moreau" in one game), which reads oddly in the leaders; a polish item, not
+  touched.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3140,3 +3155,7 @@ NFL rules first, every item checked the full way before it ships.
   no man's land, 4th and goal from the 2; safe when ahead late).
 - [x] The kicking game by the numbers: the computer's punts end the league's way (fair catches, downed, the coffin
   corner, returns of about nine yards) and its field goals make the league's rates by distance.
+- [x] The two-point chart: the computer and a career's coach go for two the modern way (down 2, 5, 8 and 10, up
+  1, 4, 5 and 12 in the fourth quarter; down 2 or 5 and up 1 in the third).
+- [ ] Players on different teams sharing a surname (one game had both leading rushers named the same): keep
+  surnames apart across the two sides of a game, or show a first initial where they clash.
