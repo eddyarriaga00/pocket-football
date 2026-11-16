@@ -251,6 +251,7 @@
     ageOneYear();
     LG.start(C);
     C.stats = ZERO();
+    C.reg = ZERO();  // the regular season alone: season records count it, the way the league's do
     C.log = [];
     setRival();
     pickGoals();
@@ -1339,13 +1340,65 @@
     return n ? `${n} for ${y} yards${m.krtd ? `, ${m.krtd} TD` : ''}` : 'none';
   };
 
+  /* ---------- the record book ----------
+     The league's marks, kept on this device across careers (like the hall of fame). They start where the real game's
+     stand: the single-game records as they are, the season records scaled from seventeen games to this league's ten.
+     The men who hold them at the start are invented. Season records count the regular season only. */
+  const RBK = 'pg.records.v1';
+  const RECS = [
+    ['g.pyd', 'game', 'pyd', 'Passing yards', 554], ['g.ptd', 'game', 'ptd', 'Touchdown passes', 7], ['g.comp', 'game', 'comp', 'Completions', 45],
+    ['g.recyd', 'game', 'recyd', 'Receiving yards', 336], ['g.rec', 'game', 'rec', 'Catches', 21], ['g.rectd', 'game', 'rectd', 'Touchdown catches', 5],
+    ['s.pyd', 'season', 'pyd', 'Passing yards', 3220], ['s.ptd', 'season', 'ptd', 'Touchdown passes', 32], ['s.comp', 'season', 'comp', 'Completions', 275],
+    ['s.recyd', 'season', 'recyd', 'Receiving yards', 1155], ['s.rec', 'season', 'rec', 'Catches', 88], ['s.rectd', 'season', 'rectd', 'Touchdown catches', 14]];
+  const REC_POS = { QB: ['pyd', 'ptd', 'comp'], WR: ['recyd', 'rec', 'rectd'] };
+  function recordBook() {
+    const book = load(RBK, {});
+    for (const [id, , , , v] of RECS) if (!book[id]) {
+      const h = [...id].reduce((t, ch) => t * 31 + ch.charCodeAt(0), 7) >>> 0;  // the same invented man every time
+      book[id] = { v, name: `${PG.media.FIRST[h % PG.media.FIRST.length]} ${PG.NAMES[(h >>> 5) % PG.NAMES.length]}`, team: (h >>> 9) % TEAMS.length, when: 'Before your time' };
+    }
+    return book;
+  }
+  /* after a game: the single-game marks against this game, the season marks against the regular season so far.
+     Returns what fell, each once (a season record you already hold this season is moved up quietly). */
+  function recordsAfter(m, playoff) {
+    const book = recordBook(), fell = [], keys = REC_POS[C.pos] || [];
+    C.rid = C.rid || Date.now().toString(36);
+    for (const [id, kind, k, label] of RECS) {
+      if (!keys.includes(k)) continue;
+      const v = kind === 'game' ? m[k] || 0 : playoff ? 0 : (C.reg && C.reg[k]) || 0, r = book[id];
+      if (v <= r.v) continue;
+      const mine = r.rid === C.rid && (kind === 'game' || r.season === C.season);
+      book[id] = { v, name: C.name, team: C.team, rid: C.rid, season: C.season, when: `Season ${C.season}` + (kind === 'game' ? ` \u00b7 ${LG.short(C)}` : ''), old: mine ? r.old : r };
+      if (!mine) fell.push({ id, kind, label, v, was: r });
+    }
+    save(RBK, book);
+    return fell;
+  }
+  /* the single-game marks a game watches for, live: { stat: [mark, holder] } */
+  function recsLive() {
+    const book = recordBook(), o = {};
+    for (const [id, kind, k] of RECS) if (kind === 'game' && (REC_POS[C.pos] || []).includes(k)) o[k] = [book[id].v, book[id].name];
+    return o;
+  }
+
+  /* the stats tab's page of it: your position's marks, a bar of your season so far against each season mark */
+  function recordsHtml() {
+    const book = recordBook(), keys = REC_POS[C.pos] || [], row = ([id, kind, k, label]) => {
+      const r = book[id], you = r.rid && r.rid === C.rid, cur = kind === 'season' ? (C.reg && C.reg[k]) || 0 : 0;
+      return `<div class="rbk${you ? ' you' : ''}"><div><b>${fmt(r.v)}</b><small>${label}</small></div><span>${esc(r.name)}${you ? ' (you)' : ''}<small>${esc(team(r.team).name)} \u00b7 ${esc(r.when)}</small></span>${kind === 'season' && !you ? `<i class="rbar" role="img" aria-label="Your season: ${cur} of ${r.v}"><u style="width:${Math.min(100, cur / r.v * 100).toFixed(1)}%"></u></i>` : ''}</div>`;
+    };
+    return `<h2>Record book</h2><h3 class="dvh">Single game</h3>${RECS.filter(r => r[1] === 'game' && keys.includes(r[2])).map(row).join('')}
+  <h3 class="dvh">Season</h3>${RECS.filter(r => r[1] === 'season' && keys.includes(r[2])).map(row).join('')}<p class="note">The league's marks, kept across careers. Season marks count the regular season.</p>`;
+  }
+
   function tabStats() {
     const cols = COLS[C.pos], row = (l, m) => `<tr><td>${l}</td>${cols.map(([,k])=>`<td>${m[k]}</td>`).join('')}</tr>`;
     /* laid out as a page, not a list: this season's numbers as tiles (the career figure under each), the games as a
        chart of grades with a row a game under it, the league leaders with a bar a man, then the trophies and the seasons */
     return `<h2>This season</h2><div class="stl">${cols.map(([h,k])=>`<div><small>${STAT_NAME[h]||h}</small><b>${C.stats[k]}</b><span>${C.career[k]} career</span></div>`).join('')}</div>
   ${C.pos==='WR'&&(C.career.kr||C.career.pr)?`<p class="note">Returns · this season ${retTot(C.stats)} · career ${retTot(C.career)}</p>`:''}
-  ${gamesHtml()}${leadersHtml()}${trophiesHtml()}${historyHtml()}`;
+  ${gamesHtml()}${leadersHtml()}${recordsHtml()}${trophiesHtml()}${historyHtml()}`;
   }
 
   const STAT_NAME = { G: 'Games', Comp: 'Completed', Att: 'Attempts', Yds: 'Yards', TD: 'TDs', INT: 'INTs', Rec: 'Catches', Tgt: 'Targets', Car: 'Carries', Tkl: 'Tackles', Sack: 'Sacks', PBU: 'Break-ups' };
@@ -1771,7 +1824,7 @@
     const rivalry = C.rival && C.rival.team === opp ? { name: C.rival.name, quote: rivalSays(), mine: C.social && C.social.callout && C.social.callout.team === opp ? C.social.callout.quote : '' } : null;
     const pt = LG.prime(C), env = gameEnv();
     PG.startGame({ ...gameMates(), a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[opp] - (oppInj(opp) ? oppInj(opp).pen : 0)], diff: C.diff ?? 1, share: share(), callout: call, rivalry,
-      away: !LG.home(C), kr: retNow(), prime: pt, around: LG.preWeek && LG.full(C) ? LG.preWeek(C) : null, highs: Object.assign({}, C.highs || {}),
+      away: !LG.home(C), kr: retNow(), prime: pt, around: LG.preWeek && LG.full(C) ? LG.preWeek(C) : null, highs: Object.assign({}, C.highs || {}), recs: recsLive(),
       mustWin: C.phase !== 'reg', env, line: chip, goals: m => goals().map(g => ({ d: g.d, ok: !!g.t(m) })), onEnd: r => gameEnd(r, opp), onQuit: () => showHub('up') });
   }
 
@@ -1847,6 +1900,10 @@
     if (callRes && callRes.backed) items.push([callRes.kind === 'guarantee' ? 'Backed up your guarantee' : 'Backed up your words', CALL_XP[callRes.kind]]);
     const deals = so.deals || [];
     if (deals.length) items.push([deals.length > 1 ? 'Endorsements' : `Endorsement \u00b7 ${deals[0].name}`, deals.reduce((t, d) => t + d.pay, 0)]);
+    if (!C.reg) C.reg = { ...C.stats };  // a career begun before the record book: its season so far
+    if (!playoff0) for (const k in m) C.reg[k] = (C.reg[k] || 0) + m[k];
+    const fell = recordsAfter(m, playoff0);  // league records
+    for (const f of fell) items.push([`League record \u00b7 ${f.kind === 'game' ? 'single game' : 'season'} ${f.label.toLowerCase()}`, 500]);
     const xp = items.reduce((t, [, v]) => t + v, 0) + met * GOAL_XP;
     for (const k in m) {
       C.stats[k] = (C.stats[k] || 0) + m[k];
@@ -1907,6 +1964,9 @@
     if (prime) so.hype = clamp(so.hype + 6, 0, 100);  // the nation saw it
     const posts = PG.media.reaction(ctx).concat(endorseWeek()), dFol = so.fol - fol0, mile = MILES.filter(v => fol0 < v && so.fol >= v).pop();
     if (mile) posts.splice(1, 0, myPost(anyOf(['Thank you. Every one of you.', 'Never thought I’d see this. Love y’all.', `${PG.media.short(mile)}. Let’s keep going.`]), 1.5, { t: 'mile', v: PG.media.short(mile) }));
+    for (const f of fell) posts.unshift({ who: 'The League', at: 'theleague', bio: 'Official account', kind: 'press', col: '#334155', ver: true,
+      text: `A new league record. ${C.name}: ${fmt(f.v)} ${f.label.toLowerCase()} in a ${f.kind}, past ${f.was.name}'s ${fmt(f.was.v)}.`,
+      card: { t: 'stat', cells: [[fmt(f.v), f.label], [fmt(f.was.v), 'Old mark']] }, rep: 300 + Math.round(so.fol / 200), rt: 900 + Math.round(so.fol / 60), likes: 6000 + Math.round(so.fol / 8) });
     if (potw) posts.unshift({ who: 'The League', at: 'theleague', bio: 'Official account', kind: 'press', col: '#334155', ver: true, text: `${C.name} is the ${confName} Player of the Week. ${line(m)} against the ${TEAMS[opp].name}.`, rep: 120 + Math.round(so.fol / 400), rt: 300 + Math.round(so.fol / 150), likes: 1800 + Math.round(so.fol / 20) });
     const trophies = checkTrophies();
     persist();
@@ -1922,6 +1982,7 @@
   <ul class="gl">${gl.map(g=>`<li class="${g.ok?'ok':'no'}"><span>${g.d}</span><b>${g.ok?'+'+GOAL_XP:'0'}</b></li>`).join('')}
   ${items.map(([l,v])=>`<li><span>${l}</span><b>+${fmt(v)}</b></li>`).join('')}
   <li class="tot"><span>XP earned</span><b>+${fmt(xp)}</b></li></ul>
+  ${fell.length?`<p class="note hi rec">League record${fell.length>1?'s':''}: ${fell.map(f=>`${fmt(f.v)} ${f.label.toLowerCase()} in a ${f.kind}, past ${esc(f.was.name)}'s ${fmt(f.was.v)}`).join('; ')}.</p>`:''}
   ${newHighs.length?`<p class="note hi">New career high${newHighs.length>1?'s':''}: ${newHighs.join(', ')}.</p>`:''}
   ${r.potgHtml || ''}${r.potdHtml || ''}${r.scoringHtml || ''}${moved||retNote?`<p class="note">${(moved+retNote).trim()}</p>`:''}${trophies.length?`<p class="note">Trophy earned: ${trophies.join(', ')}.</p>`:''}
   <button class="go" id="rc">To the podium</button></div>`;

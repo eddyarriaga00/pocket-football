@@ -179,7 +179,7 @@
     const lock = o.lock || null, first = o.mode && o.mode !== 'exh' && rnd() < 0.5 ? 1 : 0;  // exhibition always opens with the user receiving
     G = { state: 'dead', mode: o.mode || 'exh', tm: [o.a, o.b], ros: [o.ros0 || mkRoster(o.a, 0, o.ovr && o.ovr[0]), mkRoster(o.b, [-6, 0, 5][o.diff ?? 1], o.ovr && o.ovr[1])],
       score: [0, 0], q: 1, ql: o.ql || 180, diff: o.diff ?? 1, clock: o.ql || 180, stats: [0, 1].map(() => ({ pass: 0, rush: 0, comp: 0, att: 0, to: 0 })), stam: 1, pad: null, deadT: 0, ot: false, final: false,
-      sel: null, me: null, preT: 0, meter: 0, lock, lockSide: lock ? (OFFR.includes(lock) ? 'off' : 'def') : null, first, drill: o.drill ? { n: o.drill, left: o.drill, side: o.side || (lock && !OFFR.includes(lock) ? 'def' : 'off'), script: o.script || null, dcall: o.dcall || null, title: o.title || 'Practice', reps: [] } : null, lineFn: o.line || null, goalsFn: o.goals || null, mustWin: !!o.mustWin, home: o.away ? 1 : 0, kr: !!o.kr && !!lock, liveP: null, prime: !!o.prime, around: o.around || null, highs: o.highs || null, onEnd: o.onEnd || null, onQuit: o.onQuit || null, paused: false, last: '', box: {}, scores: [], lastScore: null, drive: null, potd: null, hl: null, rpEnd: null, pat: null, try2: null, introT: 0, to: [3, 3], runoff: 0, share: o.share === undefined ? 1 : o.share, possN: 0, benchN: -1, sit: false, env: o.env || { time: SET.tod || 'night', weather: SET.wx || 'clear' },
+      sel: null, me: null, preT: 0, meter: 0, lock, lockSide: lock ? (OFFR.includes(lock) ? 'off' : 'def') : null, first, drill: o.drill ? { n: o.drill, left: o.drill, side: o.side || (lock && !OFFR.includes(lock) ? 'def' : 'off'), script: o.script || null, dcall: o.dcall || null, title: o.title || 'Practice', reps: [] } : null, lineFn: o.line || null, goalsFn: o.goals || null, mustWin: !!o.mustWin, home: o.away ? 1 : 0, kr: !!o.kr && !!lock, liveP: null, prime: !!o.prime, around: o.around || null, highs: o.highs || null, recs: o.recs || null, onEnd: o.onEnd || null, onQuit: o.onQuit || null, paused: false, last: '', box: {}, scores: [], lastScore: null, drive: null, potd: null, hl: null, rpEnd: null, pat: null, try2: null, introT: 0, to: [3, 3], runoff: 0, share: o.share === undefined ? 1 : o.share, possN: 0, benchN: -1, sit: false, env: o.env || { time: SET.tod || 'night', weather: SET.wx || 'clear' },
       my: { att: 0, comp: 0, pyd: 0, ptd: 0, pint: 0, car: 0, ryd: 0, rtd: 0, rec: 0, recyd: 0, rectd: 0, tgt: 0, tkl: 0, sack: 0, int: 0, pbu: 0 } };
     if (lock && o.hero) {
       G.bench = { ...G.ros[0][lock] };  // the man the roster had there: he plays the drives the coach sits you out for
@@ -5452,6 +5452,14 @@
   function highCheck() {
     const h = G.highs, my = G.my, me = G.me;
     if (!h || !my || !me) return;
+    /* a league single-game record, passed live (career.js hands over the marks: { stat: [mark, name] }) */
+    for (const k in G.recs || {}) if ((my[k] || 0) > G.recs[k][0] && !(G.hiSaid || (G.hiSaid = {}))['r' + k]) {
+      G.hiSaid['r' + k] = G.hiSaid[k] = 1;
+      const who = { team: 0, name: me.name, num: me.num }, v = my[k], [old, by] = G.recs[k];
+      later(() => statCard(who, String(v), 'League record · ' + (HIGHS[k] ? HIGHS[k][0] : k), `past ${by}'s ${old}`), 2600);
+      later(() => snd('applause', { level: 0.8, dur: 3 }), 2700);
+      return;
+    }
     for (const k in HIGHS) if ((my[k] || 0) > (h[k] || 0) && (h[k] || 0) >= HIGHS[k][1] && !(G.hiSaid || (G.hiSaid = {}))[k]) {
       G.hiSaid[k] = 1;
       const who = { team: 0, name: me.name, num: me.num }, v = my[k], old = h[k];

@@ -1030,3 +1030,15 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 .hst{margin-top:12px}
 .hallp .mhero,.awm .mhero,.cmbm .mhero{margin-top:4px}
 .cmbm .cmb{position:relative;overflow:hidden}
+
+/* the record book (career stats tab): a row a mark, the figure, who holds it, and for a season mark a bar of your
+   season so far against it */
+.rbk{display:grid;grid-template-columns:128px minmax(0,1fr);align-items:center;gap:2px 12px;padding:9px 0;border-bottom:1px solid var(--line)}
+.rbk>div b{display:block;font-family:var(--display);font-weight:800;font-size:19px;line-height:1.1;font-variant-numeric:tabular-nums}
+.rbk>div small,.rbk span small{display:block;font-size:10.5px;color:var(--mute)}
+.rbk>div small{font-family:var(--display);font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.rbk span{font-size:13px;min-width:0;overflow-wrap:anywhere}
+.rbk.you>div b,.rbk.you span{color:var(--acc)}
+.rbk .rbar{grid-column:1/-1;display:block;height:5px;margin-top:5px;border-radius:3px;background:var(--panel3);overflow:hidden}
+.rbk .rbar u{display:block;height:100%;background:var(--acc);text-decoration:none}
+.note.rec{border-left:3px solid var(--acc);padding-left:8px}

@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `5ddc9bc`, before the record book (league single-game and season marks, a card when one falls) (2026-11-16 night).
   - `5e105a8`, before surer open-field tackles after a catch and pursuit angles on the throw (2026-11-16 night).
   - `17446bf`, before the downfield reads, defenders rallying on the throw and the juke rework (2026-11-16 night).
   - `14895e9`, before both feet in: catches out of bounds incomplete, toe taps at the line (2026-11-16 night).
@@ -2608,6 +2609,21 @@ six were done as the pro game has them; the choices where there was one are mine
   re-pinned, the old value in pg.fingerprint.before-tackles. Audit empty at 320x568, 390x844 and 440x956; whole
   seasons at both positions, careers at both, exhibitions and a season with the rough test player clean.
 
+- Tonight, round 4 (03:23): a record book. The league's single-game and season marks for a quarterback (passing
+  yards, touchdown passes, completions) and a receiver (receiving yards, catches, touchdown catches), kept on the
+  device across careers like the hall of fame (pg.records.v1). They start where the real game's stand: the
+  single-game records as they are (554, 7, 45; 336, 21, 5), the season records scaled from seventeen games to this
+  league's ten (3,220, 32, 275; 1,155, 88, 14), held by invented men on the league's teams, "before your time".
+  Season marks count the regular season only (a new `C.reg` tally, started from the season so far for a career
+  begun before it). When a career player passes one: a live broadcast card the moment it falls in the game, with
+  the crowd ("League record", past the holder's figure: game.js highCheck, the marks handed over as `recs`), a
+  line in the XP sheet (+500), a note on the result sheet, and a post from the league's account with the figures
+  as a stat card. The stats tab has the book: the figure, who holds it (you in the accent color), and for each
+  season mark a bar of your season so far against it. Checked by lowering marks in a test (each moment fired); at
+  the real marks no record fell in a whole season at either position, as it should be. Play outside careers is
+  untouched: fingerprint unchanged. Audit empty at 320x568, 390x844 and 440x956; whole seasons at both positions,
+  careers at both, an exhibition and a season with the rough test player clean.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -2968,7 +2984,7 @@ NFL rules first, every item checked the full way before it ships.
   penalties a game from `H.sim`, tuned where they are well off (the fingerprint re-pinned if play changes).
 - [x] (part, round 3: surer open-field tackles, pursuit angles; the rest is the last item) Coverage at the catch: the nearest defender is 4.8 yards off at the catch (NFL about 3) and a catch still runs
   for 10.6 more (NFL about 5.3); tighter zone matching and trail technique, measured the same way (round 2's log).
-- [ ] A record book: the league's single-game and season marks, kept as careers play; the booth and a card when a
+- [x] A record book: the league's single-game and season marks, kept as careers play; the booth and a card when a
   career player breaks one.
 - [ ] The form tackle as a paired motion: tackler and runner keyed to each other (wrap, drive, fall together).
 - [ ] Injuries, the rest: the trainers jog out and a hurt man is helped off (a short scene), the cart for the worst.

@@ -144,6 +144,8 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   your top receiver) builds over seasons: he looks your way more and the ball between you is caught more often.
   The social feed has stat accounts, local radio, former players and opponents, and reacts to streaks, road wins,
   primetime, the playoffs, the weather, playing hurt and your chemistry.
+- A record book: the league's single-game and season marks, kept across careers; break one and the broadcast, the
+  result sheet and the league's own account say so. Your season so far is drawn against each season mark.
 - Both feet in: a ball caught out of bounds is incomplete, and a catch at the sideline or end line needs a toe tap.
 - As a receiver, your route is painted on the field before the snap and as you run it: bright from where you are to
   the end, a dot on each cut to come, the part already run fading behind you. Steer through a cut and it counts.
