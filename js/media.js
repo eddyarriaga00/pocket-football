@@ -179,6 +179,94 @@
     wasted: ['{L} balled out. We owe him one. That’s on the rest of us.', 'My guy {L} did his part. We gotta finish for him.'],
   };
 
+  /* ---------- more voices ----------
+     Stat accounts, former players, local radio, opposing players, and posts about what the week was: a streak, a
+     road win, primetime, the playoffs, the weather, playing hurt, a rookie year, a promotion, chemistry with a
+     teammate, the snap grade. Each line is dealt from the week's deck like the others, so none repeats. */
+  const STATS = [['Gridiron Numbers', 'GridironNumbers'], ['The Box Score', 'theboxscore'], ['Film & Figures', 'FilmFigures'], ['Pocket Stats', 'PocketStatsHQ']];
+  const LEGENDS = [['Big Mike Tolliver', 'BigMikeT', '12 seasons on the offensive line'], ['Darnell Pryce', 'DPryce21', 'former cornerback, 3x All-League'], ['Gus Hammond', 'GusHammond', 'former quarterback'], ['Reggie Okoye', 'ReggieO_88', 'former receiver']];
+  const fresh = list => {
+    // an account posts once a week (the deck keeps its handle); null when they have all posted
+    const left = list.filter(e => !dealt.has('@' + e[1]));
+    if (!left.length) return null;
+    const e = any(left);
+    dealt.add('@' + e[1]);
+    return e;
+  };
+  const statAcct = () => {
+    const e = fresh(STATS);
+    if (!e) return null;
+    const [who, at] = e;
+    return { who, at, kind: 'stat', col: '#2b8a6e', ver: true };
+  };
+  const legend = () => {
+    const e = fresh(LEGENDS);
+    if (!e) return null;
+    const [who, at, bio] = e;
+    return { who, at, bio, kind: 'legend', col: '#8a5a2b', ver: true };
+  };
+  const radio = c => ({ who: `${TEAMS[c.team].city} Sports Radio`, at: `${TEAMS[c.team].city.replace(/\s/g, '')}Radio`, bio: 'call-in show weeknights', kind: 'press', col: '#2f6fb5', ver: true });
+  const oppPlayer = c => {
+    const f = any(FIRST), l = any(PG.NAMES), pos = c.pos === 'QB' ? any(['DE', 'LB', 'S']) : any(['CB', 'S']);
+    return { who: `${f} ${l}`, at: `${f[0].toLowerCase()}${l.toLowerCase()}${10 + Math.floor(Math.random() * 89)}`, bio: `${TEAMS[c.opp].name} ${pos}`, kind: 'rival', col: TEAMS[c.opp].c1, ver: true };
+  };
+  const partnerBy = c => {
+    const ch = c.chem;
+    if (!ch) return null;
+    return { who: `${ch.first} ${ch.last}`, at: `${ch.first[0].toLowerCase()}${ch.last.toLowerCase()}${ch.num}`, bio: `${TEAMS[c.team].name} ${ch.role}`, kind: 'mate', col: TEAMS[c.team].c1, ver: true };
+  };
+
+  function extras(c, x, D, t, lost) {
+    const out = [], P = (by, arr, k) => by && keep(out, post(by, D(arr), c, k));
+    const ch = c.chem, L = ch && ch.L, PL = ch ? ch.last : '';
+    const y = { ...x, PL, PF: ch ? `${ch.first} ${ch.last}` : '', G: c.snap ? c.snap.g : '', SN: c.snap ? c.snap.n : '', BW: c.snap && c.snap.best ? c.snap.best : '', W: c.wx === 'snow' ? 'snow' : 'rain', n: c.streakW || c.streakL || 0, INJ: c.inj ? c.inj.what : '' };
+    const F2 = arr => arr.map(s => fill(s, y));
+    // the numbers
+    P(statAcct(), F2(c.pos === 'QB' ? ['{N} today: {S}.', '{L} vs the {O}: {S}. File it away.', '{S}. That’s {L}’s line against the {O}.'] : ['{N} today: {S}.', '{L} vs the {O}: {S}.', 'Target to catch: {L} went {S} against the {O}.']), 1.1);
+    if (c.snap && c.snap.n >= 4) {
+      P(statAcct(), F2(c.snap.v >= 3.5 ? ['{L} graded out at {G} over {SN} snaps on our tape. Best one: {BW}.', 'Snap by snap, {L} was a {G} today. That’s elite.'] : c.snap.v >= 2.5 ? ['{L}: {G} over {SN} graded snaps. Solid, a couple left out there.', 'Tape grade for {L} today: {G}.'] : ['Rough tape for {L}: {G} over {SN} snaps.', '{L} graded {G}. The film won’t be fun this week.']), 1.2);
+      P(analyst(), F2(c.snap.v >= 3.5 ? ['Watched every {L} snap twice. {G}. Decisions, timing, all of it.', 'Graded {L} out at {G}. His best rep: {BW}. That’s a pro.'] : c.snap.v < 2.3 ? ['Went back through the {L} tape: {G}. Too many snaps where he wasn’t where he needed to be.'] : ['{L} on tape: {G}. A couple of plays from a really good day.']), 1.3);
+    }
+    // the man he works with
+    if (ch && L) {
+      if (L.td > 0 || L.comp >= 4) {
+        P(fan(c.team), F2(['The {L} to {PL} connection is REAL 🔥', '{L} and {PL} on the same page all day. That’s chemistry.', '{PL} and {L} are going to be a problem for years.', 'Every time {L} and {PL} hook up I lose my voice']), 1.2);
+        P(partnerBy(c), F2(c.pos === 'QB' ? ['When #{L} throws it, I’m going to go get it. Simple.', 'Same page every week with my QB. Love you {L}.'] : ['Throw it up and {L} goes and gets it. Easiest job in the league.', 'Me and {L} been working all week. You saw it today.']), 1.5);
+        if (L.td > 0) P(legend(), F2(['That {L} and {PL} chemistry is something you can’t teach. They just see it the same way.', 'Watch the timing between {L} and {PL}. That comes from reps nobody films.']), 1.4);
+      } else if (L.int + L.drop >= 2) {
+        P(fan(c.team), F2(['{L} and {PL} are NOT on the same page right now.', 'Somebody get {L} and {PL} in a room together this week.', 'The {L}–{PL} thing isn’t clicking yet.']), 1);
+        P(analyst(), F2(['Two misfires between {L} and {PL} today. That’s timing, and timing is fixable.']), 1.1);
+      }
+    }
+    // the week's story
+    if (c.won && c.streakW >= 3) {
+      P(fan(c.team), F2(['{n} STRAIGHT. Don’t wake me up.', 'Win streak at {n}. Book the parade route. (kidding) (not kidding)', '{n} in a row and {L} is a huge reason why.']), 1.2);
+      P(statAcct(), F2(['The {T} have won {n} straight.', '{n}-game win streak for the {T}.']), 0.9);
+    }
+    if (lost && c.streakL >= 2) P(fan(c.team), F2(['{n} losses in a row. Something has to change.', 'Losing streak at {n}. I need a win before I need a therapist.', 'Not panicking. Ok, a little panicking.']), 1);
+    if (c.won && c.away) P(fan(c.team), F2(['Love a road win. Quiet the whole building.', 'Went into {OC} and took it. That’s a real team.', 'Road dub. The flight home hits different.']), 0.9);
+    if (c.prime) P(neutral(), F2(t === 'great' || t === 'good' ? ['Primetime and {L} showed up. Noted.', 'Whole league watching and {L} delivered.'] : ['Big stage, quiet night for {L}.', 'Primetime wasn’t kind to {L}.']), 1.1);
+    if (c.playoff) P(fan(c.team), F2(c.won ? ['SURVIVE AND ADVANCE 🗣️', 'Playoff {L} is a different person.', 'Still dancing. Still believing.'] : ['Season’s over. Proud of this group anyway.', 'Hurts. {L} gave us everything.', 'We’ll be back. That’s a promise.']), 1.3);
+    if (c.wx === 'rain' || c.wx === 'snow') P(neutral(), F2(c.wx === 'snow' ? (t === 'bad' ? ['Snow game and {L} couldn’t find his footing.'] : ['{L} in the snow. Football the way it should be. ❄️', 'Snow globe football and {L} played like it was a dome.']) : (t === 'bad' ? ['Wet ball, rough day for {L}.'] : ['Rain game, wet ball, and {L} held on anyway.', 'Played in a monsoon and {L} still produced. Respect.'])), 1);
+    if (c.inj) P(fan(c.team), F2(['Played through {INJ}. That’s a tough man.', 'Questionable all week and {L} suited up anyway. Respect.']), 1.1);
+    if (c.season === 1 && (c.week || 0) <= 4) P(legend(), F2(t === 'bad' ? ['Rookie year is hard. {L} will learn more from this one than from the good ones.'] : ['Remember, {L} is a rookie. That’s scary for the rest of the league.', 'Rookie doing that? I didn’t do that until year three.']), 1.3);
+    if (c.roleUp) P(radio(c), F2(['Phones are lit up tonight: {L} is a starter now. Was it time?', 'Big news on the show tonight: the {T} handed {L} the job.']), 1.2);
+    // somebody from across the field
+    if (c.won && t !== 'bad') P(oppPlayer(c), F2(['Good battle today {L}. See you next time.', 'You got that one. Respect, {L}.', 'Tough to cover. Gotta be better.']), 1.1);
+    else if (lost && t !== 'great') P(oppPlayer(c), F2(['Too easy. 🤷', 'Told y’all all week. We had {L} figured out.', 'Locked in. That’s all.']), 1.1);
+    // the local radio and a former player, every week
+    P(radio(c), F2(t === 'great' || t === 'good' ? ['Calls on the show tonight: is {L} the best {pos} in {C} in years?', 'Open lines tonight. Everybody wants to talk about {L}.'] : ['Lines are open: what’s wrong with {L}? Call in.', 'Tough night for {L}. We’ll take your calls.']), 0.8);
+    P(legend(), F2(t === 'great' ? ['I’ve seen a lot of football. {L} today was the real thing.', '{L} plays with a calm you can’t coach.'] : t === 'bad' ? ['Every great player has days like {L} had. It’s the next one that tells you who he is.'] : ['{L} is close. A couple of habits away from being a problem.']), 1.2);
+    // a fan or two answers the stat accounts
+    for (const p of out) if (p && p.kind === 'stat' && Math.random() < 0.7) {
+      p.replies = [];
+      keep(p.replies, post(fan(c.team), D(t === 'bad' ? ['Numbers don’t lie. Rough one.', 'Delete this.'] : ['Respect the numbers.', 'Screenshotting this for the haters.', 'Now do his season totals 👀']), c, 0.2));
+      if (Math.random() < 0.5) keep(p.replies, post(fan(c.opp), D(['Stats in a {O} game don’t count.', 'Padding stats.', 'Ok and?']), c, 0.2));
+      p.rep = Math.max(p.rep, p.replies.length);
+    }
+    return out;
+  }
+
   /* ---------- the reaction to a game ---------- */
   function reaction(c) {
     dealt = new Set();
@@ -229,6 +317,7 @@
         pool.push(post(neutral(), F('Moral of the story: don’t write checks your team can’t cash, {L}.'), c, 1.2));
       }
     }
+    extras(c, x, D, t, lost).forEach(p => pool.push(p));
     pool.sort(() => Math.random() - 0.5);
     // the most liked fan post goes viral on a big day
     if (b >= 7 && pool.length) {

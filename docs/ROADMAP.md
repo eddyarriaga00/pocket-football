@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `f3f4ee8`, before the live play grade, teammate chemistry and the wider social feed (2026-11-16, from the Mac).
   - `381dfb4`, before uniforms picked up grass stains through the game (2026-11-16, from the Mac).
   - `68745cb`, before the jersey was tucked into the pants (2026-11-16, from the Mac).
   - `a782106`, before the 2026-11-16 player and stadium detail pass (chin strap, collar, tape; gooseneck posts,
@@ -2453,6 +2454,35 @@ six were done as the pro game has them; the choices where there was one are mine
   clean. Seen after a half in the rain: the back who had been tackled had muddy thighs under a cleaner seat, a
   receiver who had not was clean. Fingerprint unchanged; audit empty at 320x568 and 390x844; exhibition, season,
   careers, camp and the rough test player clean.
+
+- The owner, after research on Madden's Superstar mode (the 2023 return and the 2025 rework: live player grading,
+  Sphere of Influence relationships, Game Day Beats stories): "add proper teammate chemistry, and live play grade
+  proper, also add more social media comments that are different and make social even better". Built:
+  Live play grade (`gradeSnap`, `GRP` in game.js): after every career snap the player is part of, a letter and the
+  reason under the stat line for three seconds (`#pgr`), and a running grade on the stat line itself. A quarterback
+  is graded on what he did with the ball: a touchdown A+, a completion by yards, whether it moved the chains and
+  on which down, a throw-away C+, a miss to an open man D, a ball into coverage C-, a sack he held into D, an
+  interception or fumble F, a scramble by what it got. A receiver: the catch by yards and the sticks, a drop (a
+  catchable ball, `ps.cpT`, not caught) D, a contested ball broken up C, and on a pass not thrown to him, whether
+  he got open (his separation as the ball left, `ps.meOpen`). Handoffs he is not in, a receiver's run plays and
+  snaps he sat out are not graded. The result screen shows the game's snap grade, how many snaps, the best and
+  the worst. It is shown beside the old game grade, which is unchanged.
+  Teammate chemistry (`partner`, `chemHtml`, `gameMates` in career.js; `chemOf` in game.js): with the teammate the
+  feed already had, a receiver's quarterback or a quarterback's top receiver. Those feed teammates now line up on
+  the field under their own names and numbers (they were random each game). 0 to 100, 50 when you meet; it grows
+  with completions, yards and touchdowns between the two and falls with interceptions and drops, more slowly the
+  higher it is (a receiver reached 77 after two test seasons). In a game it tilts the computer quarterback's read
+  toward his receiver (the old bonus at 50, up to half again at 100) and moves the catch chance on a ball between
+  them by up to five points either way. New teammates, and new chemistry, after a trade. A card on the hub, a line
+  on the result screen.
+  Social (`extras` in media.js): new voices (stat accounts, local radio, former players, an opposing player) and
+  posts for what the week was, which until now only the press conference used: a win or losing streak, a road win,
+  primetime, the playoffs, rain or snow, playing hurt, a rookie's first weeks, a promotion to starter, chemistry
+  (a connection that clicked, or misfired), the snap grade on tape. Stat accounts' posts carry fan replies. Each
+  account posts once a week, and every line is dealt from the week's deck like the rest.
+  Play outside careers is untouched: fingerprint unchanged. Audit empty at 320x568 and 390x844 (the grade chip and
+  the hub card included); exhibition, season, careers (whole seasons at both positions), camp and the rough test
+  player clean.
 
 ## Morning hand-off
 

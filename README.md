@@ -139,6 +139,11 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   man off the line goes in motion; a forward pass is legal only from behind the line of scrimmage.
 - A missed field goal gives the other side the ball at the spot of the kick, or at its own 20.
 - Team totals follow the pro game: a sack's lost yards come off net passing, not rushing.
+- Career: every snap you play gets a live grade with the reason ("A- · Moved the chains", "D · Dropped it"),
+  averaged on your stat line and summed up after the game. Chemistry with your quarterback (or, as a quarterback,
+  your top receiver) builds over seasons: he looks your way more and the ball between you is caught more often.
+  The social feed has stat accounts, local radio, former players and opponents, and reacts to streaks, road wins,
+  primetime, the playoffs, the weather, playing hurt and your chemistry.
 - Jerseys are tucked into the pants at the waist, with a belt; uniforms pick up grass stains (mud in the rain)
   as players go to the ground through the game.
 - On the sideline the reserves stand unevenly, each turned his own way, and one or two take a knee to watch.

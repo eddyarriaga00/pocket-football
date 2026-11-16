@@ -913,6 +913,32 @@
     return so;
   }
 
+  /* ---------- chemistry ----------
+     With the teammate you work with most: a quarterback and his top receiver, a receiver and his quarterback (the same
+     man as in your feed). 0 to 100, 50 when you meet; it grows with completions, yards and touchdowns between you,
+     and falls with interceptions and drops. In a game it tilts the quarterback's read toward a receiver he trusts and
+     makes the ball between the two of you a little easier to catch (game.js chemOf). New teammates after a trade. */
+  const CHEM_ROLE = { QB: 'WR', WR: 'QB' };
+  const SNAP_PTS = [['A+', 4.3], ['A', 4], ['A-', 3.7], ['B+', 3.3], ['B', 3], ['B-', 2.7], ['C+', 2.3], ['C', 2], ['C-', 1.7], ['D', 1], ['F', 0]];
+  const snapAvg = g => { const v = g.sum / g.n; return SNAP_PTS.reduce((b, e) => (Math.abs(e[1] - v) < Math.abs(b[1] - v) ? e : b))[0]; };
+  const fieldRole = r => r === 'WR' ? (C.pos === 'QB' ? 'X' : 'Z') : r;  // where each feed teammate lines up
+  function partner() {
+    const so = social(), m = so.mates.find(x => x.role === CHEM_ROLE[C.pos]);
+    if (m && m.chem === undefined) m.chem = 50;
+    return m || null;
+  }
+  const chemTier = v => v >= 80 ? 'Elite' : v >= 62 ? 'In sync' : v >= 40 ? 'Building' : 'Off';
+  function gameMates() {
+    const so = social(), p = partner();
+    return { mates: so.mates.map(m => ({ role: fieldRole(m.role), name: m.last, num: m.num })), mate: p ? { role: fieldRole(p.role), v: p.chem, name: p.last } : null };
+  }
+  function chemHtml() {
+    const p = partner();
+    if (!p) return '';
+    const v = Math.round(p.chem), what = C.pos === 'QB' ? 'Your passes to him are caught more often as it grows.' : 'He looks your way more, and his throws are easier to hold, as it grows.';
+    return `<div class="chem"><i style="--c:${team(C.team).c1};color:${PG.inkOn(team(C.team).c1)}">${p.num}</i><div><small>Chemistry · ${C.pos === 'QB' ? 'top receiver' : 'your quarterback'}</small><b>${esc(p.first)} ${esc(p.last)}</b><div class="bar"><i style="width:${v}%"></i></div></div><em>${v}<small>${chemTier(v)}</small></em></div><p class="note" style="margin:4px 0 0">${what}</p>`;
+  }
+
   const short = n => PG.media.short(n), signed = n => (n >= 0 ? '+' : '\u2212') + Math.abs(n);
 
   /* the week's posts go on top of the feed, under a heading for the week */
@@ -1542,7 +1568,7 @@
       scr.innerHTML = `<div class="menu solid"><button class="back" id="bk">‹ Menu</button>
   <div class="pc${kit()?' k':''}" style="--c:${t.c1}">${kit()}<div><h3>${esc(C.name)}</h3><p>#${C.num} · ${C.pos} · age ${age()}<br>${full(C.team)} · Season ${C.season}</p><div class="pcc"><span>${esc(C.arch)}</span><span>${rank()}</span>${C.rings?`<span>${C.rings} title${C.rings>1?'s':''}</span>`:''}${C.awards&&C.awards.length?`<span>${C.awards.length} honor${C.awards.length>1?'s':''}</span>`:''}</div></div><div class="ovr">${ovr()}<small>OVR</small></div></div>
   <div class="xp2"><div><span>To spend</span><b>${fmt(C.xp)} XP</b></div><div><span>Contract</span><b class="dl">${deal().left>0?`${money(deal().pay)} · ${deal().left} of ${deal().years} left`:'Up for renewal'}</b></div></div>
-  ${trustHtml()}
+  ${trustHtml()}${chemHtml()}
   ${C.ageNote && C.week === 0 && C.phase === 'reg' ? `<p class="note">${esc(C.ageNote)}</p>` : ''}
   ${nextCard()}
   <div class="tabs itabs" style="margin-top:16px">${[['up','Upgrade'],['season','Season'],['stats','Stats'],['social','Social']].map(([k,l])=>`<button data-t="${k}" class="${k===tab?'on':''}">${TAB_ICON[k]}<span>${l}</span></button>`).join('')}</div>
@@ -1692,7 +1718,7 @@
     /* a rival game opens with the two of you face to face at midfield: his words, and yours if you called him out */
     const rivalry = C.rival && C.rival.team === opp ? { name: C.rival.name, quote: rivalSays(), mine: C.social && C.social.callout && C.social.callout.team === opp ? C.social.callout.quote : '' } : null;
     const pt = LG.prime(C), env = gameEnv();
-    PG.startGame({ a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[opp] - (oppInj(opp) ? oppInj(opp).pen : 0)], diff: C.diff ?? 1, share: share(), callout: call, rivalry,
+    PG.startGame({ ...gameMates(), a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[opp] - (oppInj(opp) ? oppInj(opp).pen : 0)], diff: C.diff ?? 1, share: share(), callout: call, rivalry,
       away: !LG.home(C), kr: retNow(), prime: pt, around: LG.preWeek && LG.full(C) ? LG.preWeek(C) : null, highs: Object.assign({}, C.highs || {}),
       mustWin: C.phase !== 'reg', env, line: chip, goals: m => goals().map(g => ({ d: g.d, ok: !!g.t(m) })), onEnd: r => gameEnd(r, opp), onQuit: () => showHub('up') });
   }
@@ -1701,7 +1727,7 @@
   function practice() {
     const opp = nextOpp();
     PG.snd('whistle');
-    PG.startGame({ a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[C.team] - 4], diff: 1, drill: 6, env: { time: 'day', weather: 'clear' }, line: chip,
+    PG.startGame({ ...gameMates(), a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[C.team] - 4], diff: 1, drill: 6, env: { time: 'day', weather: 'clear' }, line: chip,
       onEnd: r => {
         const m = r.my, items = xpFor(m, false).filter(([l]) => l !== 'Game played').map(([l, v]) => [l, Math.round(v * 0.5)]);
         items.unshift(['Practice reps', 80]);
@@ -1735,6 +1761,14 @@
     const base = xpFor(m, won), hard = (C.diff ?? 1) === 2 ? [['All-Pro bonus', Math.round(base.reduce((t, [, v]) => t + v, 0) * 0.2)]] : [];
     const items = base.concat(hard, star ? [['Player of the game', 300]] : [], beatRival ? [['Beat your rival', 300]] : []), met = gl.filter(g => g.ok).length, [pts, grade] = gradeOf(m, won, met);
     const prime = LG.prime(C), playoff0 = C.phase !== 'reg', away = !LG.home(C);
+    /* chemistry after this game: every ball between you and your partner counts */
+    const pt = partner(), L = r.mateLog || {}, chem0 = pt ? pt.chem : 0;
+    if (pt) {
+      // it builds over seasons, not weeks: the gains shrink as it climbs (about 70 after a first season together)
+      const up = (0.5 + (L.comp || 0) * 0.4 + (L.yds || 0) / 120 + (L.td || 0) * 1.5) * clamp((100 - pt.chem) / 50, 0.15, 1.2), down = (L.int || 0) * 2 + (L.drop || 0) * 1.2;
+      pt.chem = clamp(pt.chem + up - down, 5, 100);
+    }
+    const dChem = pt ? Math.round(pt.chem) - Math.round(chem0) : 0, snapG = r.pgr && r.pgr.n ? r.pgr : null;
     const inj0 = C.inj;  // what you played through, for the room to ask about
     const streak = k => {
       let n = 0;
@@ -1807,7 +1841,9 @@
     const ctx = { name: C.name, pos: C.pos, team: C.team, opp, won, us, them, m, pts, star, rival: C.rival, rivalGame: !!C.rival && C.rival.team === opp, playoff, callRes, coachName: so.coachName, away, prime, inj: inj0, season: C.season, left: deal().left, seen: C.pressSeen || [],
       streakW: won ? streak('W') : 0, streakL: !won && us !== them ? streak('L') : 0,
       coachLine: (C.coach.match(/^[^.!?]{12,}[.!?]|^[^.!?]+[.!?][^.!?]+[.!?]/) || [C.coach])[0].trim(), next: C.phase === 'done' ? null : nextOpp(), week: C.log.length, wk, head: `${wk} \u00b7 ${res} ${us}\u2013${them} vs ${TEAMS[opp].name}`, weak, role0, role1, mates: so.mates,
-      roleUp: ROLES.findIndex(r => r[1] === role1) < ROLES.findIndex(r => r[1] === role0) };
+      roleUp: ROLES.findIndex(r => r[1] === role1) < ROLES.findIndex(r => r[1] === role0),
+      wx: r.env && r.env.weather, snap: snapG ? { g: snapAvg(snapG), v: snapG.sum / snapG.n, n: snapG.n, best: snapG.best ? snapG.best[1].toLowerCase() : '' } : null,
+      chem: pt ? { first: pt.first, last: pt.last, num: pt.num, role: pt.role, v: pt.chem, L } : null };
     const bz = PG.media.buzzOf(ctx), fol0 = so.fol;
     so.hype = clamp(Math.round(so.hype * 0.8 + bz.b * 3 + (callRes ? (callRes.backed ? 12 : -20) : 0)), 0, 100);
     /* followers: a big day brings thousands (more when you are already hyped), a quiet one loses a few, and eating
@@ -1826,6 +1862,8 @@
       scr.innerHTML = `<div class="sheet" style="max-height:80%"><div class="shd"><b>${won?'Victory':res==='T'?'Tie game':'Final'}</b><span>${wk} · ${us}–${them} vs ${team(opp).ab}</span></div>
   <div class="rs"><i class="${won?'w':res==='T'?'t':'l'}"><small>Grade</small>${grade}</i><div><b>${us}–${them} <em>${won?'Win':res==='T'?'Tie':'Loss'}</em></b><span>${line(m)}</span></div></div>
   <div class="trk" style="margin-top:6px"><span><b>+${fmt(xp)}</b> XP earned</span><span><b>${C.trust}</b> coach trust (${dTrust>=0?'+':''}${dTrust})</span></div>
+  ${snapG||pt?`<div class="trk" style="margin-top:6px">${snapG?`<span><b>${snapAvg(snapG)}</b> snap grade · ${snapG.n} snaps</span>`:''}${pt?`<span><b>${Math.round(pt.chem)}</b> chemistry with ${esc(pt.last)} (${dChem>=0?'+':''}${dChem})</span>`:''}</div>`:''}
+  ${snapG&&snapG.best?`<p class="note" style="margin:6px 0 0">Best snap: ${snapG.best[0]} · ${esc(snapG.best[1])}${snapG.worst&&snapG.worst!==snapG.best?` · worst: ${snapG.worst[0]} · ${esc(snapG.worst[1])}`:''}</p>`:''}
   <p class="rsn">${esc(C.news)}</p>
   ${callRes?`<p class="callout ${callRes.backed?'ok':'no'}"><small>${callRes.backed?'You backed it up':'You ate your words'}</small>\u201c${esc(callRes.quote)}\u201d</p>`:''}
   <ul class="gl">${gl.map(g=>`<li class="${g.ok?'ok':'no'}"><span>${g.d}</span><b>${g.ok?'+'+GOAL_XP:'0'}</b></li>`).join('')}

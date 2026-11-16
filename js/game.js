@@ -12,7 +12,7 @@
     <div class="side r" id="sd1"><i></i><b id="a1"></b><em></em><u id="s1">0</u></div>
   </div>
   <div class="sub"><button id="pz" aria-label="Pause"><span></span><span></span></button><div id="dn"></div><div id="zm"><button id="zo" aria-label="Zoom out">−</button><button id="zi" aria-label="Zoom in">+</button></div></div>
-  <div id="mine" hidden></div>
+  <div id="mine" hidden></div><div id="pgr" hidden></div>
   <div id="rp" hidden><i></i>Replay · tap to skip</div>
 </div>
 <div id="banner"></div><div id="toast"></div>
@@ -186,6 +186,19 @@
       if (G.bench.num === o.hero.num) G.bench.num = (o.hero.num % 98) + 1;
       G.ros[0][lock] = o.hero;
     }
+    /* a career's own teammates (the men in its social feed) line up under their own names and numbers, and the one he
+       has chemistry with is marked: his quarterback, or a quarterback's top receiver */
+    for (const m of o.mates || []) {
+      const r = G.ros[0][m.role];
+      if (!r || m.role === lock) continue;
+      const dup = Object.entries(G.ros[0]).find(([k, x]) => k !== m.role && x && x.num === m.num);
+      if (dup) dup[1].num = r.num;  // whoever wore his number takes the old one
+      r.name = m.name;
+      r.num = m.num;
+    }
+    G.mate = o.mate || null;
+    G.mateLog = { att: 0, comp: 0, yds: 0, td: 0, int: 0, drop: 0 };
+    G.pgr = { n: 0, sum: 0, best: null, worst: null };
     G.callout = o.callout || null;
     bcHide();  // a career player's callout of this opponent ('trash' or 'guarantee'): the booth knows
     G.heroCeleb = o.hero && o.hero.celeb >= 0 ? o.hero.celeb : -1;  // a career player's own touchdown celebration
@@ -1594,6 +1607,16 @@
     ps.carrier = null;
     ps.passer = q;
     ps.tgt = r;
+    if (G.mode === 'career' && !AUTO && !QUIET) {
+      // how open the target and the career player were as the ball left (for the play grade)
+      const sep = w => {
+        let o = 99;
+        if (w) for (const d of P) if (d.team !== q.team && !d.down) o = Math.min(o, dist(d, w));
+        return o;
+      };
+      ps.thrOpen = sep(r);
+      ps.meOpen = G.me && G.me !== q ? sep(G.me) : 0;
+    }
     q.thrT = 0.32;
     q.thrP = pw;  // the follow-through fits the power (drawing only)
     snd('throw');
@@ -1613,6 +1636,15 @@
       if (b) G.sel = b;
     }
   }
+
+  /* Chemistry between a career player and his partner (career.js keeps it, 0 to 100, 50 to start): -50 to +50 when
+     this throw is between the two of them, else 0. It tilts the computer quarterback's read toward a receiver he
+     trusts, and a ball between the two is caught a little more often. Career games only. */
+  const chemOf = (a, b) => {
+    const m = G.mate, me = G.me;
+    if (!m || !me || !a || !b || a.team !== 0 || b.team !== 0) return 0;
+    return (a === me && b.role === m.role) || (b === me && a.role === m.role) ? m.v - 50 : 0;
+  };
 
   function qbAI(q, dt, past) {
     if (past || ps.scr) {
@@ -1636,7 +1668,7 @@
       if (dist(r, q) > range) continue;
       let open = 99;
       for (const o of P) if (o.team !== q.team && !o.down) open = Math.min(open, dist(o, r));
-      const sc = Math.min(open, 7) + clamp((r.y - ps.los) * G.dir, -3, 25) * 0.05 + rnd(1.2) + (r === me ? (me.role === 'RB' ? 1.2 : 3.5) : 0) + (hot && r === hot ? 2.2 : 0);
+      const sc = Math.min(open, 7) + clamp((r.y - ps.los) * G.dir, -3, 25) * 0.05 + rnd(1.2) + (r === me ? (me.role === 'RB' ? 1.2 : 3.5 + chemOf(q, r) * 0.03) : 0) + (hot && r === hot ? 2.2 : 0);
       if (sc > bsc) {
         bsc = sc;
         best = r;
@@ -1765,6 +1797,8 @@
     const ud = nd && nd === G.sel && off === 1 && !AUTO && ndd < 1.8;
     if (ud) cp -= 0.2;
     cp *= G.wx.cat;  // a wet or frozen ball is harder to hold
+    if (dr <= 2.2) cp += chemOf(ps.passer, r) * 0.001;  // up to five points either way between a career player and his partner
+    ps.cpT = cp;  // how catchable it was, for the play grade (a drop is a catchable ball not caught)
     let ip = ndd < 1.5 ? 0.38 * (1 + ((nd.bsk ?? nd.rt) - 75) * 0.02) : 0;
     if (dr > 2.2 && ndd < 1.6) ip = 0.4;
     if (ud) ip += 0.2;
@@ -3389,7 +3423,7 @@
     if (!AUTO && !G.drill && PG.milestones) PG.milestones.game({ us: G.score[0], them: G.score[1], stats: G.stats, ot: G.ot, diff: G.diff, weather: G.env && G.env.weather });
     /* the handshake at midfield first (a cutscene: skipped in simulations, practice, and when they are switched off) */
     const done = () => {
-      if (G.onEnd) G.onEnd({ score: G.score.slice(), my: G.my, stats: G.stats, ot: G.ot, potg: playerOfGame(), potgHtml: potgHtml(), box: G.box, potdHtml: potdHtml(), scoringHtml: scoringHtml(G.scores), drill: G.drill });
+      if (G.onEnd) G.onEnd({ env: G.env, pgr: G.pgr, mateLog: G.mateLog, score: G.score.slice(), my: G.my, stats: G.stats, ot: G.ot, potg: playerOfGame(), potgHtml: potgHtml(), box: G.box, potdHtml: potdHtml(), scoringHtml: scoringHtml(G.scores), drill: G.drill });
       else showFinal();
     };
     playScene('final', {}, done);
@@ -3813,6 +3847,8 @@
       PG.audio.crowd.stopClaps();
       PG.audio.crowd.settle();  // and the third-down noise falls away as the play starts
     }
+    /* the play grade: what the career player's line was before this snap, to read what he did with it after */
+    ps.gr = !AUTO && !QUIET && G.mode === 'career' && !G.drill && G.me && ps.offTeam === 0 && (ps.mode === 'pass' || ps.mode === 'run') ? { my: { ...G.my }, down: G.down, togo: G.togo, sc: G.score[0] } : null;
     REC.length = 0;
     for (const p of P) if (p.jog) {
       p.x = p.sx;
@@ -5256,6 +5292,68 @@
   }
 
   /* one tracking number for a player: big on the left in his team's color, what it is, and the play it came from */
+  /* ---------- the play grade ----------
+     After every snap a career player is part of, a letter and the reason, the way the broadcast grades a player
+     snap by snap: what he did with the ball, or for a receiver, whether he got open and held on to it. Handoffs he
+     was not part of, run plays for a receiver, and snaps he sat out are not graded. The letters average into a
+     game grade on his stat line. Chemistry with his partner moves with the same reads. */
+  const GRP = { 'A+': 4.3, A: 4, 'A-': 3.7, 'B+': 3.3, B: 3, 'B-': 2.7, 'C+': 2.3, C: 2, 'C-': 1.7, D: 1, F: 0 };
+  const gradeOfPts = v => Object.entries(GRP).reduce((b, e) => (Math.abs(e[1] - v) < Math.abs(b[1] - v) ? e : b))[0];
+  function gradeSnap() {
+    const g = ps.gr, me = G.me, m = G.my;
+    g.done = true;
+    if (!me) return;
+    const d = k => (m[k] || 0) - (g.my[k] || 0), td = G.score[0] - g.sc >= 6, qb = me === ps.qb;
+    const lostFum = !!ps.fum && ps.fum.by === me && ps.turnover && !ps.fum.muff;
+    const yds = qb ? d('pyd') + d('ryd') : d('recyd') + d('ryd'), first = !td && yds >= g.togo - 0.05, late = g.down >= 3;
+    let gr = null, why = '';
+    if (qb) {
+      if (d('pint') > 0) [gr, why] = ['F', 'Interception'];
+      else if (lostFum) [gr, why] = ['F', 'Fumble'];
+      else if (G.last === 'Sack!' && ps.carrier === me) [gr, why] = ['D', 'Held it, took a sack'];
+      else if (td && (d('ptd') > 0 || d('rtd') > 0)) [gr, why] = ['A+', d('ptd') > 0 ? 'Touchdown pass' : 'Ran it in'];
+      else if (d('comp') > 0) [gr, why] = yds >= 20 ? ['A', 'Big-time throw'] : first ? ['A-', late ? 'Converted on ' + ORD[g.down - 1] + ' down' : 'Moved the chains'] : late ? ['C', 'Short of the sticks'] : yds >= 6 ? ['B', 'On time, on target'] : ['B-', 'Checkdown'];
+      else if (d('att') > 0) [gr, why] = !ps.tgt ? ['C+', 'Threw it away'] : (ps.thrOpen || 0) >= 3 ? ['D', 'Missed an open man'] : (ps.cpT || 0) >= 0.62 ? ['C+', 'On the money, not caught'] : ['C-', 'Forced it into coverage'];
+      else if (d('car') > 0) [gr, why] = first ? ['A-', 'Picked it up with his legs'] : yds >= 8 ? ['B+', 'Made something of nothing'] : yds > 0 ? ['C+', 'Scrambled for a few'] : ['C-', 'Nowhere to go'];
+    } else {
+      const mine = ps.tgt === me;
+      if (lostFum) [gr, why] = ['F', 'Fumble'];
+      else if (td && (d('rectd') > 0 || d('rtd') > 0)) [gr, why] = ['A+', 'Touchdown'];
+      else if (d('rec') > 0) [gr, why] = yds >= 20 ? ['A', 'Big play'] : first ? ['A-', late ? 'Converted on ' + ORD[g.down - 1] + ' down' : 'Moved the chains'] : late ? ['C+', 'Short of the sticks'] : yds >= 5 ? ['B', 'Caught it, got upfield'] : ['B-', 'Short catch'];
+      else if (mine && ps.turnover) [gr, why] = ['C-', 'Picked off on his route'];
+      else if (mine && (ps.cpT || 0) >= 0.62) [gr, why] = ['D', 'Dropped it'];
+      else if (mine && ps.thrown) [gr, why] = ['C', 'Contested, broken up'];
+      else if (d('car') > 0) [gr, why] = first ? ['A-', 'Moved the chains'] : yds >= 6 ? ['B', 'Good run'] : ['C', 'Stopped short'];
+      else if (ps.thrown && ps.mode === 'pass') [gr, why] = (ps.meOpen || 0) >= 3.5 ? ['B', 'Got open, not thrown to'] : (ps.meOpen || 0) < 1.6 ? ['C', 'Blanketed in coverage'] : ['C+', 'Ran his route'];
+    }
+    /* chemistry: every ball thrown between him and his partner */
+    if (ps.thrown && ps.passer && ps.tgt && chemOf(ps.passer, ps.tgt) !== undefined && G.mate && ((ps.passer === me && ps.tgt.role === G.mate.role) || (ps.tgt === me && ps.passer.role === G.mate.role))) {
+      const L = G.mateLog;
+      L.att++;
+      if (d('rec') > 0 || d('comp') > 0) {
+        L.comp++;
+        L.yds += Math.max(0, yds);
+        if (td) L.td++;
+      } else if (ps.turnover) L.int++;
+      else if ((ps.cpT || 0) >= 0.62) L.drop++;
+    }
+    if (!gr) return;
+    const v = GRP[gr], P0 = G.pgr;
+    P0.n++;
+    P0.sum += v;
+    if (!P0.best || v > GRP[P0.best[0]]) P0.best = [gr, why];
+    if (!P0.worst || v < GRP[P0.worst[0]]) P0.worst = [gr, why];
+    hudKey = '';
+    const el = $('#pgr');
+    if (!el) return;
+    el.className = v >= 3.6 ? 'hi' : v >= 2.6 ? 'ok' : v >= 1.6 ? 'mid' : 'lo';
+    el.innerHTML = `<b>${gr}</b><span>${why}</span>`;
+    el.hidden = false;
+    clearTimeout(gradeSnap.t);
+    gradeSnap.t = setTimeout(() => (el.hidden = true), 3200);
+  }
+  const pgAvg = () => (G.pgr && G.pgr.n ? gradeOfPts(G.pgr.sum / G.pgr.n) : '');
+
   function statCard(p, big, what, play) {
     if (!bcLive() || !p) return;
     const t = TEAMS[G.tm[p.team]];
@@ -5461,12 +5559,12 @@
   function updHud() {
     if (!G.ros) return;
     const pcs = pcOn() && G.pc <= 10 ? Math.max(0, Math.ceil(G.pc)) : -1;  // the play clock, in its last ten seconds
-    const s = Math.ceil(G.clock), ko = !!ps && ps.mode === 'ko', ln = G.lineFn ? G.lineFn(G.my, G.drill) : '', k = [pcs, G.score, G.q, s, G.poss, G.down, G.togo | 0, G.los | 0, ko, ln, G.drill && G.drill.left, G.drill && G.drill.reps.length, G.to, G.state === 'over' || G.state === 'replay'].join();
+    const s = Math.ceil(G.clock), ko = !!ps && ps.mode === 'ko', ln = G.lineFn ? G.lineFn(G.my, G.drill) : '', k = [pcs, G.pgr && G.pgr.n, G.score, G.q, s, G.poss, G.down, G.togo | 0, G.los | 0, ko, ln, G.drill && G.drill.left, G.drill && G.drill.reps.length, G.to, G.state === 'over' || G.state === 'replay'].join();
     if (k === hudKey) return;
     hudKey = k;
     const mine = $('#mine');
     mine.hidden = !ln || G.state === 'over' || G.state === 'replay';  // the result sheet and the replay badge take its place
-    mine.textContent = ln;
+    mine.textContent = ln + (pgAvg() ? ' · ' + pgAvg() : '');
     $('#s0').textContent = G.score[0];
     $('#s1').textContent = G.score[1];
     $('#qt').textContent = G.q > 4 ? 'OT' : ORD[G.q - 1];
@@ -5496,6 +5594,7 @@
     setBrief('');
     $('#banner').classList.remove('on');
     $('#toast').classList.remove('on');  // a toast from the last play does not follow you to the menu
+    $('#pgr').hidden = true;
     $('#meter').hidden = true;
     $('#rp').hidden = true;  // leaving in the middle of a replay used to leave its badge on the menu
     CONF.length = 0;
@@ -6866,6 +6965,7 @@
       kickTick(dt);
       if (ps && (ps.mode === 'ko' || ps.ret)) record();
     } else if (st === 'dead') {
+      if (ps && ps.gr && !ps.gr.done) gradeSnap();
       coast(dt);
       G.deadT -= dt;
       if (G.deadT <= 0) next();
