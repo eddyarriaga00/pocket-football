@@ -11,9 +11,13 @@ what is next. Update it after every item.
   07:10 (until then the work sat on `ui-refresh`, which is now merged and no longer used). Every push redeploys
   the live GitHub Pages site, so run the regression in "How to test" before pushing.
   On 2026-11-16 the owner, working from a phone, wrote "always merge to main, allow easy rollback". So before
-  every push to `main`, tag the commit `main` is on with `rollback/<date>-<what comes next>` and push the tag.
-  To go back: `git checkout main && git reset --hard <tag> && git push --force-with-lease origin main` (or, to keep
-  the history, `git revert --no-edit <tag>..main` and push). `git tag -l 'rollback/*'` lists the points.
+  every push to `main`, add a line to "Rollback points" below with the commit `main` is on and what the push brings.
+  (Tags were the first idea, but the cloud sessions may not push tags.) To go back to a point, keeping the history:
+  `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
+  session "roll back to before <what>".
+- **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `a782106`, before the 2026-11-16 player and stadium detail pass (chin strap, collar, tape; gooseneck posts,
+    padded wall, sideline gear, field marks, the ball's shape).
 - **Technology:** the owner also wrote "use more complex languages and change code and anything if needed".
   Shaders (GLSL), modules and rewrites are welcome where they buy visible quality. The site is still static
   hosting, so everything must end up as files a browser loads directly.
