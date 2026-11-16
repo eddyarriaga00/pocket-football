@@ -181,8 +181,14 @@
           float arms = uCheer * step(0.5, r2) * (step(abs(q.x - 0.2), 0.07) + step(abs(q.x - 0.8), 0.07)) * step(0.5, q.y) * step(q.y, 0.92);
           vec3 seat = mix(vec3(0.030, 0.045, 0.085), vec3(0.055, 0.075, 0.125), step(0.9, f.y));
           vec3 skin = mix(vec3(0.70, 0.52, 0.42), vec3(0.40, 0.28, 0.21), step(0.5, r2));
+          /* the concrete between the seats: stairs up every aisle, and halfway up each section a portal the crowd came in by */
+          float ax = mod(cell.x, 9.0), vom = step(3.5, ax) * step(ax, 5.5) * step(4.5, cell.y) * step(cell.y, 6.5);
+          here *= 1.0 - vom;
+          vec3 conc = vec3(0.105, 0.115, 0.145);
           vec3 c = mix(seat, shirt(r), body * here);
           c = mix(c, skin, min(1.0, head + arms) * here);
+          c = mix(c, conc * mix(0.62, 1.0, step(0.45, f.y)), aisle);
+          c = mix(c, mix(vec3(0.012, 0.016, 0.03), conc * 1.25, max(step(0.78, f.y) * step(5.5, cell.y), step(ax, 3.5 + 0.12) * step(f.x, 0.12))), vom);
           float fw = max(fwidth(g.x), fwidth(g.y));
           vec3 avg = mix(seat, mix(shirt(hash(floor(g / 3.0))), vec3(0.30, 0.33, 0.40), 0.55), 0.45);
           c = mix(c, avg, smoothstep(0.3, 1.0, fw));

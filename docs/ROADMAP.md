@@ -2383,6 +2383,36 @@ six were done as the pro game has them; the choices where there was one are mine
   Same parts, same joints, same number of draws; both the gameplay model and the close-up one, since they share
   the recipes. Audit empty at 320x568 and 390x844; exhibition, careers and camp clean; fingerprint unchanged.
 
+### From the owner's phone, 2026-11-16
+
+- The owner, away from the Mac: "it feels good on my iphone 16 pro max, i just want to make the characters model
+  better and better, more realistic, and the field, add more small details throughout ... no regressions".
+  Stills of the model from four sides (`PG.r3d.modelStrip()`, new: the whole figure, large; `{ far: true }` for the
+  gameplay model) and of the stadium from seven pinned cameras first. What changed:
+  The helmet is held on: a chin cup with a strap up each cheek into the shell, and a bumper at the back of the
+  neck (`chinStrap`, white on every helmet, the part `chin`). The jersey has a collar in the trim color on both
+  models (`collar`; the near model's was in the shoulder pads' geometry and so in the jersey color). Tape over the
+  sock from the shoe up, the way most players spat their ankles (`ankleTape`, the part `tape`, white). The
+  gameplay model's hand is a mitt with a thumb instead of a ball (`mitt`), and it has the knee pad the close one had.
+  The elbow is a shade wider than the forearm that turns in it (the two surfaces cut each other in a ragged line).
+  The shading where the leg leaves the hips is lighter: a hard band there drew a pair of briefs on him.
+  Officials and bare heads hide the strap and the tape (`REF_HIDE`).
+  The field: scuffed, duller turf between the numbers, thickest at midfield and in front of each goal; the league's
+  shield on both 25s; a cross at each kickoff spot and the short line at each 2. The ground between the turf and
+  the wall was the bare dark ground the benches stood in: it is an apron of turf now. The wall at field level has
+  padding in the home side's colors with boards on it (`padsCanvas`, painted in `paintCrowd`, dimmer at night).
+  The light towers carry banks of round lamps instead of a white slab. The goal posts are goosenecks: a padded
+  post behind the end line curving forward to the crossbar, with a ribbon on each upright that streams in the wind.
+  The sidelines (all one mesh, `mergeC`): benches with a back and a foot rail, tables with two coolers and cups,
+  equipment trunks, a kicker's practice net, pylons with a white band. The ball is a football's shape (it was a
+  squashed sphere), with its two stripes and laces with stitches. The crowd shader draws concrete stairs up each
+  aisle and a portal in each section. The top of the upper deck has a fascia with a strip of lights.
+  Cost: three new body parts (three draws each model), about twenty draws of scenery; 106 draws and 158k
+  triangles in the close sideline view against 95 and 141k before. Fingerprint unchanged against the code before
+  the change, run side by side; `H.sim`, `H.exh`, both careers, the three camp drills and the chaos player clean;
+  gait, tackles, the catch and the helmet's aim identical to before (the block test varies run to run on the old
+  code too); whole games drawn at night in the clear, by day in the rain and at dusk in the snow, every pose finite.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.

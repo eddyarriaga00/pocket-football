@@ -20,7 +20,7 @@
 
   let renderer, scene, camera, post = null, glowAmount = 0.8, W = 1, H = 1;
   let fieldTex, fieldCanvas, crowdMat, skyMat, skyDome, ribbonTex, ribbonCanvas, boardTex, boardCanvas, boardKey = '';
-  let tee = null;
+  let tee = null, rimMat = null, padsMat = null, padsCanvas = null, padsTex = null;  // the padded wall round the field, and what is painted on it
   let parts = [], figs = [], contact, ball, ballShadow, ring, targetRing, losLine, fdLine, sticks, sticks2, chain, downBox;
   const crew = [], downMats = [];
   let hemiLight, sunLight, fillLight, fieldMat, groundMat, wallMat, rainPts, snowPts, envKey = '', envSnow = false, crowdBase = 1, celebT = 0;
@@ -34,7 +34,7 @@
   let teamsKey = '', lastPs = null, time = 0, cheer = 0, debugCam = null, zoom = 1, flashes = null, menuShot = -1, nearModel = false, camDist = 0;
   const FLASHES = 48, flashLife = new Float32Array(FLASHES);
   const TOWERS = [[-70, -78], [FW + 70, -78], [-70, 178], [FW + 70, 178]];  // the four light towers, as field [x, y]
-  const posts = [];
+  const posts = [], sideNets = [];
   let nearBoard = [];
   const camPos = new T.Vector3(FW / 2, 30, 20), camLook = new T.Vector3(FW / 2, 0, -50);
 
@@ -70,6 +70,28 @@
     const out = new T.BufferGeometry();
     out.setAttribute('position', new T.BufferAttribute(pos, 3));
     out.setAttribute('normal', new T.BufferAttribute(nor, 3));
+    return out;
+  }
+
+  /* Scenery that never moves: many small shapes in one mesh, each [geometry, color] with its color written into the
+     vertices, so a whole sideline of benches, tables and pylons is one draw instead of one each. */
+  function mergeC(list) {
+    const flat = list.map(([g]) => (g.index ? g.toNonIndexed() : g));
+    let n = 0;
+    for (const g of flat) n += g.attributes.position.count;
+    const pos = new Float32Array(n * 3), nor = new Float32Array(n * 3), cl = new Float32Array(n * 3);
+    let o = 0;
+    flat.forEach((g, k) => {
+      pos.set(g.attributes.position.array, o);
+      nor.set(g.attributes.normal.array, o);
+      col.set(list[k][1]);
+      for (let i = 0; i < g.attributes.position.count; i++) cl.set([col.r, col.g, col.b], o + i * 3);
+      o += g.attributes.position.count * 3;
+    });
+    const out = new T.BufferGeometry();
+    out.setAttribute('position', new T.BufferAttribute(pos, 3));
+    out.setAttribute('normal', new T.BufferAttribute(nor, 3));
+    out.setAttribute('color', new T.BufferAttribute(cl, 3));
     return out;
   }
 
@@ -189,10 +211,11 @@
   });
   const mkUpperArm = seg => merge([sculpt([[0.01, 0.05], [0.062, 0.036], [0.075, 0], [0.078, -0.08], [0.07, -0.18], [0.061, -0.275]], seg, (v, front, back) => {
     v.z += -0.01 * bell((v.y + 0.12) / 0.07) * front + 0.008 * bell((v.y + 0.14) / 0.08) * back;  // biceps in front, triceps behind
-  }), new T.SphereGeometry(0.061, seg, 8).translate(0, -0.3, 0)]);
+  }), new T.SphereGeometry(0.066, seg, 8).translate(0, -0.3, 0)]);  // the elbow: a shade wider than the forearm that turns in it, or the two surfaces cut each other in a ragged line
   const mkForeArm = seg => sculpt([[0.01, 0.04], [0.047, 0.03], [0.06, 0], [0.062, -0.06], [0.053, -0.15], [0.043, -0.23], [0.04, -0.262], [0.01, -0.275]], seg, (v, front, back) => {
     v.z += 0.007 * bell((v.y + 0.07) / 0.06) * back;
   });
+
   /* The hips, as football pants sit: a yoke wider than it is deep that wraps over the tops of both thighs, so the legs
      come out of the pants instead of hanging under a ball (it was a near-sphere, and read as one from behind a lineman).
      Shallow in front, a seat behind, and it stops higher between the legs. */
@@ -211,6 +234,25 @@
     for (let i = 0; i < p.count; i++) if (p.getY(i) < -0.507) p.setY(i, -0.507);
     return g.translate(0, ANKLE, 0);  // into the ankle joint's space
   }
+
+  /* What holds a helmet on, and what protects it: a chin cup with a strap up each cheek into the shell, and a bumper at the
+     back of the neck. White on every helmet. */
+  function chinStrap(seg) {
+    const list = [new T.SphereGeometry(1, seg, 6).scale(0.052, 0.03, 0.034).translate(0, -0.122, -0.158),
+      new T.BoxGeometry(0.062, 0.026, 0.014).rotateX(-0.5).translate(0, -0.116, 0.168)];
+    for (const sd of [-1, 1]) for (const [y1, z1] of [[-0.03, -0.04]]) {
+      const dx = 0.1 * sd, dy = y1 + 0.118, dz = z1 + 0.15;
+      list.push(new T.BoxGeometry(Math.hypot(dx, dy, dz), 0.018, 0.007).rotateZ(Math.atan2(dy, Math.hypot(dx, dz))).rotateY(-Math.atan2(dz, dx)).translate(0.045 * sd + dx / 2, -0.118 + dy / 2, -0.15 + dz / 2));
+    }
+    return merge(list);
+  }
+
+  /* the collar of the jersey, in the trim color, and the white tape a player winds over his sock from the shoe up */
+  const collar = (a, b) => new T.TorusGeometry(0.1, 0.02, a, b).rotateX(Math.PI / 2).translate(0, 0.676, 0);
+  const ankleTape = seg => lathe([[0.058, -0.462], [0.06, -0.42], [0.068, -0.33], [0.071, -0.3], [0.064, -0.294]], seg);  // wide enough to go over the collar of the shoe, as a spat does
+
+  /* the far model's hand: a mitt with a thumb (it was a ball) */
+  const mitt = () => merge([new T.SphereGeometry(1, 8, 6).scale(0.036, 0.072, 0.056).translate(0, -0.31, 0.002), new T.SphereGeometry(1, 6, 4).scale(0.017, 0.034, 0.02).rotateX(0.7).translate(0, -0.3, -0.055)]);
 
   /* the far model: what you see from the gameplay camera, kept light because 45 figures are drawn every frame */
   const GEO = {
@@ -244,13 +286,16 @@
     sleeve: new T.TorusGeometry(0.086, 0.013, 4, 12).rotateX(Math.PI / 2).translate(0, -0.13, 0),
     foreArm: mkForeArm(10),
     wrist: new T.CylinderGeometry(0.053, 0.049, 0.055, 10).translate(0, -0.215, 0),
-    hand: new T.SphereGeometry(0.064, 8, 6).scale(1, 1.15, 0.85).translate(0, -0.3, 0),
+    hand: mitt(),
+    chin: chinStrap(8),
+    collar: collar(4, 12),
+    tape: ankleTape(12),
     playband: new T.CylinderGeometry(0.064, 0.062, 0.115, 10).translate(0, -0.125, 0),
     /* a towel tucked into the front of the belt, hanging over one thigh (a career player's own choice: optional) */
     towel: merge([new T.BoxGeometry(0.1, 0.05, 0.05).translate(0.08, -0.03, -0.2), new T.BoxGeometry(0.09, 0.22, 0.016).translate(0.08, -0.15, -0.222)]),
     /* a stripe down both sides of the thigh, following its taper */
     pantStripe: merge([Math.PI / 2, Math.PI * 1.5].map(a => lathe(THIGH.map(([r, y]) => [r + 0.004, y]), 3, a - 0.2, 0.4))),
-    thigh: mkThigh(12, false),
+    thigh: mkThigh(12, true),
     shin: mkShin(12),
     foot: cleat(8),
   };
@@ -271,8 +316,8 @@
   const GEO_HI = {
     torso: mkTorso(24),
     pads: merge([new T.SphereGeometry(0.22, 24, 14).scale(1.58, 0.6, 0.98).translate(0, 0.565, 0),
-      ...[-1, 1].map(side => new T.SphereGeometry(0.13, 14, 8).scale(1, 0.64, 1.12).translate(side * 0.29, 0.566, 0)),  // a cap over each shoulder
-      new T.TorusGeometry(0.1, 0.02, 6, 18).rotateX(Math.PI / 2).translate(0, 0.676, 0)]),  // the collar
+      ...[-1, 1].map(side => new T.SphereGeometry(0.13, 14, 8).scale(1, 0.64, 1.12).translate(side * 0.29, 0.566, 0))]),  // a cap over each shoulder
+    collar: collar(6, 18),
     neck: mkNeck(16),
     hips: mkHips(20),
     helmet: helmetShell(28, 18),
@@ -311,7 +356,9 @@
     helmet: (x, y, z, ny) => lerp(0.7, 1, ease(-0.8, -0.25, ny)),  // the rim
     upperArm: (x, y) => lerp(0.68, 1, ease(-0.02, -0.17, y)),  // in the sleeve
     foreArm: (x, y) => lerp(0.84, 1, ease(0.03, -0.06, y)),
-    thigh: (x, y) => lerp(0.68, 1, ease(0.04, -0.11, y)),  // where the leg leaves the hips
+    thigh: (x, y) => lerp(0.84, 1, ease(0.04, -0.09, y)),  // where the leg leaves the hips (lightly: pants are one garment, and a hard line there drew a pair of briefs on him)
+    tape: (x, y) => lerp(0.8, 1, ease(-0.3, -0.33, y)) * (Math.abs(y + 0.37) < 0.006 || Math.abs(y + 0.41) < 0.006 ? 0.86 : 1),  // under its top edge, and two turns of the tape
+    chin: (x, y, z, ny) => lerp(0.8, 1, ease(-0.9, 0, ny)),
     shin: (x, y) => lerp(0.8, 1, ease(0.04, -0.05, y)) * (Math.abs(y + 0.075) < 0.012 || Math.abs(y + 0.105) < 0.012 ? 0.5 : 1),  // out of the pants; two bands round the top of the sock
     foot: (x, y, z, ny) => lerp(0.55, 1, ease(-0.9, -0.2, ny)),  // the sole
   };
@@ -338,13 +385,13 @@
   /* [name, joints it follows, color key, what body type scales it ('body', 'limb' or nothing), casts a shadow] */
   const PART_DEFS = [
     ['torso', ['chest'], 'jersey', 'body', 1], ['pads', ['chest'], 'jersey', 'body', 1], ['neck', ['chest'], 'skin'],
-    ['hips', ['pelvis'], 'pants', 'body', 1], ['towel', ['pelvis'], 'towel', 'body', 0, 1],
-    ['helmet', ['head'], 'helmet', '', 1], ['ear', ['head'], 'visor'], ['face', ['head'], 'skin'], ['skull', ['head'], 'skin', '', 0, 1], ['hair', ['head'], 'helmet', '', 0, 1], ['brim', ['head'], 'helmet', '', 0, 1], ['stripe', ['head'], 'stripe'], ['logo', ['head'], 'stripe'], ['visor', ['head'], 'visor'], ['mask', ['head'], 'mask'],
+    ['collar', ['chest'], 'trim', 'body'], ['hips', ['pelvis'], 'pants', 'body', 1], ['towel', ['pelvis'], 'towel', 'body', 0, 1],
+    ['helmet', ['head'], 'helmet', '', 1], ['ear', ['head'], 'visor'], ['face', ['head'], 'skin'], ['skull', ['head'], 'skin', '', 0, 1], ['hair', ['head'], 'helmet', '', 0, 1], ['brim', ['head'], 'helmet', '', 0, 1], ['stripe', ['head'], 'stripe'], ['logo', ['head'], 'stripe'], ['visor', ['head'], 'visor'], ['mask', ['head'], 'mask'], ['chin', ['head'], 'strap'],
     ['upperArm', ['shL', 'shR'], 'arm', 'limb', 1], ['sleeveCap', ['shL', 'shR'], 'jersey', 'limb'], ['sleeve', ['shL', 'shR'], 'trim', 'limb'],
     ['foreArm', ['elL', 'elR'], 'arm', 'limb', 1], ['wrist', ['elL', 'elR'], 'trim', 'limb'], ['hand', ['elL', 'elR'], 'glove'],
     ['playband', ['elL'], 'band', 'limb', 0, 1],  // a quarterback's play-call wristband, on his left forearm
     ['thigh', ['hipL', 'hipR'], 'pants', 'limb', 1], ['pantStripe', ['hipL', 'hipR'], 'stripe', 'limb'],
-    ['shin', ['kneeL', 'kneeR'], 'sock', 'limb', 1], ['foot', ['ankL', 'ankR'], 'shoe', 'limb', 1],  // the shoe widens with the leg, or a thick ankle pokes through it
+    ['shin', ['kneeL', 'kneeR'], 'sock', 'limb', 1], ['tape', ['kneeL', 'kneeR'], 'tape', 'limb'], ['foot', ['ankL', 'ankR'], 'shoe', 'limb', 1],  // the shoe widens with the leg, or a thick ankle pokes through it
   ];
 
   /* Body types: [shoulder and hip width, depth, height, limb thickness]. Linemen are wide and deep, receivers and
@@ -380,7 +427,7 @@
   const REF_COLORS = { jersey: '#f4f4f4', pants: '#15171c', helmet: '#15171c', stripe: '#15171c', trim: '#15171c', sock: '#15171c', number: '#15171c',
     skin: '#d7a078', glove: '#d7a078', shoe: '#0c0c10', mask: '#15171c', visor: '#d7a078' };
   const HOOD = t => ({ jersey: t.c1, pants: '#20242c', helmet: t.c1, stripe: t.c1, trim: t.c2, sock: '#20242c', number: t.c1, glove: SKIN[2], shoe: '#0c0c10', mask: t.c1, visor: SKIN[2], skin: SKIN[2] });  // after the game: a team hoodie and cap
-  const REF_HIDE = new Set(['pads', 'mask', 'stripe', 'logo', 'sleeve', 'pantStripe', 'wrist', 'ear']);
+  const REF_HIDE = new Set(['pads', 'mask', 'stripe', 'logo', 'sleeve', 'pantStripe', 'wrist', 'ear', 'chin', 'tape']);
   const BARE_HIDE = new Set([...REF_HIDE, 'helmet', 'visor']), CAP_ON = new Set(['skull', 'hair', 'brim']), HAIR_ON = new Set(['skull', 'hair']);  // no helmet: a cap, or hair
   const SUIT = { jersey: '#1d2433', pants: '#1d2433', helmet: '#2b1f17', stripe: '#1d2433', trim: '#1d2433', sock: '#14171f', number: '#1d2433', glove: '#c99a74', shoe: '#0c0c10', mask: '#1d2433', visor: '#c99a74', skin: '#c99a74' };  // a dark suit; the cap is his hair
   const SKIN = ['#f0c8a4', '#d7a078', '#b3764c', '#8a583a', '#66402e'];
@@ -621,6 +668,7 @@
      'team2' are the team's two colors. Bands 'none' takes the sleeve and wrist bands off. No yellow in the list. */
   const LOOK_HEX = { white: '#f1f1f1', black: '#17191e', grey: '#aeb6c2', silver: '#d3dae4', clear: '#9db3c7', dark: '#14161c', red: '#c2362f', blue: '#2d6cdf', green: '#1f9d6b', orange: '#e8742a', pink: '#e0569a', purple: '#7c3aed' };
   const LOOK_HIDE = new Set(['sleeve', 'wrist']), EXTRAS = { t: new Set(['towel']), b: new Set(['playband']), tb: new Set(['towel', 'playband']) };
+
   /* the optional gear a player wears: a towel if he chose one, and every quarterback has a play-call wristband */
   const gearOf = p => EXTRAS[(p.look && p.look.towel && p.look.towel !== 'kit' ? 't' : '') + (p.role === 'QB' ? 'b' : '')] || null;
 
@@ -926,6 +974,7 @@
      team name ran off both edges. The board is drawn narrower there (down to half), and its lines are written
      pre-stretched and sized to fit, so the letters keep their shape. */
   const boardFit = () => Math.round(clamp((camera ? camera.aspect : 1) / 0.95, 0.5, 1) * 20) / 20;
+
   function boardLines(x, lines) {
     const k = boardFit();
     props.draft.board.scale.x = k;
@@ -2070,7 +2119,8 @@
       tg[SLX] = -w * 0.28 * a;
       tg[SRX] = w * 0.28 * a;
       tg[PELY] = HIP - 0.015 + Math.abs(Math.cos(f.ph)) * 0.02;
-    } else if (f.benchY !== undefined && (f.seed * 3.7) % 1 >= 0.3 && (f.seed * 5.3) % 1 < (window.PG_KNEEL || 0.14)) {  // PG_KNEEL: a test hook, to look at the pose
+    } else if (f.benchY !== undefined && (f.seed * 3.7) % 1 >= 0.3 && (f.seed * 5.3) % 1 < (window.PG_KNEEL || 0.14)) {
+      // PG_KNEEL: a test hook, to look at the pose
       /* one or two of those who do not pace take a knee to watch, as reserves do */
       const hy = tg[HEADRY];
       for (let i = 0; i < NPOSE; i++) tg[i] = KNEEL[i];
@@ -2773,7 +2823,8 @@
           }
           let fight = 99;
           for (const o of s.P || []) if (o.team !== p.team && !o.down) fight = Math.min(fight, Math.hypot(o.x - a.x1, o.y - a.y1));
-          if (fight < 1.8 && left < 0.42) {  // over the shoulder too: a deep ball with a man on him is fought for in the air
+          if (fight < 1.8 && left < 0.42) {
+            // over the shoulder too: a deep ball with a man on him is fought for in the air
             const up = Math.sin(clamp(1 - left / 0.42, 0, 1) * Math.PI / 2);
             f.leap = Math.max(f.leap, up);
             tg[SLX] = tg[SRX] = lerp(reach, 3.0, up);
@@ -3091,6 +3142,16 @@
       c.fillStyle = Math.random() < 0.5 ? 'rgba(255,255,255,0.035)' : 'rgba(0,0,0,0.05)';
       c.fillRect(Math.random() * TEXW, Math.random() * TEXH, 2, 6 + Math.random() * 9);
     }
+    /* where the game is played the turf is scuffed: duller patches between the numbers, thickest round midfield and in
+       front of each goal line */
+    for (let i = 0; i < 300; i++) {
+      const k = i % 3, y = k === 0 ? 50 + (Math.random() + Math.random() - 1) * 34 : k === 1 ? Math.random() * 100 : (Math.random() < 0.5 ? 4 : 96) + (Math.random() - 0.5) * 9;
+      const x = FW / 2 + (Math.random() + Math.random() + Math.random() - 1.5) * 15;
+      c.fillStyle = Math.random() < 0.7 ? `rgba(14,40,22,${0.03 + Math.random() * 0.045})` : `rgba(210,225,170,${0.015 + Math.random() * 0.02})`;
+      c.beginPath();
+      c.ellipse(X(x), Y(y), (0.5 + Math.random() * 1.7) * S, (0.3 + Math.random() * 1.1) * S, Math.random() * 3, 0, 7);
+      c.fill();
+    }
     if (envSnow) {
       // a dusting of snow, thicker in patches
       c.fillStyle = 'rgba(236,243,252,0.46)';
@@ -3169,6 +3230,45 @@
     /* the fifty runs through the logo again, faintly, as the real paint does */
     c.fillStyle = 'rgba(255,255,255,0.22)';
     c.fillRect(mx - 6.1 * S, my - 0.1 * S, 12.2 * S, 0.2 * S);
+    /* the small marks a real field carries: the league's shield on both 25s, a cross where the ball is teed up for the
+       kickoff, and the short line at the two where a try is snapped */
+    for (const y of [25, 75]) {
+      const sx = X(FW / 2), sy = Y(y), w = 1.5 * S, h = 1.9 * S;
+      const shield = k => {
+        c.beginPath();
+        c.moveTo(sx - w * k, sy - h * k);
+        c.lineTo(sx + w * k, sy - h * k);
+        c.lineTo(sx + w * k, sy + h * 0.15 * k);
+        c.quadraticCurveTo(sx + w * k, sy + h * 0.8 * k, sx, sy + h * 1.1 * k);
+        c.quadraticCurveTo(sx - w * k, sy + h * 0.8 * k, sx - w * k, sy + h * 0.15 * k);
+        c.closePath();
+      };
+      c.globalAlpha = 0.88;
+      c.fillStyle = '#f2f5f8';
+      shield(1);
+      c.fill();
+      c.fillStyle = '#16233f';
+      shield(0.84);
+      c.fill();
+      c.fillStyle = '#c2362f';
+      c.fillRect(sx - w * 0.84, sy - h * 0.84, w * 1.68, h * 0.3);
+      c.fillStyle = '#f2f5f8';
+      c.font = `800 ${1.25 * S}px Archivo, Arial, sans-serif`;
+      c.fillText('PG', sx, sy + h * 0.22);
+      c.globalAlpha = 1;
+    }
+    c.strokeStyle = 'rgba(255,255,255,0.85)';
+    c.lineWidth = 0.1 * S;
+    for (const y of [35, 65]) {
+      c.beginPath();
+      c.moveTo(X(FW / 2 - 0.3), Y(y - 0.3));
+      c.lineTo(X(FW / 2 + 0.3), Y(y + 0.3));
+      c.moveTo(X(FW / 2 + 0.3), Y(y - 0.3));
+      c.lineTo(X(FW / 2 - 0.3), Y(y + 0.3));
+      c.stroke();
+    }
+    c.fillStyle = '#ffffff';
+    for (const y of [2, 98]) c.fillRect(X(FW / 2 - 0.5), Y(y) - 0.07 * S, S, 0.14 * S);
     c.strokeStyle = 'rgba(255,255,255,0.7)';
     c.lineWidth = 0.14 * S;  // team areas
     c.strokeRect(X(-5.2), Y(70), 2.6 * S, 40 * S);
@@ -3193,6 +3293,27 @@
       r.fillText(t.name.toUpperCase(), i * rw / 2 + rw / 4, rh / 2 + 1);
     });
     ribbonTex.needsUpdate = true;
+    /* the padded wall: sixteen panels, mostly the home team's color with a seam between each, every fourth one a board */
+    const w = padsCanvas.getContext('2d'), pw = padsCanvas.width / 16, ph = padsCanvas.height, says = [t0.name.toUpperCase(), 'POCKET GRIDIRON', t0.ab, 'GAME DAY'];
+    w.textAlign = 'center';
+    w.textBaseline = 'middle';
+    for (let i = 0; i < 16; i++) {
+      const board = i % 4 === 1, x0 = i * pw;
+      w.fillStyle = board ? (i % 8 === 1 ? '#f1f3f6' : t0.c2) : t0.c1;
+      w.fillRect(x0, 0, pw, ph);
+      w.fillStyle = 'rgba(0,0,0,0.22)';  // the shadow under the rail, and the seam
+      w.fillRect(x0, 0, pw, 5);
+      w.fillRect(x0, 0, 2, ph);
+      w.fillStyle = 'rgba(255,255,255,0.1)';
+      w.fillRect(x0 + 2, 5, 2, ph - 5);
+      if (board) {
+        const light = lumOf(i % 8 === 1 ? '#f1f3f6' : t0.c2) > 0.55;
+        w.fillStyle = light ? (lumOf(t0.c1) < 0.55 ? t0.c1 : '#16233f') : '#f1f3f6';
+        w.font = '800 30px Archivo, Arial, sans-serif';
+        w.fillText(says[(i >> 2) % 4], x0 + pw / 2, ph / 2 + 3, pw - 16);
+      }
+    }
+    padsTex.needsUpdate = true;
   }
 
   const BOARD_SAYS = /^(First down|Sack!|Interception!|It’s good!|No good|Fumble|Safety|Turnover on downs|Touchback|Pass broken up)/;
@@ -3287,6 +3408,12 @@
     field.position.set(FW / 2, 0, -(Y0 + Y1) / 2);
     scene.add(field);
 
+    /* the apron: what lies between the turf and the wall (it was the bare ground, a dark void the benches stood in) */
+    const apron = new T.Mesh(new T.PlaneGeometry(FW + 28, 148), new T.MeshLambertMaterial({ color: 0x1d3a29 }));
+    apron.rotation.x = -Math.PI / 2;
+    apron.position.set(FW / 2, -0.03, -50);
+    scene.add(apron);
+
     /* stands: a lower bowl and an upper deck, each four trapezoids around the field */
     ribbonCanvas = document.createElement('canvas');
     ribbonCanvas.width = 512;
@@ -3308,7 +3435,36 @@
     ring4(-14, FW + 14, -24, 124, 1.6, 40, 22, crowdMat);
     ring4(-54, FW + 54, -64, 164, 23.6, 0.01, 5, ribbonMat, 3, 1);  // ribbon board between the decks
     ring4(-55, FW + 55, -65, 165, 28.6, 34, 24, crowdMat);
+    /* the rim of the bowl: a fascia over the top row with a strip of lights along it (the stands stopped in a bare edge
+       against the sky) */
+    const rimC = document.createElement('canvas');
+    rimC.width = 256;
+    rimC.height = 32;
+    const rx = rimC.getContext('2d');
+    rx.fillStyle = '#0b111e';
+    rx.fillRect(0, 0, 256, 32);
+    rx.fillStyle = '#26324a';
+    rx.fillRect(0, 26, 256, 6);
+    for (let i = 0; i < 16; i++) {
+      rx.fillStyle = '#dfe7f7';
+      rx.fillRect(i * 16 + 4, 10, 8, 5);
+    }
+    const rimTex = new T.CanvasTexture(rimC);
+    rimTex.colorSpace = T.SRGBColorSpace;
+    rimTex.wrapS = T.RepeatWrapping;
+    rimMat = new T.MeshBasicMaterial({ map: rimTex, side: T.DoubleSide });
+    ring4(-89, FW + 89, -99, 199, 52.4, 0.01, 3.4, rimMat, 14, 1);
     ring4(-14, FW + 14, -24, 124, 0, 0.01, 1.6, wallMat);  // the wall at field level
+    /* and its padding: panels in the home team's colors with a few boards between them, a hand's breadth inside the wall */
+    padsCanvas = document.createElement('canvas');
+    padsCanvas.width = 2048;
+    padsCanvas.height = 64;
+    padsTex = new T.CanvasTexture(padsCanvas);
+    padsTex.colorSpace = T.SRGBColorSpace;
+    padsTex.wrapS = T.RepeatWrapping;
+    padsTex.anisotropy = 4;
+    padsMat = new T.MeshBasicMaterial({ map: padsTex, side: T.DoubleSide });
+    ring4(-13.9, FW + 13.9, -23.9, 123.9, 0.12, 0.001, 1.36, padsMat, 2, 1);
     /* video boards behind both end zones */
     boardCanvas = document.createElement('canvas');
     boardCanvas.width = 512;
@@ -3335,9 +3491,30 @@
     gx.fillStyle = rg;
     gx.fillRect(0, 0, 64, 64);
     const glowTex = new T.CanvasTexture(glowC);
+    /* a bank of lamps: rows of round lights in a dark frame (it was one white slab) */
+    const lampC = document.createElement('canvas');
+    lampC.width = 160;
+    lampC.height = 72;
+    const lx = lampC.getContext('2d');
+    lx.fillStyle = '#3a4152';
+    lx.fillRect(0, 0, 160, 72);
+    for (let i = 0; i < 10; i++) for (let j = 0; j < 4; j++) {
+      const g = lx.createRadialGradient(8 + i * 16, 9 + j * 18, 0, 8 + i * 16, 9 + j * 18, 7);
+      g.addColorStop(0, '#ffffff');
+      g.addColorStop(0.7, '#f4f7ff');
+      g.addColorStop(1, '#8089a0');
+      lx.fillStyle = g;
+      lx.beginPath();
+      lx.arc(8 + i * 16, 9 + j * 18, 7, 0, 7);
+      lx.fill();
+    }
+    const lampTex = new T.CanvasTexture(lampC);
+    lampTex.colorSpace = T.SRGBColorSpace;
     for (const [x, y] of TOWERS) {
       box(2.2, 78, 2.2, 0x1a2338, x, 39, -y, true);
-      const panel = box(20, 9, 1, 0xf2f6ff, x, 80, -y, true);
+      const panel = new T.Mesh(new T.BoxGeometry(20, 9, 1), new T.MeshBasicMaterial({ color: 0xf2f6ff, map: lampTex }));
+      panel.position.set(x, 80, -y);
+      scene.add(panel);
       panel.material.fog = false;
       panel.lookAt(FW / 2, 0, -50);
       const sp = new T.Sprite(new T.SpriteMaterial({ map: glowTex, blending: T.AdditiveBlending, depthWrite: false, transparent: true, fog: false }));
@@ -3371,7 +3548,18 @@
       g.userData.y = y;
       scene.add(g);
       posts.push(g);
-      g.add(cyl(0.16, 3.33, FW / 2, 1.67, -y), cyl(0.12, 6.4, FW / 2, 3.33, -y, Math.PI / 2),
+      /* a gooseneck: the post stands behind the end line in a pad and curves forward to carry the crossbar over it, and
+         a ribbon flies from the top of each upright to show the kicker the wind */
+      const back = y < 50 ? -1.9 : 1.9, neck = new T.CatmullRomCurve3([[0, 0], [0, 1.5], [0.12, 2.5], [0.75, 3.12], [1.5, 3.3], [1.9, 3.33]].map(([d, h]) => new T.Vector3(FW / 2, h, -(y + back - Math.sign(back) * d))));
+      const pad = new T.Mesh(new T.CylinderGeometry(0.36, 0.36, 2, 12), new T.MeshLambertMaterial({ color: 0x1f2a44 }));
+      pad.position.set(FW / 2, 1, -(y + back));
+      const flags = [-3.1, 3.1].map(dx => {
+        const fl = new T.Mesh(new T.PlaneGeometry(0.62, 0.13).translate(0.33, 0, 0), new T.MeshBasicMaterial({ color: 0xe8552a, side: T.DoubleSide }));  // hinged on the upright
+        fl.position.set(FW / 2 + dx, 14.72, -y);
+        return fl;
+      });
+      g.userData.flags = flags;
+      g.add(new T.Mesh(new T.TubeGeometry(neck, 14, 0.15, 8), postMat), pad, ...flags, cyl(0.12, 6.4, FW / 2, 3.33, -y, Math.PI / 2),
         cyl(0.1, 11.5, FW / 2 - 3.1, 9.1, -y), cyl(0.1, 11.5, FW / 2 + 3.1, 9.1, -y));
       /* the kicking net: two poles and a net behind the uprights, run up only for a field goal or an extra point at this end */
       if (!netMat) {
@@ -3393,9 +3581,35 @@
       g.userData.net = net;
       g.add(net);
     }
-    for (const y of [-10, 0, 100, 110]) for (const x of [0, FW]) box(0.22, 0.8, 0.22, 0xff7a2f, x, 0.4, -y);
-    /* benches */
-    for (const x of [-7.6, FW + 7.6]) for (const y of [36, 50, 64]) box(0.7, 0.5, 9, 0x8b93a3, x, 0.25, -y);
+    /* The sidelines, all one mesh (see mergeC): the eight pylons, and on each side three benches with a back rail, two
+       tables with a pair of coolers and a stack of cups, the equipment trunks and a kicker's practice net frame. */
+    const bx = (w, h, d, x, y, z) => new T.BoxGeometry(w, h, d).translate(x, y, z), side = [];
+    const ORANGE = '#ff7a2f', ALU = '#aeb6c4', STEEL = '#4b5364', DARK = '#1c2434';
+    for (const y of [-10, 0, 100, 110]) for (const x of [0, FW]) side.push([bx(0.2, 0.8, 0.2, x, 0.4, -y), ORANGE], [bx(0.21, 0.09, 0.21, x, 0.68, -y), '#f1f1f1']);
+    for (const sd of [-1, 1]) {
+      const X = d => (sd < 0 ? -d : FW + d);
+      for (const y of [36, 50, 64]) {
+        side.push([bx(0.62, 0.07, 9, X(7.6), 0.66, -y), ALU], [bx(0.07, 0.3, 9, X(7.95), 1.12, -y), ALU], [bx(0.5, 0.05, 9, X(7.5), 0.2, -y), STEEL]);  // the seat, the back rail, and the rail for the feet
+        for (const dy of [-4.2, -1.4, 1.4, 4.2]) side.push([bx(0.07, 0.66, 0.07, X(7.4), 0.33, -(y + dy)), STEEL], [bx(0.07, 1.27, 0.07, X(7.95), 0.635, -(y + dy)), STEEL]);
+      }
+      for (const y of [43, 57]) {
+        side.push([bx(0.9, 0.06, 2.6, X(9.6), 0.98, -y), '#d9dde4']);
+        for (const [dx, dy] of [[-0.4, -1.2], [0.4, -1.2], [-0.4, 1.2], [0.4, 1.2]]) side.push([bx(0.06, 0.95, 0.06, X(9.6 + dx), 0.475, -(y + dy)), STEEL]);
+        for (const dy of [-0.75, 0]) side.push([new T.CylinderGeometry(0.3, 0.27, 0.62, 12).translate(X(9.6), 1.32, -(y + dy)), '#e8742a'], [new T.CylinderGeometry(0.31, 0.31, 0.08, 12).translate(X(9.6), 1.67, -(y + dy)), '#f1f1f1']);
+        side.push([new T.CylinderGeometry(0.09, 0.07, 0.3, 8).translate(X(9.45), 1.16, -(y + 0.85)), '#f1f1f1'], [new T.CylinderGeometry(0.09, 0.07, 0.22, 8).translate(X(9.75), 1.12, -(y + 1)), '#f1f1f1']);
+      }
+      for (const y of [31, 69]) side.push([bx(1, 0.72, 1.7, X(9.4), 0.36, -y), DARK], [bx(1.04, 0.07, 1.74, X(9.4), 0.6, -y), ALU], [bx(1.04, 0.07, 1.74, X(9.4), 0.04, -y), ALU]);
+      const ny = sd < 0 ? 25 : 75;  // the net a kicker warms up into: an upright frame, the net itself hung in it below
+      side.push([bx(0.09, 3.4, 0.09, X(9.6), 1.7, -(ny - 1.3)), STEEL], [bx(0.09, 3.4, 0.09, X(9.6), 1.7, -(ny + 1.3)), STEEL], [bx(0.09, 0.09, 2.69, X(9.6), 3.4, -ny), STEEL], [bx(1.5, 0.08, 0.08, X(9.6), 0.04, -(ny - 1.3)), STEEL], [bx(1.5, 0.08, 0.08, X(9.6), 0.04, -(ny + 1.3)), STEEL]);
+      sideNets.push([X(9.6), ny]);
+    }
+    scene.add(new T.Mesh(mergeC(side), new T.MeshLambertMaterial({ vertexColors: true })));
+    for (const [x, y] of sideNets) {
+      const m = new T.Mesh(new T.PlaneGeometry(2.6, 3.3), netMat);
+      m.rotation.y = Math.PI / 2;
+      m.position.set(x, 1.7, -y);
+      scene.add(m);
+    }
     /* line of scrimmage, line to gain, first-down marker */
     const near = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
     const strip = color => {
@@ -3457,15 +3671,16 @@
     scene.add(targetRing);
     /* ball */
     ball = new T.Group();
-    const leather = new T.Mesh(new T.SphereGeometry(0.2, 12, 10).scale(0.62, 0.62, 1), new T.MeshLambertMaterial({ color: 0x7a4a21 }));
-    const band = z => {
-      const m = new T.Mesh(new T.TorusGeometry(0.094, 0.012, 4, 12), new T.MeshBasicMaterial({ color: 0xffffff }));
-      m.position.z = z;
-      return m;
-    };
-    const laces = new T.Mesh(new T.BoxGeometry(0.02, 0.012, 0.14), new T.MeshBasicMaterial({ color: 0xffffff }));
-    laces.position.y = 0.125;
-    ball.add(leather, band(0.13), band(-0.13), laces);
+    /* a football's own shape: fat in the middle and drawn out to a point at each end (it was a squashed ball), with a
+       white stripe near each point and the laces along the top, a strip with eight stitches across it */
+    const ballR = z => 0.124 * Math.pow(Math.max(0, 1 - (z / 0.205) ** 2), 0.62), prof = [];
+    for (let i = 0; i <= 14; i++) prof.push([Math.max(0.002, ballR(-0.205 + i * 0.41 / 14)), -0.205 + i * 0.41 / 14]);
+    const leather = new T.Mesh(lathe(prof, 14).rotateX(Math.PI / 2), new T.MeshLambertMaterial({ color: 0x7a4a21 }));
+    const white = [];
+    for (const z of [-0.135, 0.135]) white.push(lathe([[ballR(z - 0.013) + 0.002, z - 0.013], [ballR(z) + 0.003, z], [ballR(z + 0.013) + 0.002, z + 0.013]], 14).rotateX(Math.PI / 2));
+    white.push(new T.BoxGeometry(0.014, 0.01, 0.15).translate(0, 0.126, 0));
+    for (let i = 0; i < 8; i++) white.push(new T.BoxGeometry(0.05, 0.009, 0.01).translate(0, 0.128 - Math.abs(i - 3.5) * 0.0012, -0.063 + i * 0.018));
+    ball.add(leather, new T.Mesh(merge(white), new T.MeshBasicMaterial({ color: 0xf2f2f2, side: T.DoubleSide })));
     ball.scale.setScalar(1.45);
     scene.add(ball);
     const blob = () => new T.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false, ...near });
@@ -3605,6 +3820,8 @@
     crowdBase = t.crowd * dim * 0.62;
     groundMat.color.set(t.ground);
     wallMat.color.set(t.wall);
+    rimMat.color.setScalar(dark || bad ? 1 : 0.55);  // its lights only show once it is dark
+    padsMat.color.setScalar((dark ? 0.5 : t === TIMES.dusk ? 0.66 : 0.92) * dim);  // painted, not lit from inside: as bright as the light on it
     const lamps = bad ? Math.max(t.glow, 0.8) : t.glow;  // the lights come on when the weather closes in
     for (const sp of towerGlow) {
       sp.visible = lamps > 0;
@@ -4141,6 +4358,10 @@
     const camY = -camera.position.z, inPlay = G.state !== 'menu' && G.state !== 'intro' && G.state !== 'over';
     for (const g of posts) g.visible = Math.abs(camY - g.userData.y) > 14 && !(inPlay && g.userData.y < 0 && camY < g.userData.y);
     const fgTry = !!ps && ps.mode === 'kick' && !!G.op && G.op.n === 'Field Goal' && G.state !== 'scene' && G.state !== 'menu';
+    for (const g of posts) for (const [k, fl] of g.userData.flags.entries()) {
+      fl.rotation.y = 0.35 * Math.sin(time * 2.3 + k * 1.7) + 0.15 * Math.sin(time * 5.1 + k);  // the wind ribbons stream and flutter
+      fl.rotation.x = 0.12 * Math.sin(time * 3.7 + k * 2.1);
+    }
     for (const g of posts) g.userData.net.visible = fgTry && (ps.offTeam === 0) === (g.userData.y > 50);
     tee.visible = !!ps && ps.mode === 'ko' && G.state !== 'scene' && G.state !== 'menu' && G.state !== 'over';
     if (tee.visible) tee.position.set(FW / 2, 0.065, -ps.los);
@@ -4276,6 +4497,34 @@
     st.cam.position.copy(keep.p);
     st.cam.lookAt(0, 0.98, 0);
     st.f.root.rotation.y = keep.r;
+    return cv.toDataURL('image/png');
+  }
+
+  /* test hook: the whole figure, large, from in front, three quarters, the side and behind. { far: true } draws the
+     gameplay model instead of the close one; { team, home, num, look } dress him. */
+  function modelStrip(opts) {
+    if (!renderer) return null;
+    const o = opts || {}, st = studioOf(), w = o.cell || 420, h = Math.round(w * PH / PW), cv = document.createElement('canvas'), x = cv.getContext('2d'), keep = { r: st.f.root.rotation.y, rt: st.rt, buf: st.buf };
+    dress(st, o.team || PG.TEAMS[0], o.home !== false, o.num || 12, o.look);
+    for (const name in st.meshes) for (const m of st.meshes[name]) m.geometry = (o.far ? GEO[name] : GEO_HI[name] || GEO[name]);
+    st.rt = new T.WebGLRenderTarget(w, h, { samples: 4 });
+    st.rt.texture.colorSpace = T.SRGBColorSpace;
+    st.buf = new Uint8Array(w * h * 4);
+    st.pw = w;
+    st.ph = h;
+    const angles = [Math.PI, Math.PI + 0.75, Math.PI * 1.5, 0];
+    cv.width = w * angles.length;
+    cv.height = h;
+    x.fillStyle = '#0d1524';
+    x.fillRect(0, 0, cv.width, cv.height);
+    angles.forEach((a, i) => {
+      st.f.root.rotation.y = a;
+      shoot(st, x, i * w, 0, w);
+    });
+    st.rt.dispose();
+    Object.assign(st, { rt: keep.rt, buf: keep.buf, pw: 0, ph: 0 });
+    st.f.root.rotation.y = keep.r;
+    for (const name in st.meshes) for (const m of st.meshes[name]) m.geometry = GEO_HI[name] || GEO[name];
     return cv.toDataURL('image/png');
   }
 
@@ -4854,7 +5103,7 @@
   }
 
   PG.r3d = {
-    init, resize, render, project, portrait, celebStrip, headStrip,
+    init, resize, render, project, portrait, celebStrip, headStrip, modelStrip,
     get ends() {
       return ends;
     },
