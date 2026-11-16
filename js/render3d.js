@@ -4493,15 +4493,28 @@
     x.drawImage(cv, dx, dy, w, w * ph / pw);
   }
 
-  function portrait(team, home, num, look) {
+  /* w: the picture's width in pixels (the height follows); a big one, for a screen's hero, gets its own target */
+  function portrait(team, home, num, look, w) {
     if (!renderer || renderer.getContext().isContextLost()) return null;  // a lost context reads back noise: no picture rather than a wrong one
-    const key = team.ab + (home ? 'h' : 'a') + num + (look ? JSON.stringify(look) : '') + team.c1 + team.c2;
+    w = Math.round(w || PW);
+    const key = team.ab + (home ? 'h' : 'a') + num + (look ? JSON.stringify(look) : '') + team.c1 + team.c2 + (w === PW ? '' : '@' + w);
     if (portraits.has(key)) return portraits.get(key);
-    const st = studioOf(), cv = document.createElement('canvas');
+    const st = studioOf(), cv = document.createElement('canvas'), h = Math.round(w * PH / PW), keep = { rt: st.rt, buf: st.buf };
     dress(st, team, home, num, look);
-    cv.width = PW;
-    cv.height = PH;
-    shoot(st, cv.getContext('2d'), 0, 0, PW);
+    if (w !== PW) {
+      st.rt = new T.WebGLRenderTarget(w, h, { samples: 4 });
+      st.rt.texture.colorSpace = T.SRGBColorSpace;
+      st.buf = new Uint8Array(w * h * 4);
+      st.pw = w;
+      st.ph = h;
+    }
+    cv.width = w;
+    cv.height = h;
+    shoot(st, cv.getContext('2d'), 0, 0, w);
+    if (w !== PW) {
+      st.rt.dispose();
+      Object.assign(st, { rt: keep.rt, buf: keep.buf, pw: 0, ph: 0 });
+    }
     const url = cv.toDataURL('image/png');
     portraits.set(key, url);
     return url;

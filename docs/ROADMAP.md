@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `808b4a6`, before player heroes and the podium scene replaced the stretched cards on short screens (2026-11-16, from the Mac).
   - `3eb0ab4`, before short screens filled tall phones (menu, camp, milestones, hall, press, combine, dash, awards) (2026-11-16, from the Mac).
   - `7f53b89`, before the interface pass: grade chip on one line, tile marks, ability locks, hall pictures, standings labels (2026-11-16, from the Mac).
   - `199ae80`, before a career receiver's route was painted bright on the field as he runs it (2026-11-16, from the Mac).
@@ -2538,6 +2539,21 @@ six were done as the pro game has them; the choices where there was one are mine
   pad fills the screen with faint yard lines; the hall shows dashed open spots up to three. The rest of each of
   those screens is now under 80 pixels (the bottom margin). Audit empty at 320x568, 390x844 and 440x956;
   fingerprint unchanged; a receiver season, careers and a season with the rough test player clean.
+
+- The owner, on the stretched cards: "i mean fill the space but don't just yk make it look bad by expanding it,
+  properly do it so it looks good expanded". The cards are back to their own size, and the room a tall phone has is
+  given to real things. A hero (`PG.hero` in game.js): a large picture of a player (render3d `portrait` takes a
+  width now; 600 pixels wide for a sharp picture) standing in a pool of his team's color with a caption, between a
+  screen's title and its cards, sized by the room left and gone under 720 pixels of height. The menu shows your
+  career player (or your season's team, or your team in the settings); the camp a player in the practice whites;
+  the combine you in a plain gray workout shirt; awards night you, giving way as the winners are revealed; the hall
+  the best career whose team is still in the league, under a strip of its figures (enshrined, retired, best case,
+  70 to get in). The camp's drills each carry their star bar (the best score against the three marks); milestones
+  carry a drawing each and the day they were earned. The press conference shows you behind a lectern with the
+  team's short name and four microphones, in front of the team's wall, the question above you and the answers
+  below; the summary's wall has you at the podium over the three results. Audit empty at 320x568, 390x844 and
+  440x956; fingerprint unchanged; whole seasons at both positions, a receiver career and a season with the rough
+  test player clean.
 
 ## Morning hand-off
 

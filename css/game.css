@@ -950,13 +950,6 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 .menu.fill{display:flex;flex-direction:column}
 .menu.fill>*{flex-shrink:0}
 .menu.fill>.back{align-self:flex-start}
-.fill .mode{align-content:center}
-.home .mode{flex:1 0 auto;max-height:150px}
-.campm .cmd{flex:1 0 auto;max-height:220px}
-.fill>.tro{flex:1 0 auto;grid-auto-rows:1fr}
-.fill .tro div{display:flex;flex-direction:column;justify-content:center}
-.fill .tro div::before{top:calc(50% - 9.5px)}
-.hallp .pc.hof{flex:1 0 auto;max-height:220px}
 .pc.hof.ghost{display:grid;place-items:center;min-height:96px;background:none;border:1.5px dashed var(--line)}
 .pc.hof.ghost::before{display:none}
 .pc.hof.ghost i{width:44px;height:58px;opacity:.5;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 58'%3E%3Cg fill='%2327354f'%3E%3Cellipse cx='22' cy='9' rx='8' ry='8.5'/%3E%3Cpath d='M8 20c4-3 9-4 14-4s10 1 14 4l2 16h-6l-1 22h-6l-1-14h-4l-1 14h-6l-1-22H6z'/%3E%3C/g%3E%3C/svg%3E") center/contain no-repeat}
@@ -964,7 +957,7 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 .wall::before{content:"";position:absolute;inset:0;border-radius:inherit;background:var(--wall) 0 0/230px 80px repeat;pointer-events:none}
 .wall>*{position:relative}
 .fill.press .pq{flex:1 0 auto;display:flex;flex-direction:column;border-color:rgba(255,255,255,.1)}
-.fill.press .pq p{flex:1;display:flex;align-items:center;color:#fff}
+.fill.press .pq p{display:flex;align-items:center;margin:16px 0 4px;color:#fff}
 .fill.press .pq .rpt span:not(.av){color:rgba(255,255,255,.72)}
 .fill.press .prh.wall{flex:1 0 auto;min-height:92px;display:flex;flex-direction:column;justify-content:flex-start;margin:0 0 12px;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.1)}
 .fill.press .prh.wall small{color:rgba(255,255,255,.75)}
@@ -982,41 +975,58 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
   .campm .cmd span{font-size:13px}
   .campm .cmd .stars{font-size:20px}
   .campm .cmd .dic svg{width:24px;height:24px}
-  .fill .tro b{font-size:14px}
-  .fill .tro span{font-size:12px}
   .hallp .pc.hof.k .kit{width:66px;height:88px}
   .fill.press .pq p{font-size:19px;line-height:1.4}
 }
 @media (min-height:880px){
-  .home .mode .mi{width:60px;height:60px;font-size:14px}
-  .home .mode .mi svg{width:28px;height:28px}
-  .home .mode b{font-size:19px}
-  .home .mode span{font-size:14px}
-  .campm .cmd{grid-template-columns:64px 1fr auto;column-gap:16px}
-  .campm .cmd .dic{width:64px;height:64px;border-radius:16px}
-  .campm .cmd .dic svg{width:30px;height:30px}
-  .campm .cmd b{font-size:20px}
-  .campm .cmd span{font-size:14px}
-  .campm .cmd .stars{font-size:26px}
-  .hallp .pc.hof.k .kit{width:105px;height:140px}
-  .hallp .pc.hof h3{font-size:22px}
+  .hallp .pc.hof.k .kit{width:84px;height:112px}
 }
 
-.prh.wall .fx3{margin-top:auto;padding-top:14px}
+.prh.wall .fx3{margin-top:12px}
 .prh.wall .fx3 span{padding:12px 2px;background:rgba(6,10,19,.6);border-color:rgba(255,255,255,.12);color:rgba(255,255,255,.82)}
 .prh.wall .fx3 b{font-size:26px;color:#fff}
 .prh.wall .fx3 small{color:rgba(255,255,255,.72)}
-.cmbm .cmb{position:relative;overflow:hidden;flex:1 0 auto;max-height:240px;display:flex;flex-direction:column;justify-content:center}
 .cmbm .cmb>*:not(.cbi){position:relative}
-.cmb .cbi{position:absolute;right:-14px;bottom:-18px;width:120px;height:120px;color:var(--acc);opacity:.13}
+.cmb .cbi{position:absolute;right:-10px;bottom:-14px;width:92px;height:92px;color:var(--acc);opacity:.13}
 .cmb .cbi svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .dashm #tap{flex:1 0 auto;height:auto;min-height:112px;font-size:19px;background:repeating-linear-gradient(180deg,transparent 0 46px,rgba(255,255,255,.22) 46px 48px),var(--acc)}
 @media (min-height:760px){
   .cmbm .cmb h4{font-size:19px}
   .cmbm .cmb p{font-size:13.5px}
-  .cmb .cbi{width:150px;height:150px}
   .dashm .dash b{font-size:72px}
   .dashm #tap{font-size:24px}
 }
-.awm .nx.aw{flex:1 0 auto;max-height:210px;display:flex;flex-direction:column;justify-content:center}
 @media (min-height:760px){.awm .nx.aw h4{font-size:18px}}
+
+/* the hero: a player standing in the room a tall phone has between a screen's title and its cards */
+.mhero{flex:1 1 0;min-height:0;position:relative;display:flex;justify-content:center;align-items:flex-end;margin:6px -18px 0;overflow:hidden;
+  background:radial-gradient(ellipse 42% 12% at 50% 96%,rgba(0,0,0,.55),transparent 70%),radial-gradient(ellipse 55% 75% at 50% 100%,color-mix(in srgb,var(--c) 38%,transparent),transparent 72%)}
+.mhero img{height:100%;max-height:470px;width:auto;max-width:100%;object-fit:contain;object-position:50% 100%;margin-bottom:12px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.5));pointer-events:none}
+.mhero .hcap{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);white-space:nowrap;padding:3px 10px;border-radius:999px;background:rgba(6,10,19,.78);border:1px solid var(--line);font-size:11px;color:var(--mute)}
+.mhero .hcap b{color:var(--ink);font-family:var(--display);font-weight:800;letter-spacing:.04em;text-transform:uppercase;margin-right:4px}
+@media (max-height:719px){.mhero{display:none}}
+.mode.cmd .mkb{grid-column:1/-1;margin-top:8px;padding:0}
+.campm .mhero{margin-top:0}
+/* milestones: a picture on every tile, and when it was earned */
+.tro.ms{gap:8px}
+.tro.ms div{padding:12px 12px 11px;display:flex;flex-direction:column;gap:2px}
+.tro.ms div::before{display:none}
+.tro.ms .msi{display:grid;place-items:center;width:34px;height:34px;margin-bottom:6px;border-radius:10px;background:var(--panel3);color:var(--mute)}
+.tro.ms div.on .msi{background:var(--acc);color:var(--acc-ink)}
+.tro.ms .msi svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tro.ms b{font-size:13px}
+.tro.ms span{flex:1;font-size:11.5px}
+.tro.ms small{margin-top:6px;font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.tro.ms div.on small{color:var(--acc)}
+@media (min-height:760px){.tro.ms div{padding:14px 13px 13px}.tro.ms .msi{width:40px;height:40px}.tro.ms .msi svg{width:22px;height:22px}}
+
+/* the podium on the press wall: a picture for the room a tall phone has, gone on a short one */
+.podsc{position:relative;flex:1 1 0;min-height:0;display:flex;justify-content:center;align-items:flex-end;margin-top:8px;pointer-events:none}
+.podsc img{height:100%;max-height:330px;width:auto;object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 6px 12px rgba(0,0,0,.45))}
+.podsc .pod{position:absolute;left:50%;bottom:0;transform:translateX(-50%);height:min(56%,190px);aspect-ratio:160/112}
+.pod svg{display:block;width:100%;height:100%}
+.prh.wall .podsc{flex:1 1 0}
+@media (max-height:719px){.podsc{display:none}}
+.hst{margin-top:12px}
+.hallp .mhero,.awm .mhero,.cmbm .mhero{margin-top:4px}
+.cmbm .cmb{position:relative;overflow:hidden}

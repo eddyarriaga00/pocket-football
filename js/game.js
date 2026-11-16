@@ -5924,12 +5924,22 @@
     return t ? `<u class="mi tb" style="--c:${t.c1};color:${inkOn(t.c1)}">${esc(t.ab)}</u>` : `<u class="mi">${MENU_ICON[kind]}</u>`;
   };
 
+  /* A big picture of a player for the open part of a short screen on a tall phone: he stands in a pool of light in
+     his team's color, a caption under his feet. Hidden on a short phone, where there is no room for him (css). */
+  function heroHtml(team, home, num, look, cap) {
+    const url = team && PG.r3d && PG.r3d.portrait ? PG.r3d.portrait(team, home, num, look || null, 600) : null;
+    return url ? `<div class="mhero" style="--c:${team.c1}"><img src="${url}" alt="">${cap ? `<span class="hcap">${cap}</span>` : ''}</div>` : '';
+  }
+
   function showMenu() {
     if (G.state === 'menu') G.env = null;  // the stadium behind the menus is always a clear night
     toMenu();
     const cs = PG.career && PG.career.summary(), camp = PG.camp, offer = !!camp && camp.fresh() && !cs && !(PG.season && PG.season.summary());
     const ss = PG.season && PG.season.summary(), ct = cs && PG.career.data ? PG.career.data.team : null, st = ss && PG.season.data ? PG.season.data.team : null;
-    scr.innerHTML = `<div class="menu home fill"><h1>Pocket<br><em>Gridiron</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p>
+    // the hero: your career player if there is one, else your season's team, else your team in the settings
+    const cd = cs && PG.career.data, hi = cd ? cd.team : st != null ? st : SET.me || 0;
+    const hero = heroHtml(TEAMS[hi], true, cd ? cd.num : 12, cd ? cd.look : null, cd ? `<b>${esc(cd.name)}</b> #${cd.num} · ${cd.pos}` : `<b>${esc(TEAMS[hi].city)}</b> ${esc(TEAMS[hi].name)}`);
+    scr.innerHTML = `<div class="menu home fill"><h1>Pocket<br><em>Gridiron</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p>${hero}
   ${offer?'<div class="offer"><b>First time here?</b><span>Training camp teaches passing, running and tackling in three short drills.</span><div class="row2"><button class="go sm" id="oY">Start camp</button><button class="btn2" id="oN">Not now</button></div></div>':''}
   <button class="mode main" id="mC">${menuBadge(ct, 'career')}<b>Career</b><span>${cs||'Create a player, lock in at your position, and build a legacy one season at a time.'}</span><i>›</i></button>
   <button class="mode" id="mSe">${menuBadge(st, 'season')}<b>Season</b><span>${ss||'Take one team through ten games and the playoffs.'}</span><i>›</i></button>
@@ -7143,6 +7153,7 @@
 
   /* What the other files use: career.js, season.js, league.js, render3d.js and audio.js all go through PG. */
   const PG = Object.assign(window.PG, {
+    hero: heroHtml,
     TEAMS, NAMES: SUR, BASE, OFFR, DEFR, SET, CELEBS, rnd, pick, clamp, load, save, scr, $,
     startGame, showMenu, toMenu, banner, toast, snd, playScene, cinema, statTable, finTop, envFor, mkRoster, kitsHtml, watchPotd, keepScroll,
     vk, teamGrid, showTeams, inkOn,
