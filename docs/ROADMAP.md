@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `634d2d2`, before the tackle drive (tackler and runner carried on through the hit together) (2026-11-16 night).
   - `5ddc9bc`, before the record book (league single-game and season marks, a card when one falls) (2026-11-16 night).
   - `5e105a8`, before surer open-field tackles after a catch and pursuit angles on the throw (2026-11-16 night).
   - `17446bf`, before the downfield reads, defenders rallying on the throw and the juke rework (2026-11-16 night).
@@ -2624,6 +2625,17 @@ six were done as the pro game has them; the choices where there was one are mine
   untouched: fingerprint unchanged. Audit empty at 320x568, 390x844 and 440x956; whole seasons at both positions,
   careers at both, an exhibition and a season with the rough test player clean.
 
+- Tonight, round 5 (03:52): the form tackle as a paired motion. Most of it was there (the tackler bends to the hit,
+  hands round the runner's hips, rides him down and lies across his legs; the runner falls away from the hit). What
+  was missing was the drive: both men dropped straight down where they met. Now a tackle carries the pair on through
+  the hit together before they are down, half a yard to 0.8 (longer the faster the tackler came in), along the line
+  from the tackler to the runner, drawn on both figures over the first 0.6 of the fall so the wrap holds (render3d,
+  the fall in pose; the vector kept per play in a WeakMap, off the game's state). Measured in games with the
+  poseOf hook: both figures move by the same amount and the gap between them holds at the wrap distance (about a
+  yard, as before); the men diving onto the pile follow the runner's drawn body. Drawing only: fingerprint
+  unchanged. Audit empty at 320x568, 390x844 and 440x956; whole seasons at both positions, careers at both,
+  exhibitions and a season with the rough test player clean.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -2986,7 +2998,7 @@ NFL rules first, every item checked the full way before it ships.
   for 10.6 more (NFL about 5.3); tighter zone matching and trail technique, measured the same way (round 2's log).
 - [x] A record book: the league's single-game and season marks, kept as careers play; the booth and a card when a
   career player breaks one.
-- [ ] The form tackle as a paired motion: tackler and runner keyed to each other (wrap, drive, fall together).
+- [x] The form tackle as a paired motion: tackler and runner keyed to each other (wrap, drive, fall together).
 - [ ] Injuries, the rest: the trainers jog out and a hurt man is helped off (a short scene), the cart for the worst.
 - [ ] A roof over the roofed stadiums: the sky and light towers give way to a dome and a ring of lights.
 - [ ] An all-star game after the season for each conference's best (a career player who makes it plays it).

@@ -1456,6 +1456,8 @@
     return SR.addScaledVector(SD1, u).addScaledVector(SD2, -w).length();
   }
 
+  const DRIVE = new WeakMap();  // a play's tackle drive (see the fall in pose), kept off the game's own state
+
   /* Keep a body that is going down on top of the turf, and put a tackler where he belongs on his man. The pose in tg
      is tried on the figure standing at (x, z). If the trunk, the head, a shoulder, an elbow or a knee would be under
      the grass, or (over: the runner's figure) his trunk would be inside the man he has tackled once they are down,
@@ -2352,6 +2354,20 @@
           tg[KL] = -0.25;
           tg[KR] = -0.1;
         }
+      }
+      /* The drive: a form tackle carries both men a stride on through the hit, together, before they are down: the
+         tackler's legs keep going and the runner goes where he is pushed. Worked out once a tackle (from where the
+         tackler was to where the runner was, longer the faster he came in) and drawn on both, so the wrap holds. */
+      const cr = ps.carrier, tq = ps.tackler;
+      if (cr && tq && cr !== tq && cr.down && (p === cr || (p === tq && p.fell))) {
+        let dv = DRIVE.get(ps);
+        if (!dv) {
+          const ddx = cr.x - tq.x, ddy = cr.y - tq.y, dl = Math.hypot(ddx, ddy) || 1, D = clamp(0.5 + Math.hypot(tq.vx || 0, tq.vy || 0) * 0.04, 0.5, 0.8);
+          DRIVE.set(ps, dv = { x: ddx / dl * D, y: ddy / dl * D });
+        }
+        const k = smooth(Math.min(1, f.fall * 1.6));
+        f.ox += dv.x * k;
+        f.oy += dv.y * k;
       }
       let onto = tk && s.figOf ? s.figOf(tk) : null;
       if (pileOn) {
