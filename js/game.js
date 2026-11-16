@@ -3149,6 +3149,11 @@
       sub = tname(off) + ' ball';
       stop = true;
       setBall(off, off === 0 ? KTB : 100 - KTB, FW / 2);
+    } else if (kind === 'koshort') {
+      big = 'Short of the landing zone';
+      sub = `${tname(off)} ball at their 40`;
+      stop = true;
+      setBall(off, off === 0 ? 40 : 60, FW / 2);
     } else if (kind === 'punt') {
       big = 'Punt';
       sub = arg.tb ? 'Touchback' : `${arg.fair?'Fair catch':arg.d+' yards'} · ${tname(1-off)} ball at ${spotTxt(arg.y)}`;
@@ -4220,6 +4225,10 @@
           finish('kotb');
           return;
         }
+        if (ps.ko.short) {
+          finish('koshort');
+          return;
+        }
         ps.carrier = r;
         r.x = a.x1;
         r.y = a.y1;
@@ -4988,12 +4997,15 @@
     toast(`Power ${Math.round(Math.min(1, pw) * 100)} · ${Math.abs(aim) < 0.03 ? 'straight' : Math.round(Math.abs(aim) * 57.3) + '° ' + (aim > 0 ? 'right' : 'left')}`);
   }
 
-  /* your kickoff: the swipe decides where it comes down. Full power reaches the end zone; less leaves a ball to return. */
+  /* your kickoff: the swipe decides where it comes down. Full power reaches the end zone; less leaves a ball to return.
+     Too little, and it comes down short of the landing zone (outside their 20): under the current kickoff rules that is
+     no return at all, their ball at their own 40. */
   function kickoffBy(pw, aim) {
     const k = ps.ko, own = 100, dir = -1, deep = -6 + (1 - clamp(pw, 0, 1.1)) * 42;
     k.y = clamp(own + dir * deep, 55, 109);
     k.x = clamp(FW / 2 + aim * 40, 6, FW - 6);
     k.tb = (k.y - own) * dir < 0;
+    k.short = (k.y - own) * dir > 20;
     ps.land = k.y;
     kickNow();
   }

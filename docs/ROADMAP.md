@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `64ee905`, before the kickoff landing zone (a short kick gives the ball at the 40) (2026-11-16 night).
   - `09e544d`, before the NFL clock rule for a runner out of bounds (2026-11-16 night).
   - `28bee05`, before the All-Star Game for invited career players (2026-11-16 night).
   - `aa77596`, before the roof over the roofed stadiums (2026-11-16 night).
@@ -2703,6 +2704,15 @@ six were done as the pro game has them; the choices where there was one are mine
   fingerprint re-pinned, the old value in pg.fingerprint.before-oobclock. Audit empty at 320x568, 390x844 and 440x956;
   whole seasons at both positions, careers at both, exhibitions and a season with the rough test player clean.
 
+- Tonight, round 10 (06:22): the kickoff landing zone. Under the current kickoff rules a kick has to come down in
+  the landing zone (from the receiving team's 20 to its goal line); one that lands short of it is not returned, and the
+  receiving team takes the ball at its own 40. The touchback at the 35 was already in, and the computer's kickoffs
+  always come down in the zone, but your own swiped kickoff could land as far out as their 36 and be returned like any
+  other. Now (kickoffBy: k.short) a kick landing more than 20 yards out is "Short of the landing zone", their ball at
+  their 40, no return. Checked with a weak synthetic swipe: it came down at their 26 and the ball went to their 40.
+  Computer kickoffs untouched: fingerprint unchanged. Audit empty at 320x568, 390x844 and 440x956; whole seasons at
+  both positions, careers at both, exhibitions and a season with the rough test player clean.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3074,3 +3084,4 @@ NFL rules first, every item checked the full way before it ships.
   zone men and man trail technique close on short throws (round 3's log has the numbers and the test tallies).
 - [x] The clock on a runner out of bounds: NFL timing (it restarts on the ready signal except in the last two
   minutes of a half or an overtime period and the last five of the game).
+- [x] The kickoff landing zone: your kickoff that lands short of their 20 is not returned; their ball at the 40.
