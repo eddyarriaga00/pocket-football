@@ -1049,8 +1049,9 @@
       const p = mk(1 - off, r, dx, dy);
       p.asg = typeof a === 'string' ? a : 'zone';
       if (p.asg === 'zone') {
-        p.zx = clamp(bx + a.z[0], 3, FW - 3);
-        p.zy = los + dir * a.z[1];
+        // a couple of yards either way each snap, so the holes are not in the same places every time (not in camp)
+        p.zx = clamp(bx + a.z[0] + (G.drill ? 0 : rnd(-2.5, 2.5)), 3, FW - 3);
+        p.zy = los + dir * (a.z[1] + (G.drill ? 0 : rnd(-1.5, 1.5)));
         p.deep = !!a.deep;
       }
       d[r] = p;
@@ -1515,6 +1516,19 @@
     }
     if (d.asg === 'man' && d.man) {
       const m = d.man;
+      /* The break is where a receiver wins: when he cuts, his man keeps going for a beat before he turns and chases.
+         How long depends on the cut (a hard one sells more), the receiver against the defender, and a little luck, so
+         on any play a slant, an out or a curl can come open. (He used to mirror every cut without losing a step, and
+         only the back in the flat was ever open.) */
+      if (m.cutAt !== undefined && m.cutAt !== d.sawCut) {
+        d.sawCut = m.cutAt;
+        d.lagTo = (m.cut || 0) > 0.2 ? ps.t + clamp(0.06 + m.cut * 0.3 + ((m.rt ?? 75) - (d.cov ?? d.rt ?? 80)) * 0.008 + rnd(-0.1, 0.14), 0, 0.55) : 0;
+      }
+      if (d.lagTo > ps.t) {
+        d.dvx = d.vx;
+        d.dvy = d.vy;
+        return;
+      }
       seek(d, m.x + m.vx * 0.15, m.y + m.vy * 0.15 + G.dir * 0.9, 0.97 * (1 + ((d.cov ?? 80) - 80) * 0.0025), true);
       return;
     }
@@ -1749,6 +1763,7 @@
     const q = ps.qb;
     if (!q || r.down) return 0;
     const [tx, ty, T] = aimAt(q, r, 1);
+    r.openDep = (ty - ps.los) * G.dir;  // how far past the line he would catch it: the ring is faint for a check-down
     if (hyp(tx - q.x, ty - q.y) > armRange(q)) return 0;
     let room = 99;
     const rx = 0.32 * (q.team === 0 ? 1 - 0.2 * hard() : 1);  // their usual reaction to a throw, quicker on the harder settings (defAI)
@@ -7084,11 +7099,13 @@
       ctx.fillText(p.let, x, by + 0.5);
       if (G.state === 'live' && !G.chg) {
         // open: a green ring round his letter, held a moment so it does not flicker
-        p.opn = lerp(p.opn || 0, roomFor(p) >= 2.4 ? 1 : 0, Math.min(1, FDT * 10));
+        const on = roomFor(p) >= 2.4;
+        p.opn = lerp(p.opn || 0, on ? 1 : 0, Math.min(1, FDT * 10));
+        if (on) p.opd = p.openDep >= 4 ? 2 : 1;  // 2: open downfield, bright; 1: open short of 4 yards (a check-down), faint
         if (p.opn > 0.05) {
-          ctx.globalAlpha = p.opn;
+          ctx.globalAlpha = p.opn * (p.opd === 2 ? 1 : 0.45);
           ctx.strokeStyle = '#3ddc84';
-          ctx.lineWidth = 2.5;
+          ctx.lineWidth = p.opd === 2 ? 2.5 : 1.6;
           ctx.beginPath();
           ctx.arc(x, by, 14.5, 0, 7);
           ctx.stroke();
@@ -7324,8 +7341,9 @@
     playTag();
     // the open ring on the field's letters (p.opn), on the pad's throw buttons too
     if (G.pad === 'pass') for (const b of pad.querySelectorAll('.pb.rc')) {
-      const r = ps.recs && ps.recs[+b.dataset.i], on = !!r && (r.opn || 0) > 0.5;
+      const r = ps.recs && ps.recs[+b.dataset.i], on = !!r && (r.opn || 0) > 0.5, lo = on && r.opd !== 2;
       if (b.classList.contains('open') !== on) b.classList.toggle('open', on);
+      if (b.classList.contains('lo') !== lo) b.classList.toggle('lo', lo);
     }
     const pwEl = $('#pw'), pwOn = G.state === 'live' && (G.chg || G.pwShow);
     if (pwEl.hidden === !!pwOn) pwEl.hidden = !pwOn;

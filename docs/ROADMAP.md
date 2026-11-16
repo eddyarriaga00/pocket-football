@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `d6ec7b5`, before receivers winning at the break, shifting zones and the two ring strengths (2026-11-16 night).
   - `0e2e039`, before the throwing rebalance from the human-player tests (2026-11-16 night).
   - `7d4de40`, before the harder kickoff power (2026-11-16 night).
   - `8c2c671`, before the perfect throw and its band on the power bar (2026-11-16 night).
@@ -2951,6 +2952,19 @@ six were done as the pro game has them; the choices where there was one are mine
   games each: Pro 77% (this morning 67), tight coverage 50% (38), deep 60% (52), points 13.3 (13.1); All-Pro 71%
   (66 to 68), tight 51%, deep 66%, picks 2.5% (5 to 9). Fingerprint re-pinned (old in pg.fingerprint.before-feel);
   drills, careers, the rough player and the audit at both sizes clean.
+
+- 2026-11-16 (night, "i really like ... being able to see open players on the buttons ... i feel like it's the same
+  players being open"). Measured over 113 pass plays with random play calls: the ring was on the running back on
+  every play (fullback too), on flat, swing and drag routes 75 to 90% of the time, and on deep routes almost never
+  (go 1%, seam 3%, post 6%, curl 4%); outside receivers 13 to 31%. Causes: man coverage mirrored every cut without
+  losing a step, and zone defenders stood on the same landmarks every snap. Now: at a receiver's break his man keeps
+  going for a beat (0 to 0.55 s: the sharper the cut, receiver against defender, and some luck; defAI), zone
+  landmarks move up to 2.5 yards across and 1.5 deep each snap (not in camp), and the ring has two strengths: bright
+  for a man open 4 yards or more past the line, faint for a check-down (the field ring and the pad's button). After:
+  a bright ring on 63% of pass plays, spread over the tight end 41%, slot 32%, outside men 21 to 31%; the back only
+  ever faint; on the same play call the first bright man is the same one 68% of the time. League 76% completions,
+  1.6% picks, 35 points; the human player at Pro 77%, deep 79%. Fingerprint re-pinned (old in
+  pg.fingerprint.before-breaks); careers, the rough player, drills and the audit clean.
 
 ## Morning hand-off
 

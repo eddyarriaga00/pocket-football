@@ -115,7 +115,8 @@ input{font:inherit;font-size:16px;color:var(--ink);background:var(--panel2);bord
 .pb:active{transform:scale(.94);background:var(--panel3)}
 .pb.big{width:70px;height:70px;font-size:13px;font-weight:800;background:var(--acc);color:var(--acc-ink);border-color:rgba(255,255,255,.85)}
 .pb.rc{width:50px;height:50px;font-size:19px;font-weight:800;letter-spacing:0;color:#06101f;border-color:rgba(255,255,255,.9)}
-.pb.rc.open{box-shadow:0 0 0 2.5px #06101f,0 0 0 5px #3ddc84}   /* open now: throw it (game.js roomFor, the same ring as on the field) */
+.pb.rc.open{box-shadow:0 0 0 2.5px #06101f,0 0 0 5px #3ddc84}
+.pb.rc.open.lo{box-shadow:0 0 0 2.5px #06101f,0 0 0 4px rgba(61,220,132,.45)}   /* open, but a check-down short of 4 yards: faint */   /* open now: throw it (game.js roomFor, the same ring as on the field) */
 .pb.aw{width:46px;height:46px;margin:2px 4px 2px 14px;font-size:10px;letter-spacing:0;border-style:dashed;border-color:rgba(255,255,255,.4);color:#c9d3e6}   /* throw it away: smaller, set apart from the receivers so it is not hit by mistake */
 .hset{margin-top:18px;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:0 12px}
 .hsum{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;min-height:48px;font-family:var(--display);color:var(--ink);text-align:left}
