@@ -1337,8 +1337,13 @@
       if (a.t < d.rx) return;
       /* Everybody breaks on the throw: the men near it go for the ball, the rest rally toward where it comes down
          (they used to stand still beyond nine yards, and a catch then ran for fifteen more on average). */
-      if (hyp(a.x1 - d.x, a.y1 - d.y) < 9 || d.man === a.target) seek(d, a.x1, a.y1, 1, true);
-      else seek(d, a.x1, a.y1 + G.dir * 5, 0.9, true);  // to a spot past it: they take the angle to tackle, not to catch
+      /* the man on him, and anybody within four yards, plays the ball; the rest take the angle to where the receiver
+         will be a moment after the catch (he keeps running), not to where it lands: they used to arrive behind him,
+         and he ran eight yards before the first hand touched him (NFL about three or four) */
+      const t = a.target, lx = a.x1 + (t ? t.vx : 0) * 0.5, ly = a.y1 + (t ? t.vy : 0) * 0.5, far = hyp(a.x1 - d.x, a.y1 - d.y);
+      if (far < 4 || d.man === t) seek(d, a.x1, a.y1, 1, true);
+      else if (far < 9) seek(d, lx, ly, 1, true);
+      else seek(d, lx, ly + G.dir * 3, 0.92, true);
       return;
     }
     if (!c) {
@@ -1832,6 +1837,7 @@
     }
     if (got && !oob) {
       ps.cp = cp;  // how likely the catch was: the card after an improbable one says so
+      ps.cy = r.y;  // where he caught it (yards after the catch are counted from here)
       ps.carrier = r;
       ps.caught = true;
       G.stats[off].comp++;
@@ -2113,6 +2119,10 @@
         if (d > (o.dive > 0 ? 1.7 : o.eng ? 1.15 : 1.05)) continue;
         o.tcd = 0.8;
         let pr = 0.76 + ((o.tkl ?? o.rt) - 75) * 0.006 - ((c2.brk ?? c2.rt) - 75) * 0.005;
+        /* after a catch: an open-field tackle on a receiver, who has no blockers in front of him. Measured 2026-11-16 at
+           70% made against the NFL's 85 to 90% (and 15% of completions went for touchdowns, about twice the league's),
+           so it is surer; the run game, at 4.4 a carry, is left as it was. */
+        if (ps.caught) pr += 0.14;
         if (o.eng) pr *= 0.42;
         if (o.dive > 0) pr += 0.2;
         for (const q of P) if (q.team === o.team && q !== o && !q.down && q.stun <= 0 && dist(q, c2) < 2.2) pr += 0.15;
@@ -2130,7 +2140,23 @@
         if (o.strip > 0) pr -= 0.2;
         if (c2 === ps.qb && ps.mode === 'pass' && !ps.thrown && !ps.open) pr = 0.93;
         if (o === G.sel && uod) pr += 0.1;
-        if (rnd() < clamp(pr, 0.08, 0.97)) {
+        const made = rnd() < clamp(pr, 0.08, 0.97);
+        if (window.PG_TEST && ps.caught) {  // test hook: tackles after a catch (tools/harness.js sets PG_TEST)
+          const T = window.PG_TKL = window.PG_TKL || { n: 0, made: 0, pr: 0, juke: 0, truck: 0, stiff: 0, eng: 0, first: 0, firstYds: 0, firstT: 0 };
+          T.n++;
+          if (!ps.tried) {  // the first try after the catch: how far he got before anybody reached him
+            ps.tried = true;
+            T.first++;
+            T.firstYds += (c2.y - ps.cy) * G.dir;
+          }
+          T.pr += clamp(pr, 0.08, 0.97);
+          if (made) T.made++;
+          if (c2.juke > 0) T.juke++;
+          if (c2.truck > 0) T.truck++;
+          if (c2.stiff > 0) T.stiff++;
+          if (o.eng) T.eng++;
+        }
+        if (made) {
           /* does the ball come out? rare on a normal tackle, likely enough on a hit stick or a strip to be worth the risk */
           let fum = 0.016 * G.wx.fum * clamp(1 - ((c2.brk ?? c2.rt) - 75) * 0.015, 0.5, 1.5);
           if (o.hit > 0) fum += 0.085;

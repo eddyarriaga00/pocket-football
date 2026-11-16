@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `5e105a8`, before surer open-field tackles after a catch and pursuit angles on the throw (2026-11-16 night).
   - `17446bf`, before the downfield reads, defenders rallying on the throw and the juke rework (2026-11-16 night).
   - `14895e9`, before both feet in: catches out of bounds incomplete, toe taps at the line (2026-11-16 night).
   - `808b4a6`, before player heroes and the podium scene replaced the stretched cards on short screens (2026-11-16, from the Mac).
@@ -2591,6 +2592,22 @@ six were done as the pro game has them; the choices where there was one are mine
   Also the like button's touch area was 43 px wide with a short count: 44 now. Audit empty at 320x568, 390x844 and
   440x956; whole seasons at both positions, careers at both, exhibitions and a season with the rough player clean.
 
+- Tonight, round 3 (02:52): yards after the catch, part 2. Measured first: by coverage and role (backs out of the
+  backfield are 8 yards clear in zone and 6 in man; slot receivers in man are 2.5 yards off yet still ran 11 more),
+  and with a test tally of tackles after a catch (`window.PG_TKL` under PG_TEST): 70% of tries made against the
+  NFL's 85 to 90%, 15% of completions went for touchdowns (about twice the league's), and the receiver ran 8.2
+  yards before anybody reached him (NFL about 3 to 4).
+  Two changes in game.js: an open-field tackle after a catch is surer (+0.14 on the chance; measured 79 to 84% made
+  across runs; the run game, at 4.1 to 4.5 a carry, was left alone), and on the throw only the man on the receiver
+  and anybody within four yards play the ball, the rest take the angle to where he will be half a second after the
+  catch (he keeps running) instead of to where it lands. `ps.cy` keeps the catch spot.
+  After, over 30 games: 65% completions, 9.3 yards after the catch (10.6 before, NFL about 5.3), 1.6% interceptions,
+  4.1 a carry, 12% of completions for touchdowns. What is left is how plays develop, not one number: at the catch the
+  three nearest defenders are mostly linemen (490 of 921), the coverage men are farther; the receiver still runs about
+  8 yards before the first hand. Moved to the end of tonight's list as its own item. Play changed: fingerprint
+  re-pinned, the old value in pg.fingerprint.before-tackles. Audit empty at 320x568, 390x844 and 440x956; whole
+  seasons at both positions, careers at both, exhibitions and a season with the rough test player clean.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -2949,7 +2966,7 @@ NFL rules first, every item checked the full way before it ships.
   a ball near the line catchable in bounds.
 - [x] League numbers against the NFL's: points, completion rate, yards a pass and a carry, sacks, turnovers and
   penalties a game from `H.sim`, tuned where they are well off (the fingerprint re-pinned if play changes).
-- [ ] Coverage at the catch: the nearest defender is 4.8 yards off at the catch (NFL about 3) and a catch still runs
+- [x] (part, round 3: surer open-field tackles, pursuit angles; the rest is the last item) Coverage at the catch: the nearest defender is 4.8 yards off at the catch (NFL about 3) and a catch still runs
   for 10.6 more (NFL about 5.3); tighter zone matching and trail technique, measured the same way (round 2's log).
 - [ ] A record book: the league's single-game and season marks, kept as careers play; the booth and a card when a
   career player breaks one.
@@ -2957,3 +2974,6 @@ NFL rules first, every item checked the full way before it ships.
 - [ ] Injuries, the rest: the trainers jog out and a hurt man is helped off (a short scene), the cart for the worst.
 - [ ] A roof over the roofed stadiums: the sky and light towers give way to a dome and a ring of lights.
 - [ ] An all-star game after the season for each conference's best (a career player who makes it plays it).
+- [ ] Yards after the catch, part 3: the receiver still runs about 8 yards before the first hand touches him (NFL about
+  3 to 4) and 9.3 in all; at the catch the nearest defenders are mostly linemen behind him. Look at how underneath
+  zone men and man trail technique close on short throws (round 3's log has the numbers and the test tallies).
