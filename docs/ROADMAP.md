@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `0e2e039`, before the throwing rebalance from the human-player tests (2026-11-16 night).
   - `7d4de40`, before the harder kickoff power (2026-11-16 night).
   - `8c2c671`, before the perfect throw and its band on the power bar (2026-11-16 night).
   - `fcc0158`, before the catch model, the open ring and incompletion reasons (2026-11-16 night).
@@ -2934,6 +2935,22 @@ six were done as the pro game has them; the choices where there was one are mine
   average after a kick in the middle of the green, the 24 at the edge, 26 to 28 weaker, against the 35 on a
   touchback. Field goals, punts and the computer's kickoffs unchanged; fingerprint unchanged; the rough player, an
   exhibition with the harness player, a career and the audit clean. Test hooks: dbg.beginKickoff, dbg.kickBySwipe.
+
+- 2026-11-16 (night, "i just can't throw good like the start, keep improving throwing and such, play the game like a
+  normal player multiple tests"). New `tools/human.js`: a quarterback that throws like a person (a human beat, a
+  misjudged look, uneven holds on the bar), run against this morning's version (dbf6e55, served from a scratch copy)
+  and the current one, 3-minute quarters. At All-Pro the evening's changes had made it worse to play: throws arriving
+  in tight coverage 22% to 38%, caught there 52% to 35%, deep 59% to 42%, points 7.5 to 4.8 a game, with "Pass broken
+  up" most of the misses; the overall rate hid it. Causes: defenders broke on any ball they could nearly reach (2.5
+  yards of slack), All-Pro made them react faster on top, and an ordinary throw into coverage was caught 15% of the
+  time. Now: they break only on a ball they can reach (1 yard), the difficulty's reaction speed-up is 20% at the
+  ends (was 30%), an ordinary contested ball 33% (perfect 70%), the white band is wider (perfect within 0.12, some
+  credit out to 0.35), the bar no longer says Too soft or Too hard, open on-target balls 94%. And quarterbacks miss
+  now and then (off target: behind him, at his feet, over him; 5% plus distance, pressure and a weaker arm, never on
+  a perfect throw), which keeps the league near this morning's: 30 games 75 to 77%, picks 0.22. Human player, 10
+  games each: Pro 77% (this morning 67), tight coverage 50% (38), deep 60% (52), points 13.3 (13.1); All-Pro 71%
+  (66 to 68), tight 51%, deep 66%, picks 2.5% (5 to 9). Fingerprint re-pinned (old in pg.fingerprint.before-feel);
+  drills, careers, the rough player and the audit at both sizes clean.
 
 ## Morning hand-off
 

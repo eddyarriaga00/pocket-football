@@ -422,6 +422,10 @@ await fetch('tools/harness.js?' + Date.now()).then(r => r.text()).then(t => (0, 
 - `tools/chaos.js` is a rougher test player for the rare endings: `X.exh(8, 120)`, `X.career('WR', 6)` and
   `X.season(1, 'potie')` go for it on fourth down, try for two, kick onside, challenge, pick random plays and tie
   games late so overtime is played, checking after every step that the game's numbers are still numbers.
+- `tools/human.js` (after the harness): `HP.run(8, { lvl: 3 })` plays exhibitions with a quarterback who throws like a
+  person (a human beat, a misjudged look, uneven holds on the power bar; `learned: true` uses the ring and the white
+  band) and reports completions, tight-coverage and deep catches, picks and points. It runs on older versions too,
+  for comparing.
 - `tools/passcheck.js` (after the harness): `PC.run(4)` reports how throws land, yours and the computer's: completion
   rate, interceptions, and how far the receiver was from the ball when it came down. `PC.run(4, 0)` does it at a
   difficulty step (0 Rookie to 4 Legend).

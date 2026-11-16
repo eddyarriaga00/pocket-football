@@ -1490,7 +1490,7 @@
   function defAI(d) {
     const a = ps.air, c = ps.carrier;
     if (a) {
-      if (a.t < d.rx * (d.team === 1 ? 1 - 0.3 * hard() : 1)) return;
+      if (a.t < d.rx * (d.team === 1 ? 1 - 0.2 * hard() : 1)) return;
       /* Everybody breaks on the throw: the men near it go for the ball, the rest rally toward where it comes down
          (they used to stand still beyond nine yards, and a catch then ran for fifteen more on average). */
       /* the man on him, and anybody within four yards, plays the ball; the rest take the angle to where the receiver
@@ -1500,7 +1500,7 @@
       /* he breaks on the ball when he can get there in time (or nearly: a hand in at the catch is enough), as a
          defensive back does; otherwise he takes the angle to where the receiver will run after the catch. So a ball
          that gets there fast beats the men closing on it, and one that hangs lets them arrive. */
-      if (far < 4 || d.man === t || far - d.spd * left < 2.5) seek(d, a.x1, a.y1, clamp(far / left / d.spd, 0.5, 1), true);  // timed, like the receiver (see offAI): flat out he ran past the spot
+      if (far < 4 || d.man === t || far - d.spd * left < 1) seek(d, a.x1, a.y1, clamp(far / left / d.spd, 0.5, 1), true);  // timed, like the receiver (see offAI): flat out he ran past the spot
       else if (far < 9) seek(d, lx, ly, 1, true);
       else seek(d, lx, ly + G.dir * 3, 0.92, true);
       return;
@@ -1527,8 +1527,9 @@
       if (a && a.target === p) {
         /* he times his run to get there with the ball, and catches it in stride: flat out at the spot he arrived early
            on a long ball, could not stop, and was a yard or two past it when it came down behind him */
-        const left = Math.max(0.05, a.T - a.t), far = hyp(a.x1 - p.x, a.y1 - p.y);
-        seek(p, a.x1, a.y1, clamp(far / left / p.spd, 0.35, 1), true);
+        // (a ball well off target he runs to where it should have been, and it comes down out of his reach)
+        const gx = a.off ? a.ix : a.x1, gy = a.off ? a.iy : a.y1, left = Math.max(0.05, a.T - a.t), far = hyp(gx - p.x, gy - p.y);
+        seek(p, gx, gy, clamp(far / left / p.spd, 0.35, 1), true);
       } else if (p.route && !(a && p.wp >= p.route.pts.length)) followRoute(p);
       else blockAI(p, cl);
       return;
@@ -1740,7 +1741,7 @@
     const [tx, ty] = aimAt(q, r, 1);
     return clamp(0.95 - (hyp(tx - q.x, ty - q.y) - 6) * 0.017, 0.3, 0.9);
   }
-  const throwQ = dev => clamp(1 - (Math.abs(dev) - 0.1) / 0.15, 0, 1);
+  const throwQ = dev => clamp(1 - (Math.abs(dev) - 0.12) / 0.23, 0, 1);
 
   /* How open he would be if you threw to him now, at an ordinary pace: the room the nearest defender would leave him
      when the ball got there, after reacting and running at it (as defAI does). The green ring on his letter. */
@@ -1750,7 +1751,7 @@
     const [tx, ty, T] = aimAt(q, r, 1);
     if (hyp(tx - q.x, ty - q.y) > armRange(q)) return 0;
     let room = 99;
-    const rx = 0.32 * (q.team === 0 ? 1 - 0.3 * hard() : 1);  // their usual reaction to a throw, quicker on the harder settings (defAI)
+    const rx = 0.32 * (q.team === 0 ? 1 - 0.2 * hard() : 1);  // their usual reaction to a throw, quicker on the harder settings (defAI)
     for (const o of P) if (o.team !== q.team && !o.down && !o.eng) room = Math.min(room, Math.max(0, hyp(o.x - tx, o.y - ty) - o.spd * Math.max(0, T - rx)));
     return room;
   }
@@ -1760,14 +1761,14 @@
     if (!q || ps.thrown) return;
     const option = ps.rpo && ps.mode === 'run';
     if (option) ps.mode = 'pass';  // the option is taken: from here it is a pass play
-    let tx, ty, T = 0.6, d;
+    let tx, ty, T = 0.6, d, offT = null;
     /* power, 0 to 1: a floated lob at 0 (slow, high), an ordinary pass at a half, a bullet at 1 (fast, flat).
        Yours throws what the power bar says, and how near it is to the right ball (idealPow) is the throw's quality.
        The computer's quarterbacks throw at a half, and their quality is a roll that is better the more accurate they
        are. */
     const ideal = r ? idealPow(q, r) : 0.5, mine = typeof type === 'number';
     const pw = mine ? clamp(type, 0, 1) : type === 'bullet' ? 1 : type === 'lob' ? 0 : 0.5;
-    const tq = !r ? 0 : mine ? throwQ(pw - ideal) : throwQ((rnd() - rnd()) * (1.2 + (85 - (q.thr ?? q.rt)) * 0.01));
+    const tq = !r ? 0 : mine ? throwQ(pw - ideal) : throwQ((rnd() - rnd()) * (2 + (85 - (q.thr ?? q.rt)) * 0.015));
     const sf = pw < 0.5 ? lerp(0.84, 1, pw * 2) : lerp(1, 1.22, pw * 2 - 1), hf = pw < 0.5 ? lerp(1.45, 1, pw * 2) : lerp(1, 0.55, pw * 2 - 1);
     if (r) {
       const range = armRange(q);
@@ -1782,13 +1783,23 @@
       const pr = pressure(q), err = d * 0.03 * (1 + (85 - (q.thr ?? q.rt)) * 0.03) * (pr ? 1.9 : 1) * (ps.rpo ? 1.6 : 1) * (q.team === 1 ? 1 - 0.25 * hard() : 1) * (1 - 0.6 * tq);  // an option throw comes out of the mesh, feet not set; a perfect one is tighter
       tx = clamp(tx + (rnd() - rnd()) * err, 1, FW - 1);
       ty = clamp(ty + (rnd() - rnd()) * err, -9, 109);
+      /* Now and then a throw gets away from him: behind the man, at his feet, over his head. Likelier on a long
+         ball, with the rush on him, and the weaker the arm; a perfect throw (tq) never does. NFL passers miss their
+         man on something like one throw in eight. */
+      const offP = (0.05 + Math.max(0, d - 10) * 0.003 + (pr ? 0.12 : 0) + Math.max(0, 85 - (q.thr ?? q.rt)) * 0.003) * (1 - tq) * (q.team === 1 ? 1 - 0.25 * hard() : 1);
+      if (rnd() < offP) {
+        const ang = rnd(6.283), by = rnd(2.6, 4);
+        offT = { ix: tx, iy: ty };
+        tx = clamp(tx + Math.cos(ang) * by, 1, FW - 1);
+        ty = clamp(ty + Math.sin(ang) * by, -9, 109);
+      }
     } else {
       tx = pt.x;
       ty = pt.y;
       d = hyp(tx - q.x, ty - q.y);
       T = d / 20;
     }
-    ps.air = { x0: q.x, y0: q.y, x1: tx, y1: ty, t: 0, T, h: (1.2 + d * 0.11) * hf, target: r, x: q.x, y: q.y, z: 1.8, dist: d, q: tq, ideal };
+    ps.air = { x0: q.x, y0: q.y, x1: tx, y1: ty, t: 0, T, h: (1.2 + d * 0.11) * hf, target: r, x: q.x, y: q.y, z: 1.8, dist: d, q: tq, ideal, ...(offT ? { off: true, ix: offT.ix, iy: offT.iy } : {}) };
     if (r && watched() && !ps.free && Math.random() < 0.015) ps.dhold = freeSnap();  // a defender had a fistful of jersey downfield
     ps.rel = { q, t: ps.t };  // the release: a rusher who arrives in the next half second may hit him late (see tick)
     if (!r && watched() && Math.abs(q.x - ps.bx) < 4 && (q.y - ps.los) * G.dir < 0 && Math.random() < 0.35) ps.ground = q.y;  // thrown away from inside the pocket, nobody near it: grounding, when the officials see it  // he arrives as the ball leaves, and drives him into the turf
@@ -1885,7 +1896,7 @@
     }
     const pr = pressure(q);
     if (pr && rnd() < 0.5) return;  // rattled: holds the ball a beat too long
-    let need = ps.t > 3.4 ? 1.3 : pr ? 1.2 : 2.7 - (ps.t - 1.5) * 0.35;
+    let need = (ps.t > 3.4 ? 1.3 : pr ? 1.2 : 2.7 - (ps.t - 1.5) * 0.35);
     if (best && best === me) need *= 0.65;
     if (best && bo >= need) throwTo(best);
     else if (pr) {
@@ -1999,8 +2010,10 @@
       }
     }
     /* How a pass is caught (since 2026-11-16, late): an accurate ball to a man with room (3.2 yards or more to the
-       nearest defender when it gets there) is caught 92% of the time, less a little per yard past twenty in the air
-       and plus or minus with his hands; a defender at the catch takes it down toward 15%, with no cliff between.
+       nearest defender when it gets there) is caught 94% of the time, less a little per yard past twenty in the air
+       and plus or minus with his hands; a defender at the catch takes it down toward 33% (70% for a perfect
+       throw), with no cliff between. (15% for a while on 2026-11-16 night: a person's ordinary throw into coverage
+       was nearly always broken up, and throwing felt worse than before.)
        Before, even a wide-open, on-target catch failed one time in five (the league's completion rate leaned on it),
        which felt like throws that should be made going down at random.
        0.9 was 0.96 until 2026-11-14: receivers used to run two or three yards past every hard break, so balls thrown to
@@ -2010,14 +2023,14 @@
        (0.6, was 0.42): an open man catches it, a covered one is a fight. */
     const room = clamp((ndd - 0.4) / 2.8, 0, 1), hands = ((r.cat ?? r.rt) - 75) * 0.004;
     const tq = a.q || 0;  // a perfect ball (see idealPow) can be caught with a man on him: good hands count double there
-    let cp = dr > 2.2 ? 0 : lerp(lerp(0.15, 0.6, tq) + hands, 0.92 - Math.max(0, a.dist - 20) * 0.008, room) + hands - (dr > 1.2 ? 0.25 : 0);
+    let cp = dr > 2.2 ? 0 : lerp(lerp(0.33, 0.7, tq) + hands, 0.94 - Math.max(0, a.dist - 20) * 0.008, room) + hands - (dr > 1.2 ? 0.25 : 0);
     const ud = nd && nd === G.sel && off === 1 && !AUTO && ndd < 1.8;
     if (ud) cp -= 0.2;
     cp *= G.wx.cat;  // a wet or frozen ball is harder to hold
     if (dr <= 2.2) cp += chemOf(ps.passer, r) * 0.001;  // up to five points either way between a career player and his partner
     ps.perf = tq >= 0.99 && ndd < 1.6;  // a perfect ball into tight coverage (the analyst says so if it is caught)
     ps.cpT = cp;  // how catchable it was, for the play grade (a drop is a catchable ball not caught)
-    let ip = ndd < 1.5 ? 0.18 * (1 + ((nd.bsk ?? nd.rt) - 75) * 0.02) : 0;  // 0.18 with the perfect throw (fewer picks on those), 0.16 since open men catch it (2026-11-16 late); 0.2 since the receivers reach the ball (2026-11-16 evening; more throws are contested, and a miss is a chance to pick it); 0.3 before, 0.38 until the reads went downfield: more balls are contested now, and picks ran at 4% of throws against the NFL's 2.2%
+    let ip = ndd < 1.5 ? 0.22 * (1 + ((nd.bsk ?? nd.rt) - 75) * 0.02) : 0;  // 0.22 with off-target throws and fairer contested catches (2026-11-16 night), 0.18 with the perfect throw (fewer picks on those), 0.16 since open men catch it (2026-11-16 late); 0.2 since the receivers reach the ball (2026-11-16 evening; more throws are contested, and a miss is a chance to pick it); 0.3 before, 0.38 until the reads went downfield: more balls are contested now, and picks ran at 4% of throws against the NFL's 2.2%
     if (dr > 2.2 && ndd < 1.6) ip = 0.4;
     if (ud) ip += 0.2;
     ip *= 1 - 0.75 * tq * tq;  // put where only he can get it, it is rarely picked
@@ -7087,7 +7100,7 @@
         ctx.strokeStyle = 'rgba(255,255,255,.75)';  // the perfect band: let go while the green is in it
         ctx.lineWidth = 5.5;
         ctx.beginPath();
-        ctx.arc(x, by, 15, A(id - 0.1), A(id + 0.1));
+        ctx.arc(x, by, 15, A(id - 0.12), A(id + 0.12));
         ctx.stroke();
         // the power you are building, as a green ring closing round his letter
         ctx.strokeStyle = '#3ddc84';
@@ -7320,15 +7333,15 @@
       const v = G.chg ? clamp(G.chg.t / CHARGE, 0, 1) : G.pwShow.pw, key = Math.round(v * 100);
       const r = G.chg && ps.recs[G.chg.i], ideal = r && ps.qb ? idealPow(ps.qb, r) : G.pwShow && G.pwShow.ideal, sq = !G.chg && G.pwShow && G.pwShow.q;
       // the band where the throw is perfect, and after the throw what it was
-      const verdict = sq === undefined || sq === false || G.chg ? '' : sq >= 0.99 ? 'Perfect' : sq >= 0.4 ? 'Good' : v < ideal ? 'Too soft' : 'Too hard', zk = ideal ? Math.round(ideal * 100) : -1;
+      const verdict = sq === undefined || sq === false || G.chg ? '' : sq >= 0.99 ? 'Perfect' : sq >= 0.4 ? 'Good' : '', zk = ideal ? Math.round(ideal * 100) : -1;
       if (pwEl.dataset.v !== key + verdict + zk) {
         pwEl.dataset.v = key + verdict + zk;
         $('#pwf').style.width = key + '%';
         const z = $('#pwz');
         z.hidden = zk < 0;
         if (zk >= 0) {
-          z.style.left = Math.max(0, zk - 10) + '%';
-          z.style.right = Math.max(0, 90 - zk) + '%';
+          z.style.left = Math.max(0, zk - 12) + '%';
+          z.style.right = Math.max(0, 88 - zk) + '%';
         }
         $('#pwl').textContent = verdict || (v < 1 / 3 ? 'Lob ' : v < 2 / 3 ? 'Touch ' : 'Bullet ') + (verdict ? '' : key);
         pwEl.classList.toggle('perf', verdict === 'Perfect');
