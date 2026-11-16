@@ -1802,7 +1802,28 @@
     let ip = ndd < 1.5 ? 0.38 * (1 + ((nd.bsk ?? nd.rt) - 75) * 0.02) : 0;
     if (dr > 2.2 && ndd < 1.6) ip = 0.4;
     if (ud) ip += 0.2;
-    if (rnd() < cp) {
+    /* Both feet in. A ball caught at the sideline or the end line counts only when the receiver comes down in bounds:
+       caught with him already over the line it is incomplete, and within a yard of it he has to drag his toes, which
+       sure hands manage more often (NFL: two feet or another body part down in bounds, no force-outs). */
+    const inside = (x, y) => Math.min(x, FW - x, y + 10, 110 - y);  // yards inside the nearest sideline or end line
+    const got = rnd() < cp, edge = inside(r.x, r.y), carry = inside(r.x + (r.vx || 0) * 0.3, r.y + (r.vy || 0) * 0.3);  // where his next steps take him
+    let oob = '';
+    ps.oob = '';
+    if (got && edge < 0) oob = 'Caught out of bounds';
+    else if (got && carry < 0) {
+      // his momentum takes him over the line: he has to drag his toes in as he catches it
+      if (rnd() > clamp(0.5 + edge * 0.3 + ((r.cat ?? r.rt) - 70) * 0.012, 0.25, 0.95)) oob = 'Only one foot in';
+      else ps.toe = true;
+    }
+    if (window.PG_TEST) {  // test hook: how often the line decides a catch (tools/harness.js sets PG_TEST)
+      const T = window.PG_FEET = window.PG_FEET || { got: 0, near: 0, toe: 0, one: 0, out: 0 };
+      if (got) T.got++;
+      if (got && carry < 0) T.near++;
+      if (ps.toe) T.toe++;
+      if (oob === 'Only one foot in') T.one++;
+      if (oob === 'Caught out of bounds') T.out++;
+    }
+    if (got && !oob) {
       ps.cp = cp;  // how likely the catch was: the card after an improbable one says so
       ps.carrier = r;
       ps.caught = true;
@@ -1818,12 +1839,13 @@
         o.immune = 1.5;
       }
       snd('catch', { x: r.x });
+      if (ps.toe && !QUIET) toast('Toe tap · both feet in');
       if (pm) {
         my.att++;
         my.comp++;
       }
       if (me && r === me) my.rec++;
-    } else if (nd && rnd() < ip) {
+    } else if (!got && nd && rnd() < ip) {
       for (const p of P) {
         p.eng = null;
         p.block = null;
@@ -1839,6 +1861,12 @@
         my.pint++;
       }
       if (me && nd === me) my.int++;
+    } else if (oob) {
+      // he had it, but not in bounds: an incomplete pass, and the clock stops
+      ps.oob = oob;
+      if (pm) my.att++;
+      dropBall(a);
+      finish('inc', oob);
     } else {
       /* pass interference: a defender on the receiver's back when a catchable ball falls incomplete */
       if (flagsOn() && nd && ndd < 2.2 && dr <= 2.2 && (a.y1 - ps.los) * G.dir > 1 && rnd() < 0.15) {
@@ -5324,8 +5352,9 @@
       const mine = ps.tgt === me;
       if (lostFum) [gr, why] = ['F', 'Fumble'];
       else if (td && (d('rectd') > 0 || d('rtd') > 0)) [gr, why] = ['A+', 'Touchdown'];
-      else if (d('rec') > 0) [gr, why] = yds >= 20 ? ['A', 'Big play'] : first ? ['A-', late ? 'Converted on ' + ORD[g.down - 1] + ' down' : 'Moved the chains'] : late ? ['C+', 'Short of the sticks'] : yds >= 5 ? ['B', 'Caught it, got upfield'] : ['B-', 'Short catch'];
+      else if (d('rec') > 0) [gr, why] = yds >= 20 ? ['A', 'Big play'] : ps.toe ? ['A-', 'Toe tap at the line'] : first ? ['A-', late ? 'Converted on ' + ORD[g.down - 1] + ' down' : 'Moved the chains'] : late ? ['C+', 'Short of the sticks'] : yds >= 5 ? ['B', 'Caught it, got upfield'] : ['B-', 'Short catch'];
       else if (mine && ps.turnover) [gr, why] = ['C-', 'Picked off on his route'];
+      else if (mine && ps.oob) [gr, why] = ps.oob === 'Only one foot in' ? ['C', 'One foot in'] : ['D', 'Stepped out before the catch'];
       else if (mine && (ps.cpT || 0) >= 0.62) [gr, why] = ['D', 'Dropped it'];
       else if (mine && ps.thrown) [gr, why] = ['C', 'Contested, broken up'];
       else if (d('car') > 0) [gr, why] = first ? ['A-', 'Moved the chains'] : yds >= 6 ? ['B', 'Good run'] : ['C', 'Stopped short'];
@@ -5340,7 +5369,7 @@
         L.yds += Math.max(0, yds);
         if (td) L.td++;
       } else if (ps.turnover) L.int++;
-      else if ((ps.cpT || 0) >= 0.62) L.drop++;
+      else if ((ps.cpT || 0) >= 0.62 && !ps.oob) L.drop++;
     }
     if (!gr) return;
     const v = GRP[gr], P0 = G.pgr;

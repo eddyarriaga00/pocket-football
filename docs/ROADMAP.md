@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `14895e9`, before both feet in: catches out of bounds incomplete, toe taps at the line (2026-11-16 night).
   - `808b4a6`, before player heroes and the podium scene replaced the stretched cards on short screens (2026-11-16, from the Mac).
   - `3eb0ab4`, before short screens filled tall phones (menu, camp, milestones, hall, press, combine, dash, awards) (2026-11-16, from the Mac).
   - `7f53b89`, before the interface pass: grade chip on one line, tile marks, ability locks, hall pictures, standings labels (2026-11-16, from the Mac).
@@ -2555,6 +2556,18 @@ six were done as the pro game has them; the choices where there was one are mine
   440x956; fingerprint unchanged; whole seasons at both positions, a receiver career and a season with the rough
   test player clean.
 
+- Tonight, round 1 (01:50): both feet in. A pass caught with the receiver already over the sideline or the end line
+  used to count, and he was then ruled out of bounds with the ball. Now a ball caught out of bounds is incomplete
+  ("Caught out of bounds"), and a catch whose next steps carry him over the line (his position 0.3 s on) needs a toe
+  tap: made more often by sure hands (0.5 + 0.3 a yard inside + 0.012 a point of catching over 70, held to 25-95%),
+  "Toe tap · both feet in" when he does, an incomplete "Only one foot in" when he does not. No force-outs (the NFL
+  dropped them in 2008). The career play grade knows both: "Toe tap at the line" (A-) and "One foot in" or "Stepped out
+  before the catch", and neither counts as a drop against chemistry. The toe-tap pose in render3d was already there.
+  Measured over 16 simulated games: 12 of 429 catches came down to the line, 10 toe taps, 1 one foot in, 1 out.
+  A test-only tally `window.PG_FEET` (only under the harness's PG_TEST). Play changed, so the fingerprint was
+  re-pinned; the old value is kept in pg.fingerprint.before-feet. Audit empty at 320x568, 390x844 and 440x956; whole
+  seasons at both positions, a receiver career, exhibitions and a season with the rough test player clean.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -2903,3 +2916,19 @@ Interface, when no major item fits in a run:
 - The on-field receiver letters and the drag ring are drawn on the canvas, so the audit cannot see them: check their
   size and contrast by hand in day, dusk, night, rain and snow.
 - Settings could show what each graphics option costs; the play-call sheet could remember the last tab per down.
+
+### Tonight (2026-11-16 night)
+The owner at 01:45, going to sleep: "work all night making the game better and more realistic, follow nfl / madden etc,
+goodnight". One item a round (cron job a7861c35, :13 and :43 past each hour until 09:30), real football and current
+NFL rules first, every item checked the full way before it ships.
+- [x] Sideline and end-line catches: both feet in bounds or the pass is incomplete (today a receiver who catches it out
+  of bounds keeps it); a toe tap at the line drawn and called, and the receivers and their quarterbacks working to keep
+  a ball near the line catchable in bounds.
+- [ ] League numbers against the NFL's: points, completion rate, yards a pass and a carry, sacks, turnovers and
+  penalties a game from `H.sim`, tuned where they are well off (the fingerprint re-pinned if play changes).
+- [ ] A record book: the league's single-game and season marks, kept as careers play; the booth and a card when a
+  career player breaks one.
+- [ ] The form tackle as a paired motion: tackler and runner keyed to each other (wrap, drive, fall together).
+- [ ] Injuries, the rest: the trainers jog out and a hurt man is helped off (a short scene), the cart for the worst.
+- [ ] A roof over the roofed stadiums: the sky and light towers give way to a dome and a ring of lights.
+- [ ] An all-star game after the season for each conference's best (a career player who makes it plays it).
