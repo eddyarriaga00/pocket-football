@@ -3090,7 +3090,7 @@
         }
         const g = (y - los) * dir, gi = Math.round(g), sack = c === ps.qb && ps.mode === 'pass' && !ps.thrown && g < 0;
         addYds(off, gi, false, sack);
-        stop = kind === 'oob';
+        stop = kind === 'oob' && lateClock();  // out of bounds stops it for good only late in a half (see lateClock)
         rpGain = gi;
         if (sack && me && ps.tackler === me) G.my.sack++;
         if (sack) credit(ps.tackler, 'sack', 1);
@@ -3165,7 +3165,7 @@
     if (G.review && youChallenge() && !AUTO && !QUIET) setTimeout(() => {
       if (G.review && G.state !== 'menu') toast('Close spot · challenge it on the next screen · a timeout if it stands');
     }, 1300);
-    G.runoff = !stop && !score && !G.drill ? Math.min(hurry(off) && G.poss === off ? 8 : 13, G.clock) : 0;  // the clock keeps running after an in-bounds tackle (there is no clock in practice); a hurry-up offense gets back to the line sooner
+    G.runoff = !stop && !score && !G.drill ? Math.min((hurry(off) && G.poss === off ? 8 : 13) * (kind === 'oob' ? 0.75 : 1), G.clock) : 0;  // the clock keeps running after an in-bounds tackle (there is no clock in practice); a hurry-up offense gets back to the line sooner
     G.clock -= G.runoff;
     twoMinute();
     cpuTimeout();
@@ -3253,6 +3253,12 @@
      user's play-call sheet comes up sooner, marked "No huddle". Measured: letting it run for two minutes before
      halftime as well, with more passing, put six more points a game on the board; this is the narrower rule. */
   const hurry = t => !G.drill && G.try2 == null && G.clock > 0 && (G.q === 2 ? G.clock <= Math.min(60, G.ql * 0.25) : G.q >= 4 && G.clock <= Math.min(WARN, G.ql * 0.5) && G.score[t] <= G.score[1 - t]);
+
+  /* NFL timing on a runner out of bounds: the clock stops, and starts again on the referee's signal once the ball is
+     set (a little less runoff than after a tackle in bounds), except in the last two minutes of the first half and of
+     an overtime period and the last five of the game, when it stays stopped until the snap. (It used to stop for
+     good every time, all game, which let a team save time it should not have had.) */
+  const lateClock = () => (G.q === 2 && G.clock <= WARN) || (G.q === 4 && G.clock <= 300) || (G.q >= 5 && G.clock <= WARN);
 
   function twoMinute() {
     if (G.drill || G.ot || G.ql <= WARN || !(G.q === 2 || G.q === 4) || G.clock > WARN || G.clock <= 0 || (G.warned && G.warned[G.q])) return;

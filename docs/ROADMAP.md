@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `09e544d`, before the NFL clock rule for a runner out of bounds (2026-11-16 night).
   - `28bee05`, before the All-Star Game for invited career players (2026-11-16 night).
   - `aa77596`, before the roof over the roofed stadiums (2026-11-16 night).
   - `1e549e8`, before the injury scene (trainers out, helped off, the cart for the worst) (2026-11-16 night).
@@ -2685,6 +2686,23 @@ six were done as the pro game has them; the choices where there was one are mine
   player with no problem. Play outside careers untouched: fingerprint unchanged. Audit empty at 320x568, 390x844
   and 440x956 (the invitation, the result and the hub button included); whole seasons at both positions clean.
 
+- Tonight, round 9 (05:52). First the yards-after-catch item, part 3: measured the first second after a catch over
+  ten games (the nearest coverage man, not a lineman, at 0, 0.3, 0.6 and 1 s): 6.5 yards off at the catch, closing at
+  only 2.6 yards a second (5.3 by a second in), moving at 5.7. Tried a wider pickup for the underneath zones (11.5
+  yards from the spot instead of 8.5): separation at the catch 6.5 to 6.3, yards after the catch unchanged, so it was
+  taken out again, not shipped. What is left is the quarterback's read: he throws only to a man with 1.3 to 2.7
+  yards of room (qbAI's `need`) and the most open man scores best, so catches are made in open grass by design; the
+  league throws into windows of about 3. Changing that moves the whole passing game and wants a session of its own
+  (left open on the list, with these numbers).
+  Then the next realism item, added to the list and done: the clock on a runner out of bounds. It stopped for good
+  every time, all game. NFL timing: it stops and starts again on the referee's signal once the ball is set, except
+  in the last two minutes of the first half (and of an overtime period) and the last five of the game, when it stays
+  stopped until the snap. lateClock() in game.js; outside those windows the runoff is three quarters of an in-bounds
+  tackle's (the ball is set a moment later). Measured over twelve games: early in a half the clock ran after 8 of 9
+  plays out of bounds (the other stopped for another reason), late it stayed stopped on all 13. Play changed:
+  fingerprint re-pinned, the old value in pg.fingerprint.before-oobclock. Audit empty at 320x568, 390x844 and 440x956;
+  whole seasons at both positions, careers at both, exhibitions and a season with the rough test player clean.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3051,6 +3069,8 @@ NFL rules first, every item checked the full way before it ships.
 - [x] Injuries, the rest: the trainers jog out and a hurt man is helped off (a short scene), the cart for the worst.
 - [x] A roof over the roofed stadiums: the sky and light towers give way to a dome and a ring of lights.
 - [x] An all-star game after the season for each conference's best (a career player who makes it plays it).
-- [ ] Yards after the catch, part 3: the receiver still runs about 8 yards before the first hand touches him (NFL about
+- [-] (deferred: round 9 found it is the quarterback's read, not the zones; it wants a session of its own, not a night round) Yards after the catch, part 3: the receiver still runs about 8 yards before the first hand touches him (NFL about
   3 to 4) and 9.3 in all; at the catch the nearest defenders are mostly linemen behind him. Look at how underneath
   zone men and man trail technique close on short throws (round 3's log has the numbers and the test tallies).
+- [x] The clock on a runner out of bounds: NFL timing (it restarts on the ready signal except in the last two
+  minutes of a half or an overtime period and the last five of the game).
