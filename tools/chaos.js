@@ -173,6 +173,12 @@ window.X = (() => {
           let k = 0;
           while (q('.ans') && k++ < 6) pick(qa('.ans')).click();
           for (const id of ['#prgo', '#fdgo', '#awgo']) if (q(id)) q(id).click();
+          if (q('#sgo')) {  // the all-star game, when invited
+            q('#sgo').click();
+            out.push('all-star ' + run('all-star'));
+            hit('all-star game');
+            if (q('#rc')) q('#rc').click();
+          }
         }
       } catch (e) {
         bad.push(String(e.stack).slice(0, 300));

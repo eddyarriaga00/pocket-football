@@ -144,6 +144,8 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   your top receiver) builds over seasons: he looks your way more and the ball between you is caught more often.
   The social feed has stat accounts, local radio, former players and opponents, and reacts to streaks, road wins,
   primetime, the playoffs, the weather, playing hurt and your chemistry.
+- The All-Star Game: a season with an honor or better than a B gets you invited to play for your conference's
+  all-stars against the other's, after awards night, with an MVP award for the best day on the winning side.
 - The eleven roofed stadiums have their roof: a steel vault over the bowl and a ring of lights under it.
 - Injuries: the trainers jog out to a hurt player and help him off, an arm over each shoulder, as his teammates clap;
   for the worst, the cart drives out and takes him off.

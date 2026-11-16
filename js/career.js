@@ -377,6 +377,9 @@
     bonus += night.xp;
     C.po.night = night.night;
     C.po.nightSeen = false;
+    /* the all-star game: an honor, or a season averaging better than a B, gets you the invitation (more men make the
+       all-star game than the All-League team, as in the real game) */
+    C.po.star = aw.length || avg >= 6 ? { conf: TEAMS[C.team].conf, done: false } : null;
     if (mine && his && mine.v > his.v) {
       C.beatRival = 1;
       bonus += 500;
@@ -841,7 +844,7 @@
     if (C.phase === 'done') {
       const po = C.po;
       return `<div class="nx"><small>Season ${C.season} complete</small><h4>${po.finish}</h4>
-  ${po.night ? '<button class="btn2" id="an" style="margin:0 0 8px">Awards night</button>' : ''}<div class="sdn"><span><b>${recTxt(t)}</b>${team(t).ab} record</span><span><b>${team(po.champ).ab}</b>${po.champ===t?'Champions':'Champion'}</span>${po.bonus?`<span><b>+${fmt(po.bonus)}</b>Bonus XP</span>`:''}</div>
+  ${po.night ? '<button class="btn2" id="an" style="margin:0 0 8px">Awards night</button>' : ''}${po.star && !po.star.done ? '<button class="go" id="asg" style="margin:0 0 8px">All-Star Game \u00b7 you are invited</button>' : ''}<div class="sdn"><span><b>${recTxt(t)}</b>${team(t).ab} record</span><span><b>${team(po.champ).ab}</b>${po.champ===t?'Champions':'Champion'}</span>${po.bonus?`<span><b>+${fmt(po.bonus)}</b>Bonus XP</span>`:''}</div>
   ${po.awards&&po.awards.length?`<div class="pcc" style="margin:0 0 8px">${po.awards.map(a=>`<span>${esc(a)}</span>`).join('')}</div>`:''}<p>${po.rival?`${esc(po.rival)}<br>`:''}Your season: ${line(C.stats)}.</p>
   ${deal().left>0?`<button class="go sm" id="nxs">Start season ${C.season+1}</button><p class="note" style="margin:8px 0 0">Under contract for ${deal().left} more season${deal().left>1?'s':''} at ${money(deal().pay)}.</p>`
     :`<p class="note" style="margin:0 0 8px">Your contract is up.</p><button class="go sm" id="fa">See the offers</button>`}</div>`;
@@ -1558,7 +1561,81 @@
     };
     $('#awgo').onclick = () => {
       live = false;
-      (then || (() => showHub('season')))();
+      (then || (() => C.po.star && !C.po.star.done ? showStarInvite() : showHub('season')))();
+    };
+  }
+
+  /* ---------- the all-star game ----------
+     The conferences' best, one side against the other, after the season, in all-star colors: no standings, no stats
+     on the season line, pride and XP. The two all-star sides join the league only while the game is played (added to
+     the team list as it starts, taken off as it ends), so tables, pickers and the schedule never see them. They are
+     marked custom, so the booth leaves their names out (it has no recordings of them). */
+  const STAR_SIDES = [
+    { city: 'Union', name: 'All-Stars', ab: 'UNI', c1: '#2a4fb0', c2: '#f2f5fa', ovr: 93, conf: 0, div: 0, style: 0, vo: null, clim: null, custom: true, star: true },
+    { city: 'Frontier', name: 'All-Stars', ab: 'FRO', c1: '#a8322a', c2: '#f2f5fa', ovr: 93, conf: 1, div: 0, style: 1, vo: null, clim: null, custom: true, star: true }];
+  const starOff = () => {
+    for (let i = TEAMS.length - 1; i >= 0; i--) if (TEAMS[i] && TEAMS[i].star) TEAMS.splice(i, 1);
+  };
+
+  function showStarInvite() {
+    starOff();
+    const st = C.po.star, conf = PG.data.CONF[st.conf], other = PG.data.CONF[1 - st.conf], won = (C.po.night || []).filter(x => x.w && x.w.me).map(x => x.a);
+    scr.innerHTML = `<div class="menu solid fill"><h1 class="sm">All-Star <em>Game</em></h1>
+  <p class="tag">Season ${C.season}: the ${esc(conf)}'s best against the ${esc(other)}'s, and you are one of them.</p>
+  <div class="mcard star"><div class="ssd" style="--c:${STAR_SIDES[st.conf].c1}"><b>${STAR_SIDES[st.conf].ab}</b><small>${esc(conf)}</small></div><i>vs</i><div class="ssd" style="--c:${STAR_SIDES[1 - st.conf].c1}"><b>${STAR_SIDES[1 - st.conf].ab}</b><small>${esc(other)}</small></div></div>
+  ${PG.hero ? PG.hero(STAR_SIDES[st.conf], true, C.num, C.look, `<b>${esc(C.name)}</b> #${C.num} · ${C.pos}`) : ''}
+  <div class="sdn"><span><b>${won.length || '\u2013'}</b>${won.length === 1 ? 'Honor' : 'Honors'}</span><span><b>${C.allstars || 0}</b>Times before</span><span><b>+${fmt(400)}</b>To play</span></div>
+  ${won.length ? `<p class="note">${won.map(esc).join(', ')}</p>` : ''}
+  <button class="go" id="sgo">Play the All-Star Game</button><button class="btn2" id="sno" style="margin-top:8px">Not this year</button></div>`;
+    $('#sgo').onclick = playStar;
+    $('#sno').onclick = () => {
+      st.done = 'skipped';
+      persist();
+      showHub('season');
+    };
+  }
+
+  function playStar() {
+    const st = C.po.star, n = (starOff(), TEAMS.length);
+    TEAMS.push(STAR_SIDES[0], STAR_SIDES[1]);
+    const a = n + st.conf, b = n + 1 - st.conf;
+    PG.snd('whistle');
+    PG.startGame({ a, b, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [93, 93], diff: C.diff ?? 1, share: share(), env: { time: 'night', weather: 'clear', roof: true }, line: chip,
+      onEnd: r => starEnd(r),  // the field stays behind the result, as after any game; the two sides leave with it (Continue)
+      onQuit: () => {
+        PG.toMenu();
+        starOff();
+        showHub('season');
+      } });
+  }
+
+  function starEnd(r) {
+    const st = C.po.star, m = r.my, [us, them] = r.score, won = us > them, [pts, grade] = gradeOf(m, won, 0);
+    const items = xpFor(m, won).filter(([l]) => l !== 'Game played').map(([l, v]) => [l, Math.round(v * 0.5)]);
+    items.unshift(['All-Star Game', 400]);
+    if (won) items.push([`The ${PG.data.CONF[st.conf]} won`, 250]);
+    const mvp = won && pts >= 6;  // the game's most valuable player: a winning side's best day
+    if (mvp) {
+      items.push(['All-Star Game MVP', 600]);
+      (C.awards || (C.awards = [])).push({ name: 'All-Star Game MVP', season: C.season });
+    }
+    const xp = items.reduce((t, [, v]) => t + v, 0);
+    C.xp += xp;
+    C.xpTotal += xp;
+    C.allstars = (C.allstars || 0) + 1;
+    st.done = true;
+    st.score = [us, them];
+    persist();
+    scr.innerHTML = `<div class="sheet"><div class="shd"><b>${won ? 'All-Star win' : us === them ? 'All-Star tie' : 'All-Star Game'}</b><span>${STAR_SIDES[st.conf].ab} ${us} \u00b7 ${STAR_SIDES[1 - st.conf].ab} ${them}</span></div>
+  <div class="rs"><i class="${won ? 'w' : us === them ? 't' : 'l'}"><small>Grade</small>${grade}</i><div><b>${us}\u2013${them} <em>${won ? 'Win' : us === them ? 'Tie' : 'Loss'}</em></b><span>${line(m)}</span></div></div>
+  ${mvp ? '<p class="note hi rec">All-Star Game MVP.</p>' : ''}
+  <ul class="gl">${items.map(([l, v]) => `<li><span>${esc(l)}</span><b>+${fmt(v)}</b></li>`).join('')}<li class="tot"><span>XP earned</span><b>+${fmt(xp)}</b></li></ul>
+  <p class="note">All-Star selections: ${C.allstars}. The game counts for no standings and no season line.</p>
+  <button class="go" id="rc">Continue</button></div>`;
+    $('#rc').onclick = () => {
+      PG.toMenu();  // off the field first: it is drawn from the team list the two sides are about to leave
+      starOff();
+      showHub('season');
     };
   }
 
@@ -1790,6 +1867,8 @@
       };
       const an = $('#an');
       if (an) an.onclick = () => showAwards();
+      const asg = $('#asg');
+      if (asg) asg.onclick = showStarInvite;
       const fa = $('#fa');
       if (fa) fa.onclick = showFreeAgency;
       const tr = $('#trade');

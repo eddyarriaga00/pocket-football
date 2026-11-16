@@ -229,6 +229,11 @@ window.H = (() => {
       if (q('#prgo')) q('#prgo').click();
       if (q('#fdgo')) q('#fdgo').click();
       if (q('#awgo')) q('#awgo').click();  // the season is over: awards night comes first
+      if (q('#sgo')) {  // invited to the all-star game: play it too
+        q('#sgo').click();
+        run();
+        if (q('#rc')) q('#rc').click();
+      }
       return { my, score };
     },
     career(pos, games = 2) {

@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `28bee05`, before the All-Star Game for invited career players (2026-11-16 night).
   - `aa77596`, before the roof over the roofed stadiums (2026-11-16 night).
   - `1e549e8`, before the injury scene (trainers out, helped off, the cart for the worst) (2026-11-16 night).
   - `634d2d2`, before the tackle drive (tackler and runner carried on through the hit together) (2026-11-16 night).
@@ -2667,6 +2668,23 @@ six were done as the pro game has them; the choices where there was one are mine
   and careers get the home city's. Drawing only: fingerprint unchanged. Audit empty at 320x568, 390x844 and 440x956;
   whole seasons at both positions, careers at both, exhibitions and a season with the rough test player clean.
 
+- Tonight, round 8 (05:23): an all-star game. The real league's is a mark, so this one is plainly the All-Star
+  Game: the Union All-Stars (UNI, blue) against the Frontier All-Stars (FRO, red), the two conferences. A career player
+  who won an honor on awards night, or averaged better than a B over the season (6 points a game: more men make the
+  all-star game than the All-League team, as in the real one), is invited (C.po.star, decided in closeSeason). After
+  awards night the invitation comes up (and waits on the hub as a button if put off): the two sides as badges, you
+  in your conference's all-star kit as the hero, your honors, and Play or Not this year. The game is a career game
+  with the two all-star sides at 93, under a roof, your usual quarter length; it counts for no standings and no
+  season line. After it: a result sheet over the field (the grade, the line, half the usual stat XP, 400 for
+  playing, 250 if your side won, and 600 and an award for the game's MVP, a winning day of 6 points or more), and
+  C.allstars counts your selections. The two sides are added to the team list as the game starts and taken off
+  when you leave the result sheet (or quit), so tables, pickers and the schedule never see them; they are marked
+  custom, so the booth leaves their names out. Test players: H.playCareerGame and X.career now play the all-star
+  game when invited. Checked: invited from awards night and from the hub, played through by the test player with
+  every number finite, 34 teams while the result shows and 32 after, back to the hub; a whole season by the rough
+  player with no problem. Play outside careers untouched: fingerprint unchanged. Audit empty at 320x568, 390x844
+  and 440x956 (the invitation, the result and the hub button included); whole seasons at both positions clean.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3032,7 +3050,7 @@ NFL rules first, every item checked the full way before it ships.
 - [x] The form tackle as a paired motion: tackler and runner keyed to each other (wrap, drive, fall together).
 - [x] Injuries, the rest: the trainers jog out and a hurt man is helped off (a short scene), the cart for the worst.
 - [x] A roof over the roofed stadiums: the sky and light towers give way to a dome and a ring of lights.
-- [ ] An all-star game after the season for each conference's best (a career player who makes it plays it).
+- [x] An all-star game after the season for each conference's best (a career player who makes it plays it).
 - [ ] Yards after the catch, part 3: the receiver still runs about 8 yards before the first hand touches him (NFL about
   3 to 4) and 9.3 in all; at the catch the nearest defenders are mostly linemen behind him. Look at how underneath
   zone men and man trail technique close on short throws (round 3's log has the numbers and the test tallies).
