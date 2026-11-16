@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `dbf6e55`, before the difficulty slider and receivers timing their run to the ball (2026-11-16 evening).
   - `c432a89`, before safe save reading and the playoff overtime and two-minute warning fixes (2026-11-16 afternoon).
   - `e68b326`, before the chat was connected to the owner's Firebase project (2026-11-16).
   - `477b88b`, before the Online screen and global chat (2026-11-16).
@@ -2856,6 +2857,23 @@ six were done as the pro game has them; the choices where there was one are mine
   period running out no longer ends the game while the second side's guaranteed possession is still to come or under
   way. 3: the two-minute warning now comes in the regular season's overtime period and in the second and fourth
   playoff periods (when the period is longer than two minutes). Fingerprint unchanged; X.bad empty; no console errors.
+
+- 2026-11-16 (evening, "i need there to be a difficulty slider, and for the passing and throwing to be improved if
+  possible, i don't want the controls changed though for throwing"). Difficulty: the three-button choice became one
+  slider with five steps, Rookie, Starter, Pro, All-Pro, Legend (Exhibition, New season, Career settings; shared code
+  `diffSlider`/`bindDiff`/`lvlOf` in game.js). It sets the opponent's ratings (-6, -3, 0, +5, +9) and, new, how the
+  computer plays against you (`hard()`): how fast its defenders react to your throw (30% slower at Rookie, 30%
+  faster at Legend), how often they hold on to a ball they reach (35% either way), and its quarterback's accuracy
+  (25%). Training camp keeps its own scale. Old saves keep their level (old Pro is Pro, old All-Pro is All-Pro);
+  the slider saves `dl`. The career XP bonus: All-Pro 20%, Legend 30%; "Giant killer" counts All-Pro or Legend.
+  Passing: a bug. On a thrown ball the receiver ran flat out at the landing spot, arrived early on anything long,
+  could not stop, and was a yard or two past it when it came down (deep balls landed 1.0 to 1.4 yards from him on
+  average). He now times his run to arrive with the ball and catches it in stride (0.1 to 0.3 yards); defenders
+  playing the ball do the same. The catch odds were retuned for it (base 0.83, a defender at the ball counts 0.6,
+  picks 0.2) so the league stays NFL-like: 30 games, 67% completions, 2.4% interceptions, 4.3 a carry, 36.5 points.
+  The throwing controls are unchanged. New tool `tools/passcheck.js`. Fingerprint re-pinned (old value in
+  pg.fingerprint.before-passing); X.bad empty in exhibitions and careers at both positions; drills, season start,
+  career settings and old-save levels checked; a hand-thrown 40-yard ball at 440x956 caught for a touchdown.
 
 ## Morning hand-off
 

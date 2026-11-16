@@ -65,6 +65,31 @@
 
   const SET = Object.assign({ snd: true, mus: true, ql: 180, diff: 1, me: 0, opp: 5, acc: 'blue' }, load('pg.settings', {}));
 
+  /* ---------- difficulty: one slider, five steps ----------
+     0 Rookie to 4 Legend, with Pro (2) in the middle. A game's `diff` is the step. Saves from before the slider hold
+     `diff` on the old three-step scale (0 Rookie, 1 Pro, 2 All-Pro); the slider saves `dl`, and lvlOf reads either. */
+  const LEVELS = ['Rookie', 'Starter', 'Pro', 'All-Pro', 'Legend'];
+  const lvlOf = o => o && typeof o.dl === 'number' ? clamp(Math.round(o.dl), 0, 4) : [0, 2, 3][o && o.diff] ?? 2;
+  const diffSlider = (id, v) => `<div class="dsl" id="${id}"><i class="lvl">${LEVELS.map((_, k) => `<u class="${k <= v ? 'on' : ''}"></u>`).join('')}</i>`
+    + `<input type="range" min="0" max="4" step="1" value="${v}" style="--f:${v / 4}" aria-label="Difficulty" aria-valuetext="${LEVELS[v]}"><b>${LEVELS[v]}</b></div>`;
+  /* the name and the bars follow the thumb as it moves; onSet hears the step once it is let go */
+  function bindDiff(el, onSet) {
+    const r = el && el.querySelector('input');
+    if (!r) return;
+    const show = () => {
+      const v = +r.value;
+      el.querySelector('b').textContent = LEVELS[v];
+      r.setAttribute('aria-valuetext', LEVELS[v]);
+      r.style.setProperty('--f', v / 4);
+      el.querySelectorAll('.lvl u').forEach((u, k) => u.classList.toggle('on', k <= v));
+    };
+    r.oninput = show;
+    r.onchange = () => {
+      show();
+      onSet(+r.value);
+    };
+  }
+
   /* the one accent color, picked in the menu: CSS reads it as --acc, the canvas as ACC */
   const ACCENTS = { blue: '#4c9aff', red: '#ff5a6b', orange: '#ff8437', teal: '#2fd6c1', violet: '#a58bff', white: '#eef2f8' };
   let ACC = ACCENTS.blue;
@@ -190,8 +215,8 @@
   /* opt: {a,b,ql,diff,mode,lock,hero,ovr,mustWin,onEnd,onQuit} */
   function startGame(o) {
     const lock = o.lock || null, first = o.mode && o.mode !== 'exh' && rnd() < 0.5 ? 1 : 0;  // exhibition always opens with the user receiving
-    G = { state: 'dead', mode: o.mode || 'exh', tm: [o.a, o.b], ros: (r0 => [r0, mkRoster(o.b, [-6, 0, 5][o.diff ?? 1], o.ovr && o.ovr[1], namesOf(r0))])(o.ros0 || mkRoster(o.a, 0, o.ovr && o.ovr[0])),
-      score: [0, 0], q: 1, ql: o.ql || 180, diff: o.diff ?? 1, clock: o.ql || 180, stats: [0, 1].map(() => ({ pass: 0, rush: 0, comp: 0, att: 0, to: 0 })), stam: 1, pad: null, deadT: 0, ot: false, final: false,
+    G = { state: 'dead', mode: o.mode || 'exh', tm: [o.a, o.b], ros: (r0 => [r0, mkRoster(o.b, [-6, -3, 0, 5, 9][o.diff ?? 2] ?? 0, o.ovr && o.ovr[1], namesOf(r0))])(o.ros0 || mkRoster(o.a, 0, o.ovr && o.ovr[0])),
+      score: [0, 0], q: 1, ql: o.ql || 180, diff: o.diff ?? 2, clock: o.ql || 180, stats: [0, 1].map(() => ({ pass: 0, rush: 0, comp: 0, att: 0, to: 0 })), stam: 1, pad: null, deadT: 0, ot: false, final: false,
       sel: null, me: null, preT: 0, meter: 0, lock, lockSide: lock ? (OFFR.includes(lock) ? 'off' : 'def') : null, first, drill: o.drill ? { n: o.drill, left: o.drill, side: o.side || (lock && !OFFR.includes(lock) ? 'def' : 'off'), script: o.script || null, dcall: o.dcall || null, title: o.title || 'Practice', reps: [] } : null, lineFn: o.line || null, goalsFn: o.goals || null, mustWin: !!o.mustWin, home: o.away ? 1 : 0, kr: !!o.kr && !!lock, liveP: null, prime: !!o.prime, around: o.around || null, highs: o.highs || null, recs: o.recs || null, onEnd: o.onEnd || null, onQuit: o.onQuit || null, paused: false, last: '', box: {}, scores: [], lastScore: null, drive: null, potd: null, hl: null, rpEnd: null, pat: null, try2: null, introT: 0, to: [3, 3], runoff: 0, share: o.share === undefined ? 1 : o.share, possN: 0, benchN: -1, sit: false, env: o.env || { time: SET.tod || 'night', weather: SET.wx || 'clear' },
       my: { att: 0, comp: 0, pyd: 0, ptd: 0, pint: 0, car: 0, ryd: 0, rtd: 0, rec: 0, recyd: 0, rectd: 0, tgt: 0, tkl: 0, sack: 0, int: 0, pbu: 0 } };
     if (lock && o.hero) {
@@ -1456,17 +1481,23 @@
     seek(d, tx, ty, 1, !!b);
   }
 
+  /* How far the difficulty slider is from Pro: -1 at Rookie, +1 at Legend, 0 when nobody is playing. Besides the
+     opponent's ratings (startGame), it sets how fast the computer's defenders react to your throws, how often they
+     hold on to a ball they get to, and how accurately the computer's quarterback throws. Training camp keeps its own
+     scale (its stars were set without this). */
+  const hard = () => AUTO || G.mode === 'camp' ? 0 : ((G.diff ?? 2) - 2) / 2;
+
   function defAI(d) {
     const a = ps.air, c = ps.carrier;
     if (a) {
-      if (a.t < d.rx) return;
+      if (a.t < d.rx * (d.team === 1 ? 1 - 0.3 * hard() : 1)) return;
       /* Everybody breaks on the throw: the men near it go for the ball, the rest rally toward where it comes down
          (they used to stand still beyond nine yards, and a catch then ran for fifteen more on average). */
       /* the man on him, and anybody within four yards, plays the ball; the rest take the angle to where the receiver
          will be a moment after the catch (he keeps running), not to where it lands: they used to arrive behind him,
          and he ran eight yards before the first hand touched him (NFL about three or four) */
       const t = a.target, lx = a.x1 + (t ? t.vx : 0) * 0.5, ly = a.y1 + (t ? t.vy : 0) * 0.5, far = hyp(a.x1 - d.x, a.y1 - d.y);
-      if (far < 4 || d.man === t) seek(d, a.x1, a.y1, 1, true);
+      if (far < 4 || d.man === t) seek(d, a.x1, a.y1, clamp(far / Math.max(0.05, a.T - a.t) / d.spd, 0.5, 1), true);  // timed, like the receiver (see offAI): flat out he ran past the spot
       else if (far < 9) seek(d, lx, ly, 1, true);
       else seek(d, lx, ly + G.dir * 3, 0.92, true);
       return;
@@ -1491,7 +1522,10 @@
     const a = ps.air;
     if (ps.mode === 'pass' && !ps.open) {
       if (a && a.target === p) {
-        seek(p, a.x1, a.y1, 1, true);
+        /* he times his run to get there with the ball, and catches it in stride: flat out at the spot he arrived early
+           on a long ball, could not stop, and was a yard or two past it when it came down behind him */
+        const left = Math.max(0.05, a.T - a.t), far = hyp(a.x1 - p.x, a.y1 - p.y);
+        seek(p, a.x1, a.y1, clamp(far / left / p.spd, 0.35, 1), true);
       } else if (p.route && !(a && p.wp >= p.route.pts.length)) followRoute(p);
       else blockAI(p, cl);
       return;
@@ -1708,7 +1742,7 @@
         ty = q.y + (ty - q.y) * k;
         d = range;
       }
-      const pr = pressure(q), err = d * 0.03 * (1 + (85 - (q.thr ?? q.rt)) * 0.03) * (pr ? 1.9 : 1) * (ps.rpo ? 1.6 : 1);  // an option throw comes out of the mesh, feet not set
+      const pr = pressure(q), err = d * 0.03 * (1 + (85 - (q.thr ?? q.rt)) * 0.03) * (pr ? 1.9 : 1) * (ps.rpo ? 1.6 : 1) * (q.team === 1 ? 1 - 0.25 * hard() : 1);  // an option throw comes out of the mesh, feet not set
       tx = clamp(tx + (rnd() - rnd()) * err, 1, FW - 1);
       ty = clamp(ty + (rnd() - rnd()) * err, -9, 109);
     } else {
@@ -1929,16 +1963,19 @@
     }
     /* 0.9 was 0.96 until 2026-11-14: receivers used to run two or three yards past every hard break, so balls thrown to
        hitches, curls and in-routes never found them, and the game was balanced with those misses in it. With the routes
-       run properly the base chance came down, to keep completions near 58%. */
-    let cp = dr > 2.2 ? 0 : (0.9 - clamp((2.6 - ndd) / 2.6, 0, 1) * 0.42) * (0.93 + ((r.cat ?? r.rt) - 70) * 0.005) - (dr > 1.2 ? 0.25 : 0) - Math.max(0, a.dist - 16) * 0.009;
+       run properly the base chance came down, to keep completions near 58%. Since 2026-11-16 (evening) the receiver times
+       his run to the ball and gets there (see offAI), so the base is 0.83 and a defender at the ball counts for more
+       (0.6, was 0.42): an open man catches it, a covered one is a fight. */
+    let cp = dr > 2.2 ? 0 : (0.83 - clamp((2.6 - ndd) / 2.6, 0, 1) * 0.6) * (0.93 + ((r.cat ?? r.rt) - 70) * 0.005) - (dr > 1.2 ? 0.25 : 0) - Math.max(0, a.dist - 16) * 0.009;
     const ud = nd && nd === G.sel && off === 1 && !AUTO && ndd < 1.8;
     if (ud) cp -= 0.2;
     cp *= G.wx.cat;  // a wet or frozen ball is harder to hold
     if (dr <= 2.2) cp += chemOf(ps.passer, r) * 0.001;  // up to five points either way between a career player and his partner
     ps.cpT = cp;  // how catchable it was, for the play grade (a drop is a catchable ball not caught)
-    let ip = ndd < 1.5 ? 0.3 * (1 + ((nd.bsk ?? nd.rt) - 75) * 0.02) : 0;  // 0.38 until the reads went downfield (2026-11-16 night): more balls are contested now, and picks ran at 4% of throws against the NFL's 2.2%
+    let ip = ndd < 1.5 ? 0.2 * (1 + ((nd.bsk ?? nd.rt) - 75) * 0.02) : 0;  // 0.2 since the receivers reach the ball (2026-11-16 evening; more throws are contested, and a miss is a chance to pick it); 0.3 before, 0.38 until the reads went downfield: more balls are contested now, and picks ran at 4% of throws against the NFL's 2.2%
     if (dr > 2.2 && ndd < 1.6) ip = 0.4;
     if (ud) ip += 0.2;
+    if (off === 0) ip *= 1 + 0.35 * hard();  // your throw: the computer's hands are surer the harder the setting
     /* Both feet in. A ball caught at the sideline or the end line counts only when the receiver comes down in bounds:
        caught with him already over the line it is incomplete, and within a yard of it he has to drag his toes, which
        sure hands manage more often (NFL: two feet or another body part down in bounds, no force-outs). */
@@ -6526,7 +6563,7 @@
   }
 
   function showExh() {
-    let me = SET.me, opp = SET.opp, ql = SET.ql, diff = SET.diff, tod = SET.tod || 'night', wx = SET.wx || 'clear';
+    let me = SET.me, opp = SET.opp, ql = SET.ql, diff = lvlOf(SET), tod = SET.tod || 'night', wx = SET.wx || 'clear';
     if (opp === me) opp = (me + 1) % TEAMS.length;
     const draw = () => {
       G.tm = [me, opp];
@@ -6535,7 +6572,7 @@
   ${kitsHtml([[me, true, 'Home'], [opp, false, 'Away']])}
   <h2>Your team</h2><div class="teams" id="tms">${teamGrid(me)}</div>
   <h2>Opponent</h2><div class="row"><button class="nav" id="opl" aria-label="Previous opponent">‹</button>${tmBtn(TEAMS[opp],opp,false)}<button class="nav" id="opr" aria-label="Next opponent">›</button></div>
-  <h2>Difficulty</h2><div class="seg pic" id="dif">${['Rookie','Pro','All-Pro'].map((d,i)=>`<button data-d="${i}" class="${i===diff?'on':''}"><i class="lvl">${[0,1,2].map(k=>`<u class="${k<=i?'on':''}"></u>`).join('')}</i>${d}</button>`).join('')}</div>
+  <h2>Difficulty</h2>${diffSlider('dif', diff)}
   <h2>Quarter length</h2><div class="seg" id="qls">${[60,120,180,300].map(q=>`<button data-q="${q}" class="${q===ql?'on':''}">${q/60} min</button>`).join('')}</div>
   <h2>Kickoff time</h2><div class="seg pic" id="tod">${[['day','Day'],['dusk','Dusk'],['night','Night']].map(([k,l])=>`<button data-v="${k}" class="${k===tod?'on':''}">${ENV_ICON[k]}${l}</button>`).join('')}</div>
   <h2>Weather</h2><div class="seg pic" id="wx">${[['clear','Clear'],['rain','Rain'],['snow','Snow']].map(([k,l])=>`<button data-v="${k}" class="${k===wx?'on':''}">${ENV_ICON[k]}${l}</button>`).join('')}</div>
@@ -6558,10 +6595,7 @@
         ql = +b.dataset.q;
         keepScroll(draw);
       });
-      scr.querySelectorAll('#dif button').forEach(b => b.onclick = () => {
-        diff = +b.dataset.d;
-        keepScroll(draw);
-      });
+      bindDiff($('#dif'), v => diff = v);
       scr.querySelectorAll('#tod button').forEach(b => b.onclick = () => {
         tod = b.dataset.v;
         keepScroll(draw);
@@ -6571,7 +6605,7 @@
         keepScroll(draw);
       });
       $('#go').onclick = () => {
-        Object.assign(SET, { me, opp, ql, diff, tod, wx });
+        Object.assign(SET, { me, opp, ql, dl: diff, tod, wx });
         save('pg.settings', SET);
         snd('whistle');
         startGame({ a: me, b: opp, ql, diff, env: { time: tod, weather: wx } });
@@ -7451,7 +7485,7 @@
   /* What the other files use: career.js, season.js, league.js, render3d.js and audio.js all go through PG. */
   const PG = Object.assign(window.PG, {
     hero: heroHtml,
-    TEAMS, NAMES: SUR, BASE, OFFR, DEFR, SET, CELEBS, rnd, pick, clamp, load, save, scr, $,
+    TEAMS, NAMES: SUR, BASE, OFFR, DEFR, SET, CELEBS, LEVELS, lvlOf, diffSlider, bindDiff, rnd, pick, clamp, load, save, scr, $,
     startGame, showMenu, toMenu, banner, toast, snd, playScene, cinema, statTable, finTop, envFor, mkRoster, kitsHtml, watchPotd, keepScroll,
     vk, teamGrid, showTeams, inkOn,
     boot() {

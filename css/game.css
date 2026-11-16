@@ -799,6 +799,17 @@ tr.me td{color:var(--acc);font-weight:700}
 .lvl u{width:4px;border-radius:1px;background:currentColor;opacity:.3;text-decoration:none}
 .lvl u:nth-child(1){height:6px}.lvl u:nth-child(2){height:10px}.lvl u:nth-child(3){height:14px}
 .lvl u.on{opacity:1}
+.dsl{display:flex;align-items:center;gap:12px;height:48px;margin-bottom:10px;padding:0 12px;border-radius:9px;background:var(--panel2);color:var(--acc)}   /* the difficulty slider: bars, track, name */
+.sheet .dsl{background:var(--bg)}
+.dsl .lvl{height:16px}
+.dsl .lvl u:nth-child(1){height:4px}.dsl .lvl u:nth-child(2){height:7px}.dsl .lvl u:nth-child(3){height:10px}.dsl .lvl u:nth-child(4){height:13px}.dsl .lvl u:nth-child(5){height:16px}
+.dsl b{width:58px;text-align:right;font-family:var(--display);font-weight:700;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--ink)}
+.dsl input{flex:1;min-width:0;height:44px;margin:0;padding:0;border:0;border-radius:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:pan-y}
+.dsl input::-webkit-slider-runnable-track{height:6px;border-radius:3px;background:linear-gradient(90deg,var(--acc) calc(var(--f,.5)*100%),var(--line) 0)}
+.dsl input::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-8px;border-radius:50%;background:var(--ink);border:3px solid var(--acc);box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.dsl input::-moz-range-track{height:6px;border-radius:3px;background:var(--line)}
+.dsl input::-moz-range-progress{height:6px;border-radius:3px;background:var(--acc)}
+.dsl input::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--ink);border:3px solid var(--acc)}
 
 /* playoff bracket slots: the team's color, its seed, its name; the loser of a played game is dimmed */
 .gm span{display:flex;align-items:center;gap:6px}

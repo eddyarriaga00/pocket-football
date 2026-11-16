@@ -15,7 +15,7 @@
     ['take', 'Ball hawks', 'Take the ball away twice in a game', g => g.stats[1].to >= 2],
     ['ot', 'Overtime', 'Win a game in overtime', g => g.won && g.ot],
     ['wx', 'Mudder', 'Win a game in rain or snow', g => g.won && (g.weather === 'rain' || g.weather === 'snow')],
-    ['pro', 'Giant killer', 'Win on All-Pro difficulty', g => g.won && g.diff === 2],
+    ['pro', 'Giant killer', 'Win on All-Pro or Legend', g => g.won && g.diff >= 3],
     ['ten', 'Season ticket', 'Finish ten games', () => S.games >= 10],
     ['camp', 'Camp graduate', 'Earn a star in all three training drills'],
     ['title', 'Champion', 'Win a title in Season or Career']

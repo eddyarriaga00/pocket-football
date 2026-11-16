@@ -50,7 +50,6 @@
   const PICK_TRUST = [78, 70, 62, 56, 50, 44, 38, 32], PICK_XP = [1500, 1200, 1000, 800, 650, 500, 400, 300];
   const WORK_TARGET = { QB: 300, RB: 220, WR: 220, LB: 140, CB: 130 };
   const NEUTRAL = { QB: 4.6, RB: 4.9, WR: 4.9, LB: 4.0, CB: 3.7 };  // the game grade (in points) at which coach trust stays put
-  const DIFFS = ['Rookie', 'Pro', 'All-Pro'];  // drill production that earns a grade of 85
   const persist = () => save(KEY, C);
 
   /* ---------- more than one career ----------
@@ -799,7 +798,7 @@
   /* five live reps with a neutral squad; what you produce is the grade */
   function workout() {
     PG.snd('whistle');
-    PG.startGame({ a: C.team, b: (C.team + 3) % TEAMS.length, ql: 180, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [80, 77], diff: 1, drill: 5, env: { time: 'day', weather: 'clear' }, line: chip,
+    PG.startGame({ a: C.team, b: (C.team + 3) % TEAMS.length, ql: 180, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [80, 77], diff: 2, drill: 5, env: { time: 'day', weather: 'clear' }, line: chip,
       onEnd: r => {
         const m = r.my, stat = xpFor(m, false).filter(([l]) => l !== 'Game played').reduce((t, [, v]) => t + v, 0);
         C.pre.work = { m: { ...m }, grade: clamp(Math.round(40 + stat / WORK_TARGET[C.pos] * 45), 35, 100) };
@@ -1605,7 +1604,7 @@
     TEAMS.push(STAR_SIDES[0], STAR_SIDES[1]);
     const a = n + st.conf, b = n + 1 - st.conf;
     PG.snd('whistle');
-    PG.startGame({ a, b, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [93, 93], diff: C.diff ?? 1, share: share(), env: { time: 'night', weather: 'clear', roof: true }, line: chip,
+    PG.startGame({ a, b, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [93, 93], diff: PG.lvlOf(C), share: share(), env: { time: 'night', weather: 'clear', roof: true }, line: chip,
       onEnd: r => starEnd(r),  // the field stays behind the result, as after any game; the two sides leave with it (Continue)
       onQuit: () => {
         PG.toMenu();
@@ -1760,9 +1759,9 @@
   ${nextCard()}
   <div class="tabs itabs" style="margin-top:16px">${[['up','Upgrade'],['season','Season'],['stats','Stats'],['social','Social']].map(([k,l])=>`<button data-t="${k}" class="${k===tab?'on':''}">${TAB_ICON[k]}<span>${l}</span></button>`).join('')}</div>
   ${tab==='up'?tabUp():tab==='season'?tabSeason():tab==='social'?tabSocial():tabStats()}
-  <div class="hset${setOpen?' open':''}"><button class="hsum" id="hset" aria-expanded="${setOpen}"><b>Game settings</b><span>${DIFFS[C.diff??1]} · ${C.ql/60}-min quarters${C.pos==='WR'?` · ${C.kr===false?'offense only':'returns kicks'}`:''}</span></button>
-  ${setOpen?`  <h2>Difficulty</h2><div class="seg" id="hd">${DIFFS.map((d,i)=>`<button data-d="${i}" class="${i===(C.diff??1)?'on':''}">${d}</button>`).join('')}</div>
-  <p class="note">How good the other teams are. All-Pro pays 20% more XP.</p>
+  <div class="hset${setOpen?' open':''}"><button class="hsum" id="hset" aria-expanded="${setOpen}"><b>Game settings</b><span>${PG.LEVELS[PG.lvlOf(C)]} · ${C.ql/60}-min quarters${C.pos==='WR'?` · ${C.kr===false?'offense only':'returns kicks'}`:''}</span></button>
+  ${setOpen?`  <h2>Difficulty</h2>${PG.diffSlider('hd', PG.lvlOf(C))}
+  <p class="note">All-Pro pays 20% more XP, Legend 30%.</p>
   ${C.pos==='WR'?`<h2>Special teams</h2><div class="seg" id="hk">${[[1,'Return kicks'],[0,'Offense only']].map(([v,l])=>`<button data-k="${v}" class="${v===(C.kr===false?0:1)?'on':''}">${l}</button>`).join('')}</div>
   ${retHtml()}`:''}
   <h2>Quarter length</h2><div class="seg" id="hq">${[60,120,180].map(q=>`<button data-q="${q}" class="${q===C.ql?'on':''}">${q/60} min</button>`).join('')}</div>
@@ -1807,8 +1806,8 @@
       });
       const pr = $('#prac');
       if (pr) pr.onclick = practice;
-      scr.querySelectorAll('#hd button').forEach(b => b.onclick = () => {
-        C.diff = +b.dataset.d;
+      PG.bindDiff($('#hd'), v => {
+        C.dl = v;
         persist();
         keepScroll(draw);
       });
@@ -1907,7 +1906,7 @@
     /* a rival game opens with the two of you face to face at midfield: his words, and yours if you called him out */
     const rivalry = C.rival && C.rival.team === opp ? { name: C.rival.name, quote: rivalSays(), mine: C.social && C.social.callout && C.social.callout.team === opp ? C.social.callout.quote : '' } : null;
     const pt = LG.prime(C), env = gameEnv();
-    PG.startGame({ ...gameMates(), a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[opp] - (oppInj(opp) ? oppInj(opp).pen : 0)], diff: C.diff ?? 1, share: share(), callout: call, rivalry,
+    PG.startGame({ ...gameMates(), a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[opp] - (oppInj(opp) ? oppInj(opp).pen : 0)], diff: PG.lvlOf(C), share: share(), callout: call, rivalry,
       away: !LG.home(C), kr: retNow(), prime: pt, around: LG.preWeek && LG.full(C) ? LG.preWeek(C) : null, highs: Object.assign({}, C.highs || {}), recs: recsLive(),
       mustWin: C.phase !== 'reg', env, line: chip, goals: m => goals().map(g => ({ d: g.d, ok: !!g.t(m) })), onEnd: r => gameEnd(r, opp), onQuit: () => showHub('up') });
   }
@@ -1916,7 +1915,7 @@
   function practice() {
     const opp = nextOpp();
     PG.snd('whistle');
-    PG.startGame({ ...gameMates(), a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[C.team] - 4], diff: 1, drill: 6, env: { time: 'day', weather: 'clear' }, line: chip,
+    PG.startGame({ ...gameMates(), a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[C.team] - 4], diff: 2, drill: 6, env: { time: 'day', weather: 'clear' }, line: chip,
       onEnd: r => {
         const m = r.my, items = xpFor(m, false).filter(([l]) => l !== 'Game played').map(([l, v]) => [l, Math.round(v * 0.5)]);
         items.unshift(['Practice reps', 80]);
@@ -1947,7 +1946,7 @@
     const won = us > them, res = won ? 'W' : us === them ? 'T' : 'L', gl = goals().map(g => ({ d: g.d, ok: !!g.t(m) }));
     const star = r.potg && r.potg.team === 0 && r.potg.role === POS[C.pos].role;  // you were the player of the game
     const beatRival = won && !!C.rival && C.rival.team === opp;
-    const base = xpFor(m, won), hard = (C.diff ?? 1) === 2 ? [['All-Pro bonus', Math.round(base.reduce((t, [, v]) => t + v, 0) * 0.2)]] : [];
+    const base = xpFor(m, won), lv = PG.lvlOf(C), hard = lv >= 3 ? [[`${PG.LEVELS[lv]} bonus`, Math.round(base.reduce((t, [, v]) => t + v, 0) * (lv > 3 ? 0.3 : 0.2))]] : [];
     const items = base.concat(hard, star ? [['Player of the game', 300]] : [], beatRival ? [['Beat your rival', 300]] : []), met = gl.filter(g => g.ok).length, [pts, grade] = gradeOf(m, won, met);
     const prime = LG.prime(C), playoff0 = C.phase !== 'reg', away = !LG.home(C);
     /* chemistry after this game: every ball between you and your partner counts */

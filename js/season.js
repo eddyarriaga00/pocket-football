@@ -4,7 +4,6 @@
 (() => {
   'use strict';
   const { TEAMS, load, save, scr, $ } = PG, LG = PG.league, KEY = 'pg.season.v1';
-  const DIFF = ['Rookie', 'Pro', 'All-Pro'];
   const ZERO = () => ({ g: 0, pf: 0, pa: 0, pass: 0, rush: 0, to: 0, take: 0 });
   const full = i => `${TEAMS[i].city} ${TEAMS[i].name}`;
 
@@ -66,13 +65,13 @@
   }
 
   function showNew() {
-    const st = { team: PG.SET.me || 0, diff: 1, ql: 180 };
+    const st = { team: PG.SET.me || 0, dl: PG.lvlOf(PG.SET), ql: 180 };
     const draw = () => {
       scr.innerHTML = `<div class="menu solid"><button class="back" id="bk">‹ Menu</button><h1 class="sm">New <em>season</em></h1>
         <p class="tag">Ten games: your division twice, and four against another division of your conference. The division winners make an eight-team playoff. You call and play every snap.</p>
         ${PG.kitsHtml([[st.team, true, 'Home'], [st.team, false, 'Away']]).replace('<em>vs</em>', '')}
         <h2>Your team</h2><div class="teams" id="st">${PG.teamGrid(st.team)}</div>
-        <h2>Difficulty</h2><div class="seg" id="sd">${DIFF.map((d, i) => `<button data-d="${i}" class="${i === st.diff ? 'on' : ''}">${d}</button>`).join('')}</div>
+        <h2>Difficulty</h2>${PG.diffSlider('sd', st.dl)}
         <h2>Quarter length</h2><div class="seg" id="sq">${[60, 120, 180, 300].map(q => `<button data-q="${q}" class="${q === st.ql ? 'on' : ''}">${q / 60} min</button>`).join('')}</div>
         <button class="go" id="sgo">Start season</button></div>`;
       $('#bk').onclick = PG.showMenu;
@@ -80,16 +79,13 @@
         st.team = +b.dataset.i;
         PG.keepScroll(draw);
       });
-      scr.querySelectorAll('#sd button').forEach(b => b.onclick = () => {
-        st.diff = +b.dataset.d;
-        PG.keepScroll(draw);
-      });
+      PG.bindDiff($('#sd'), v => st.dl = v);
       scr.querySelectorAll('#sq button').forEach(b => b.onclick = () => {
         st.ql = +b.dataset.q;
         PG.keepScroll(draw);
       });
       $('#sgo').onclick = () => {
-        S = { v: 1, team: st.team, diff: st.diff, ql: st.ql, year: 1, titles: 0, log: [], stats: ZERO() };
+        S = { v: 1, team: st.team, dl: st.dl, ql: st.ql, year: 1, titles: 0, log: [], stats: ZERO() };
         LG.start(S);
         ensureRoster();
         persist();
@@ -165,7 +161,7 @@
     let sure = false;
     const draw = () => {
       scr.innerHTML = `<div class="menu solid"><button class="back" id="bk">‹ Menu</button>
-        <div class="pc" style="--c:${t.c1}"><div><h3>${t.name}</h3><p>${t.city} · Season ${S.year} · ${LG.recTxt(S, S.team)}<br>${DIFF[S.diff]} · ${S.ql / 60} min quarters${S.titles ? ` · ${S.titles} title${S.titles > 1 ? 's' : ''}` : ''}</p></div>
+        <div class="pc" style="--c:${t.c1}"><div><h3>${t.name}</h3><p>${t.city} · Season ${S.year} · ${LG.recTxt(S, S.team)}<br>${PG.LEVELS[PG.lvlOf(S)]} · ${S.ql / 60} min quarters${S.titles ? ` · ${S.titles} title${S.titles > 1 ? 's' : ''}` : ''}</p></div>
           <div class="ovr">${S.ovrs[S.team]}<small>OVR</small></div></div>
         ${nextCard()}
         <div class="tabs itabs" style="margin-top:16px">${[['table', 'Standings'], ['sched', 'Schedule'], ['team', 'Team'], ['roster', 'Roster']].map(([k, l]) =>
@@ -212,7 +208,7 @@
     ensureRoster();
     const pt = LG.prime(S), env = PG.envFor(S.year + 50, LG.weekNo(S), S.phase !== 'reg' || S.week >= S.sched.length - 4, LG.home(S) ? S.team : opp);  // the home city's weather
     if (pt) env.time = 'night';  // primetime is a night game
-    PG.startGame({ a: S.team, b: opp, ql: S.ql, diff: S.diff, mode: 'season', ros0: S.roster, ovr: [S.ovrs[S.team], S.ovrs[opp]], mustWin: S.phase !== 'reg',
+    PG.startGame({ a: S.team, b: opp, ql: S.ql, diff: PG.lvlOf(S), mode: 'season', ros0: S.roster, ovr: [S.ovrs[S.team], S.ovrs[opp]], mustWin: S.phase !== 'reg',
       away: !LG.home(S), prime: pt, around: LG.full(S) ? LG.preWeek(S) : null, env,
       onEnd: r => gameEnd(r, opp), onQuit: () => hub('table') });
   }

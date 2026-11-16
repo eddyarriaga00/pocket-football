@@ -422,6 +422,9 @@ await fetch('tools/harness.js?' + Date.now()).then(r => r.text()).then(t => (0, 
 - `tools/chaos.js` is a rougher test player for the rare endings: `X.exh(8, 120)`, `X.career('WR', 6)` and
   `X.season(1, 'potie')` go for it on fourth down, try for two, kick onside, challenge, pick random plays and tie
   games late so overtime is played, checking after every step that the game's numbers are still numbers.
+- `tools/passcheck.js` (after the harness): `PC.run(4)` reports how throws land, yours and the computer's: completion
+  rate, interceptions, and how far the receiver was from the ball when it came down. `PC.run(4, 0)` does it at a
+  difficulty step (0 Rookie to 4 Legend).
 - `H.camp('run', 4)` plays a training-camp drill (`'pass'`, `'run'` or `'tackle'`) with a simple test player.
 - `H.fingerprint()` is a seeded run. After a change that should not alter behaviour it must return the same string.
 - `PG.dbg.lab('Smash', 40)` runs one play 40 times from first and ten (clear weather, every other snap mirrored) and
