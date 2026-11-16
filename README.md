@@ -112,7 +112,7 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   of the jump (the defender goes up with him), and a ball thrown off his line gets a stretch, chest out and arms long.
 - Your look: the career hub has a card for your player's skin tone, gloves, cleats, socks, visor, facemask, arm
   bands, sleeves and a towel at the belt, worn over the team's kit on the field and on your card. Social: post once a week (thank the fans, hype the
-  next game, or shout out a teammate) and read the week's direct messages from home, your agent, a teammate and,
+  next game, shout out a teammate, or post a photo) and read the week's direct messages from home, your agent, a teammate and,
   in rivalry week, your rival.
 - Pass protection: before the snap on a pass, Protect (O, or LT) steps through Base, Slide left, Slide right and
   Max protect. A slide sends the line toward a blitz you expect from that side; Max protect keeps the backs and the
@@ -144,6 +144,10 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   your top receiver) builds over seasons: he looks your way more and the ball between you is caught more often.
   The social feed has stat accounts, local radio, former players and opponents, and reacts to streaks, road wins,
   primetime, the playoffs, the weather, playing hurt and your chemistry.
+- The feed is drawn as well as written: players post with their helmet as a face, the final is a scoreboard, stat
+  lines are big figures, the team names a player of the game with your picture, fans run a poll each week (vote and
+  see the bars), follower milestones get a post, and a tap on the heart likes a post. "Post a photo" is one of the
+  weekly posts.
 - Jerseys are tucked into the pants at the waist, with a belt; uniforms pick up grass stains (mud in the rain)
   as players go to the ground through the game.
 - On the sideline the reserves stand unevenly, each turned his own way, and one or two take a knee to watch.

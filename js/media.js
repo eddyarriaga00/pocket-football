@@ -88,12 +88,13 @@
   const mate = (c, role) => (c.mates || []).find(m => m.role === role) || null;
   const teammate = (c, role) => {
     const m = mate(c, role) || (c.mates && c.mates[0]) || { first: any(FIRST), last: any(PG.NAMES), num: 10, role };
-    return { who: `${m.first} ${m.last}`, at: `${m.first[0].toLowerCase()}${m.last.toLowerCase()}${m.num}`, bio: `${TEAMS[c.team].name} ${m.role}`, kind: 'mate', col: TEAMS[c.team].c1, ver: true };
+    return { who: `${m.first} ${m.last}`, at: `${m.first[0].toLowerCase()}${m.last.toLowerCase()}${m.num}`, bio: `${TEAMS[c.team].name} ${m.role}`, kind: 'mate', col: TEAMS[c.team].c1, ver: true, pic: [c.team, m.num, 1] };
   };
 
   /* the rival has a first name too (made from his surname, so it never changes) */
   const rivalName = r => `${FIRST[[...r.name].reduce((t, ch) => t + ch.charCodeAt(0), 0) % FIRST.length]} ${r.name}`;
-  const rivalBy = (c, x) => ({ who: rivalName(c.rival), at: c.rival.name.toLowerCase() + '_' + TEAMS[c.rival.team].ab.toLowerCase(), bio: `${TEAMS[c.rival.team].name} ${x.pos}`, kind: 'rival', col: TEAMS[c.rival.team].c1, ver: true });
+  const rivalBy = (c, x) => ({ who: rivalName(c.rival), at: c.rival.name.toLowerCase() + '_' + TEAMS[c.rival.team].ab.toLowerCase(), bio: `${TEAMS[c.rival.team].name} ${x.pos}`, kind: 'rival', col: TEAMS[c.rival.team].c1, ver: true,
+    pic: [c.rival.team, (c.pos === 'QB' ? 1 : 80) + [...c.rival.name].reduce((t, ch) => t + ch.charCodeAt(0), 0) % (c.pos === 'QB' ? 18 : 10), 1] });
 
   function post(by, text, c, k) {
     // k: how much attention this kind of post gets (a reporter's final, a viral fan); no text, no post
@@ -207,13 +208,32 @@
   };
   const radio = c => ({ who: `${TEAMS[c.team].city} Sports Radio`, at: `${TEAMS[c.team].city.replace(/\s/g, '')}Radio`, bio: 'call-in show weeknights', kind: 'press', col: '#2f6fb5', ver: true });
   const oppPlayer = c => {
-    const f = any(FIRST), l = any(PG.NAMES), pos = c.pos === 'QB' ? any(['DE', 'LB', 'S']) : any(['CB', 'S']);
-    return { who: `${f} ${l}`, at: `${f[0].toLowerCase()}${l.toLowerCase()}${10 + Math.floor(Math.random() * 89)}`, bio: `${TEAMS[c.opp].name} ${pos}`, kind: 'rival', col: TEAMS[c.opp].c1, ver: true };
+    const f = any(FIRST), l = any(PG.NAMES), pos = c.pos === 'QB' ? any(['DE', 'LB', 'S']) : any(['CB', 'S']), num = { DE: 90, LB: 50, S: 20, CB: 20 }[pos] + Math.floor(Math.random() * 10);
+    return { who: `${f} ${l}`, at: `${f[0].toLowerCase()}${l.toLowerCase()}${num}`, bio: `${TEAMS[c.opp].name} ${pos}`, kind: 'rival', col: TEAMS[c.opp].c1, ver: true, pic: [c.opp, num, 0] };
+  };
+  const teamAcct = c => {
+    const T = TEAMS[c.team];
+    return { who: `${T.city} ${T.name}`, at: `${T.city}${T.name}`.replace(/\s/g, ''), bio: 'Official team account', kind: 'team', col: T.c1, ver: true };
+  };
+  /* the numbers as big figures, for the cards */
+  const statCells = c => {
+    const m = c.m, l = c.pos === 'QB' ? [[`${m.comp}/${m.att}`, 'Comp'], [m.pyd, 'Yards'], [m.ptd, 'TD']] : [[m.rec, 'Catches'], [m.recyd, 'Yards'], [m.rectd, 'TD']];
+    if (c.pos === 'QB' && m.pint) l.push([m.pint, 'INT']);
+    else if ((m.ryd || 0) >= 15) l.push([m.ryd, 'Rush yds']);
+    else if (c.pos !== 'QB' && m.tgt) l.push([m.tgt, 'Targets']);
+    return l;
+  };
+  /* a fan poll: options with the share each has before your vote ([label, percent]), and a vote count */
+  const pollOf = (p, opts) => {
+    if (!p) return null;
+    const w = opts.map(([, v]) => Math.max(1, v * (0.8 + Math.random() * 0.4))), sum = w.reduce((a, b) => a + b, 0);
+    p.card = { t: 'poll', o: opts.map(([l], k) => [l, Math.round(w[k] / sum * 100)]), n: Math.round(p.likes * (2 + Math.random() * 2)) + 40, v: null };
+    return p;
   };
   const partnerBy = c => {
     const ch = c.chem;
     if (!ch) return null;
-    return { who: `${ch.first} ${ch.last}`, at: `${ch.first[0].toLowerCase()}${ch.last.toLowerCase()}${ch.num}`, bio: `${TEAMS[c.team].name} ${ch.role}`, kind: 'mate', col: TEAMS[c.team].c1, ver: true };
+    return { who: `${ch.first} ${ch.last}`, at: `${ch.first[0].toLowerCase()}${ch.last.toLowerCase()}${ch.num}`, bio: `${TEAMS[c.team].name} ${ch.role}`, kind: 'mate', col: TEAMS[c.team].c1, ver: true, pic: [c.team, ch.num, 1] };
   };
 
   function extras(c, x, D, t, lost) {
@@ -222,7 +242,13 @@
     const y = { ...x, PL, PF: ch ? `${ch.first} ${ch.last}` : '', G: c.snap ? c.snap.g : '', SN: c.snap ? c.snap.n : '', BW: c.snap && c.snap.best ? c.snap.best : '', W: c.wx === 'snow' ? 'snow' : 'rain', n: c.streakW || c.streakL || 0, INJ: c.inj ? c.inj.what : '' };
     const F2 = arr => arr.map(s => fill(s, y));
     // the numbers
-    P(statAcct(), F2(c.pos === 'QB' ? ['{N} today: {S}.', '{L} vs the {O}: {S}. File it away.', '{S}. That’s {L}’s line against the {O}.'] : ['{N} today: {S}.', '{L} vs the {O}: {S}.', 'Target to catch: {L} went {S} against the {O}.']), 1.1);
+    if (P(statAcct(), F2(['{N} vs the {O}.', '{L}’s line against the {O}. File it away.', 'The numbers: {L} vs the {O}.', '{N}, by the numbers.']), 1.1)) out[out.length - 1].card = { t: 'stat', cells: statCells(c) };
+    // a fan poll, one a week: grade the day, or call the next game
+    const pt = t === 'great' ? [62, 25, 9, 4] : t === 'good' ? [28, 44, 20, 8] : t === 'meh' ? [8, 27, 41, 24] : [3, 10, 32, 55];
+    const poll = c.next != null && Math.random() < 0.45 ? pollOf(post(fan(c.team), fill(any(['{T} vs the {NX}. Who takes it?', 'Next up, the {NX}. Your pick:', 'Calling it now. {T} or {NX}?']), y), c, 1),
+      [[x.T, c.won ? 68 : 55], [x.NX, c.won ? 32 : 45]])
+      : pollOf(post(any([neutral(), radio(c)]), fill(any(['Grade {L}’s day.', 'How did {L} play today?', 'Report card time. {L} vs the {O}:']), y), c, 1), [['A', pt[0]], ['B', pt[1]], ['C', pt[2]], ['D–F', pt[3]]]);
+    if (poll) out.push(poll);
     if (c.snap && c.snap.n >= 4) {
       P(statAcct(), F2(c.snap.v >= 3.5 ? ['{L} graded out at {G} over {SN} snaps on our tape. Best one: {BW}.', 'Snap by snap, {L} was a {G} today. That’s elite.'] : c.snap.v >= 2.5 ? ['{L}: {G} over {SN} graded snaps. Solid, a couple left out there.', 'Tape grade for {L} today: {G}.'] : ['Rough tape for {L}: {G} over {SN} snaps.', '{L} graded {G}. The film won’t be fun this week.']), 1.2);
       P(analyst(), F2(c.snap.v >= 3.5 ? ['Watched every {L} snap twice. {G}. Decisions, timing, all of it.', 'Graded {L} out at {G}. His best rep: {BW}. That’s a pro.'] : c.snap.v < 2.3 ? ['Went back through the {L} tape: {G}. Too many snaps where he wasn’t where he needed to be.'] : ['{L} on tape: {G}. A couple of plays from a really good day.']), 1.3);
@@ -279,14 +305,20 @@
     const mateLines = tie ? ['Not the result we wanted. Back to work.', 'We’ll learn from this one. Locked in.'] : wasted ? MATE.wasted : goodLoss ? MATE.goodLoss : badWin ? MATE.meh : MATE[lost ? 'bad' : t];
     const analystLines = wasted ? ANALYST.wasted : goodLoss ? ANALYST.goodLoss : ANALYST[t];
     const myFan = k => post(fan(c.team), D(myLines), c, k), theirFan = k => post(fan(c.opp), D(theirs), c, k);
-    // the reporter's final always leads (winner first), with the thread under it
-    const [hi, lo] = c.us >= c.them ? [[x.T, c.us], [x.O, c.them]] : [[x.O, c.them], [x.T, c.us]];
-    const fin = post(reporter(), `Final: ${hi[0]} ${hi[1]}, ${lo[0]} ${lo[1]}. ${x.N}: ${x.S}.` + (c.star ? ' Player of the game.' : ''), c, 2.2);
+    // the reporter's final always leads, the score drawn as a card, with the thread under it
+    const fin = post(reporter(), c.away ? `Final from ${x.OC}.` : `Final in ${x.C}.`, c, 2.2);
+    fin.card = { t: 'final', a: [c.team, c.us], b: [c.opp, c.them], tag: c.playoff ? 'Final · playoffs' : 'Final' };
     fin.replies = [];
     [myFan(0.4), theirFan(0.3), post(neutral(), D(lost && t !== 'bad' ? ['Tough loss. On to next week.', 'Shame to waste a line like that.', 'Long trip home for the {T}.'] : THREAD[t]), c, 0.2)].forEach(p => keep(fin.replies, p));
     for (let i = 0; i < Math.floor(b / 2.5); i++) keep(fin.replies, Math.random() < 0.65 ? myFan(0.3) : theirFan(0.3));  // the bigger the day, the longer the thread
     fin.rep = Math.max(fin.rep, fin.replies.length);
     out.push(fin);
+    // the team's own account names its player of the game, with his picture
+    if (c.star && c.num != null) {
+      const pg = post(teamAcct(c), fill(any(['What a day.', '{L} did that. 🔥', 'Takeover.', 'Ours.']), x), c, 2);
+      pg.card = { t: 'pog', pic: [c.team, c.num, c.away ? 0 : 1, 'me'], cells: statCells(c).slice(0, 3) };
+      out.push(pg);
+    }
     if (c.trending) out.push({ kind: 'trend', text: F(any(['#{LU}SZN', '#{T}Rising', '#{L}Effect', '#{AB}vs{OAB}'])), sub: `Trending in football · ${short(Math.round(c.fol * (0.6 + b / 6)))} posts` });
     // how many voices: a quiet day draws a handful, a great one floods the mentions
     const n = Math.round(4 + b * 1.4), pool = [];
@@ -623,15 +655,95 @@
     return isNaN(L) || L < 0.19 ? '#fff' : '#06101f';
   }
 
-  const n = (v, one, many) => `${short(v)} ${v === 1 ? one : many}`;
+  /* the counts under a post, as small pictures: replies, reposts, and a heart you can tap */
+  const ICON = {
+    rep: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>',
+    rt: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11V5.5h7M9 3.5l2 2-2 2M12 5v5.5H5M7 12.5l-2-2 2-2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    like: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 13.5S2.5 10.2 2.5 6.3A2.8 2.8 0 018 4.9a2.8 2.8 0 015.5 1.4c0 3.9-5.5 7.2-5.5 7.2z" fill="currentColor"/></svg>',
+  };
 
+  /* players' faces: the uniform portrait (render3d.js), cropped to the helmet. pic is [team, number, home, 'me'];
+     'me' wears the look the career player picked. Anyone without a pic, or with no renderer, keeps initials. */
+  function picUrl(pic) {
+    if (!pic || !PG.r3d || !PG.r3d.portrait || !TEAMS[pic[0]]) return null;
+    const me = pic[3] === 'me' && PG.career && PG.career.data;
+    try {
+      return PG.r3d.portrait(TEAMS[pic[0]], pic[2] !== 0, pic[1], me ? me.look || null : null);
+    } catch (e) {
+      return null;
+    }
+  }
+  function avHtml(p) {
+    const url = picUrl(p.pic);
+    if (url) return `<span class="av pic" style="--c:${esc(p.col)}"><img src="${url}" alt=""></span>`;
+    return `<span class="av" style="--c:${esc(p.col)};color:${inkOn(p.col)}${inkOn(p.col) === '#fff' ? '' : ';text-shadow:none'}">${esc(initials(p.who))}</span>`;
+  }
+
+  /* pictures a post can carry (p.card): a final score, a player of the game, a stat line, a fan poll, a follower
+     milestone, a photo */
+  const badge = ti => {
+    const t = TEAMS[ti] || { ab: '?', c1: '#334155' };
+    return `<i class="tb" style="--c:${esc(t.c1)};color:${inkOn(t.c1)}">${esc(t.ab)}</i>`;
+  };
+  const cells = list => `<div class="cc">${list.map(([v, l]) => `<span><b>${esc(v)}</b><small>${esc(l)}</small></span>`).join('')}</div>`;
+  function cardHtml(p) {
+    const c = p.card;
+    if (!c) return '';
+    if (c.t === 'final') {
+      const side = ([ti, sc], win) => `<div class="fs${win ? ' w' : ''}">${badge(ti)}<b>${sc}</b></div>`;
+      return `<div class="pcd fin">${side(c.a, c.a[1] > c.b[1])}<small>${esc(c.tag || 'Final')}</small>${side(c.b, c.b[1] > c.a[1])}</div>`;
+    }
+    if (c.t === 'stat') return `<div class="pcd st">${cells(c.cells)}</div>`;
+    if (c.t === 'pog' || c.t === 'photo') {
+      const t = TEAMS[c.pic[0]] || { c1: '#334155', c2: '#64748b' }, url = picUrl(c.pic);
+      return `<div class="pcd ${c.t}" style="--c:${esc(t.c1)};--c2:${esc(t.c2)}">${url ? `<img src="${url}" alt="">` : ''}${c.t === 'pog' ? `<div><small>Player of the game</small>${cells(c.cells)}</div>` : `<span class="no" data-n="${c.pic[1]}" aria-hidden="true"></span>`}</div>`;
+    }
+    if (c.t === 'mile') return `<div class="pcd mile"><b>${esc(c.v)}</b><small>followers</small></div>`;
+    if (c.t === 'poll') {
+      const tot = c.n + (c.v != null ? 1 : 0);
+      if (c.v == null) return `<div class="pcd poll" style="grid-template-columns:repeat(${c.o.length},minmax(0,1fr))">${c.o.map(([l], k) => `<button data-vote="${p.id}" data-o="${k}">${esc(l)}</button>`).join('')}<small>${short(c.n)} votes</small></div>`;
+      return `<div class="pcd poll done">${c.o.map(([l, v], k) => {
+        const pct = Math.round((v * c.n / 100 + (c.v === k ? 1 : 0)) / tot * 100);
+        return `<div class="pbar${c.v === k ? ' me' : ''}"><i style="width:${pct}%"></i><span>${esc(l)}</span><b>${pct}%</b></div>`;
+      }).join('')}<small>${short(tot)} votes</small></div>`;
+    }
+    return '';
+  }
+
+  /* posts on the page by id, so a tap on a heart or a poll finds the post it belongs to (career.js saves them) */
+  const LIVE = new Map();
+  let uid = 0;
   function postHtml(p, reply) {
     if (p.kind === 'trend') return `<div class="post trend"><b>${esc(p.text)}</b><small>${esc(p.sub)}</small></div>`;
-    return `<div class="post${reply ? ' re' : ''}${p.hot ? ' hot' : ''} k-${p.kind}"><span class="av" style="--c:${esc(p.col)};color:${inkOn(p.col)}${inkOn(p.col) === '#fff' ? '' : ';text-shadow:none'}">${esc(initials(p.who))}</span><div class="pbody">`
+    if (!p.id) p.id = Date.now().toString(36) + (uid++).toString(36);
+    if (LIVE.size > 600) LIVE.clear();
+    LIVE.set(p.id, p);
+    const likes = p.likes + (p.liked ? 1 : 0);
+    return `<div class="post${reply ? ' re' : ''}${p.hot ? ' hot' : ''}${p.card ? ' hasc' : ''} k-${p.kind}" data-pid="${p.id}">${avHtml(p)}<div class="pbody">`
       + `<div class="phd"><b>${esc(p.who)}</b>${p.ver ? '<i class="ver" aria-label="verified"></i>' : ''}<span>@${esc(p.at)} · ${esc(p.ago || 'now')}</span></div>${p.bio ? `<div class="bio">${esc(p.bio)}</div>` : ''}`
-      + `<p>${esc(p.text)}</p><div class="pmeta"><span>${n(p.rep, 'reply', 'replies')}</span><span>${n(p.rt, 'repost', 'reposts')}</span><span>${n(p.likes, 'like', 'likes')}</span>${p.hot ? '<em>viral</em>' : ''}</div>`
+      + `<p>${esc(p.text)}</p>${cardHtml(p)}<div class="pmeta"><span aria-label="${p.rep} replies">${ICON.rep}${short(p.rep)}</span><span aria-label="${p.rt} reposts">${ICON.rt}${short(p.rt)}</span>`
+      + `<button class="lk${p.liked ? ' on' : ''}" data-like="${p.id}" aria-label="${p.liked ? 'Liked' : 'Like'}, ${likes} likes" aria-pressed="${!!p.liked}">${ICON.like}${short(likes)}</button>${p.hot ? '<em>viral</em>' : ''}</div>`
       + (p.replies && !reply ? `<div class="reps">${p.replies.map(r => postHtml(r, true)).join('')}</div>` : '') + '</div></div>';
   }
 
-  PG.media = { reaction, press, mediaDay, quoteReaction, coachOnPress, buzzOf, postHtml, short, stamp, TONE, lastOf, FIRST };
+  /* one listener for every feed on every screen: like (or unlike) a post, vote in a poll */
+  document.addEventListener('click', e => {
+    const lk = e.target.closest && e.target.closest('[data-like]'), vt = e.target.closest && e.target.closest('[data-vote]');
+    const p = LIVE.get((lk || vt || {}).dataset ? (lk || vt).dataset.like || (lk || vt).dataset.vote : '');
+    if (!p) return;
+    if (lk) {
+      p.liked = !p.liked;
+      const el = lk.closest('.post');
+      el.outerHTML = postHtml(p, el.classList.contains('re'));
+      if (PG.snd) PG.snd(p.liked ? 'chime' : 'tick');
+    } else if (p.card && p.card.v == null) {
+      p.card.v = +vt.dataset.o;
+      const el = vt.closest('.post');
+      el.outerHTML = postHtml(p, el.classList.contains('re'));
+      if (PG.snd) PG.snd('tick');
+    }
+    if (media.onChange) media.onChange();
+  });
+
+  const media = PG.media = { reaction, press, mediaDay, quoteReaction, coachOnPress, buzzOf, postHtml, short, stamp, TONE, lastOf, FIRST };
 })();

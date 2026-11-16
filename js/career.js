@@ -1018,19 +1018,29 @@
      three direct messages about your last game: from home, from your agent, from a teammate. Flavor, except the post. */
   const anyOf = a => a[Math.floor(Math.random() * a.length)];
 
+  /* follower counts worth a post of your own */
+  const MILES = [10e3, 25e3, 50e3, 100e3, 250e3, 500e3, 1e6, 2.5e6, 5e6, 10e6];
+  /* a post from your own account, your helmet for a face; k scales the attention it gets */
+  function myPost(text, k, card) {
+    const so = social(), L = PG.media.lastOf(C.name);
+    return { who: C.name, at: L.toLowerCase() + C.num, kind: 'me', col: TEAMS[C.team].c1, ver: so.fol >= 10000, pic: [C.team, C.num, 1, 'me'], text, card: card || null,
+      likes: Math.round(so.fol * 0.07 * k) + 20, rt: Math.round(so.fol * 0.012 * k) + 3, rep: Math.round(so.fol * 0.006 * k) + 2, ago: 'now' };
+  }
+
   function socialPost(kind) {
     const so = social(), L = PG.media.lastOf(C.name), t = TEAMS[C.team], last = C.log[C.log.length - 1], next = C.phase === 'done' ? null : TEAMS[nextOpp()];
     const mate = anyOf(so.mates), won = last && last.us > last.them;
-    const text = kind === 'fans' ? anyOf([`${t.city}, I hear you every single snap. Thank you.`, 'Best fans in the league. Not close.', won ? 'That one was for everybody in the building. See you next week.' : 'We owe you a better one. You will get it.'])
+    const text = kind === 'pic' ? anyOf(['Locked in.', 'Office hours.', next ? `${next.name} week.` : 'Back to work.', `${t.city} 🖤`, 'Dressed for it.', won ? 'Good week at the office.' : 'Back to it.'])
+      : kind === 'fans' ? anyOf([`${t.city}, I hear you every single snap. Thank you.`, 'Best fans in the league. Not close.', won ? 'That one was for everybody in the building. See you next week.' : 'We owe you a better one. You will get it.'])
       : kind === 'hype' ? anyOf([next ? `${next.name} week. Circle it.` : 'The work does not stop.', next ? `Cannot wait for ${next.city}. Bring the noise.` : 'Offseason? What offseason.', 'Locked in. That is the post.'])
       : anyOf([`Nobody works like #${mate.num}. ${mate.first} ${mate.last}, that is my guy.`, `Shout out ${mate.first} ${mate.last}. Makes my job easy.`, `${mate.first} ${mate.last} does the dirty work every week. Put some respect on it.`]);
-    const up = Math.round(so.fol * (kind === 'fans' ? 0.02 : 0.01)) + (kind === 'fans' ? 40 : 15);
+    const up = Math.round(so.fol * (kind === 'fans' ? 0.02 : kind === 'pic' ? 0.015 : 0.01)) + (kind === 'fans' ? 40 : 25);
     so.fol += up;
-    so.hype = clamp(so.hype + (kind === 'hype' ? 7 : kind === 'fans' ? 2 : 1), 0, 100);
+    so.hype = clamp(so.hype + (kind === 'hype' ? 7 : kind === 'fans' || kind === 'pic' ? 3 : 1), 0, 100);
     if (kind === 'mate') C.trust = clamp(C.trust + 1, 5, 100);
-    const fan = { who: anyOf(PG.media.FIRST) + ' ' + anyOf(PG.NAMES)[0] + '.', at: t.name.toLowerCase().replace(/[^a-z]/g, '') + 'fan' + (10 + Math.floor(Math.random() * 89)), kind: 'fan', col: t.c1, text: anyOf(kind === 'hype' ? ['LET’S GO', 'Inject this into my veins.', 'Sunday cannot come soon enough.'] : kind === 'fans' ? ['We ride with you.', 'This is why he is my favorite player.', 'Class act.'] : ['Good teammate. Love to see it.', 'The locker room is right.', 'That is leadership.']), likes: Math.round(so.fol * 0.004) + 3, rt: 1, rep: 0, ago: 'now' };
-    const reply = { who: `${mate.first} ${mate.last}`, at: mate.last.toLowerCase() + mate.num, kind: 'mate', col: t.c1, ver: true, text: kind === 'mate' ? anyOf(['Right back at you.', 'Appreciate you, brother.', 'Just doing my job.']) : anyOf(['Facts.', 'Say it louder.', 'Let’s work.']), likes: Math.round(so.fol * 0.006) + 5, rt: 2, rep: 1, ago: 'now' };
-    const post = { who: C.name, at: L.toLowerCase() + C.num, kind: 'me', col: t.c1, ver: so.fol >= 10000, text, likes: Math.round(so.fol * 0.07) + 20, rt: Math.round(so.fol * 0.012) + 3, rep: Math.round(so.fol * 0.006) + 2, ago: 'now', replies: [fan, reply] };
+    const fan = { who: anyOf(PG.media.FIRST) + ' ' + anyOf(PG.NAMES)[0] + '.', at: t.name.toLowerCase().replace(/[^a-z]/g, '') + 'fan' + (10 + Math.floor(Math.random() * 89)), kind: 'fan', col: t.c1, text: anyOf(kind === 'hype' ? ['LET’S GO', 'Inject this into my veins.', 'Sunday cannot come soon enough.'] : kind === 'fans' ? ['We ride with you.', 'This is why he is my favorite player.', 'Class act.'] : kind === 'pic' ? ['Hardest fit in the league.', 'Wallpaper. Done.', 'HIM.', 'Poster on my wall by Sunday.'] : ['Good teammate. Love to see it.', 'The locker room is right.', 'That is leadership.']), likes: Math.round(so.fol * 0.004) + 3, rt: 1, rep: 0, ago: 'now' };
+    const reply = { pic: [C.team, mate.num, 1], who: `${mate.first} ${mate.last}`, at: mate.last.toLowerCase() + mate.num, kind: 'mate', col: t.c1, ver: true, text: kind === 'mate' ? anyOf(['Right back at you.', 'Appreciate you, brother.', 'Just doing my job.']) : anyOf(['Facts.', 'Say it louder.', 'Let’s work.']), likes: Math.round(so.fol * 0.006) + 5, rt: 2, rep: 1, ago: 'now' };
+    const post = Object.assign(myPost(text, kind === 'pic' ? 1.4 : 1, kind === 'pic' ? { t: 'photo', pic: [C.team, C.num, 1, 'me'] } : null), { replies: [fan, reply] });
     if (!so.feed.length) so.feed = [{ kind: 'wk', text: LG.short(C) }];
     so.feed.splice(1, 0, post);
     so.posted = pracKey();
@@ -1080,13 +1090,14 @@
     }).join('')}</div>`;
     else body = (deals.length ? deals.map(x => `<div class="xp deal"><span><i class="dot" style="--c:${x.col}"></i>${esc(x.name)} · ${esc(x.kind)}</span><b>+${fmt(x.pay)} XP a game</b></div>`).join('') : '<p class="note">No partners yet.</p>')
       + '<p class="note">Two games in a row with hype at 55 or more bring an offer. A deal pays every game until your hype falls under 25. Two at most.</p>';
-    return `<div class="sprof" style="--c:${t.c1}"><span class="av" style="--c:${t.c1};color:${PG.inkOn(t.c1)}${PG.inkOn(t.c1) === '#fff' ? '' : ';text-shadow:none'}">${esc(L.slice(0, 2).toUpperCase())}</span><div><b>${esc(C.name)}${ver ? '<i class="ver" aria-label="verified"></i>' : ''}</b><span>@${esc(L.toLowerCase())}${C.num} · ${esc(t.name)} ${C.pos} #${C.num}</span></div></div>
+    const face = PG.r3d && PG.r3d.portrait ? PG.r3d.portrait(t, true, C.num, C.look || null) : null;
+    return `<div class="sprof" style="--c:${t.c1}">${face ? `<span class="av pic" style="--c:${t.c1}"><img src="${face}" alt=""></span>` : `<span class="av" style="--c:${t.c1};color:${PG.inkOn(t.c1)}${PG.inkOn(t.c1) === '#fff' ? '' : ';text-shadow:none'}">${esc(L.slice(0, 2).toUpperCase())}</span>`}<div><b>${esc(C.name)}${ver ? '<i class="ver" aria-label="verified"></i>' : ''}</b><span>@${esc(L.toLowerCase())}${C.num} · ${esc(t.name)} ${C.pos} #${C.num}</span></div></div>
   <div class="sstats"><div><b>${short(so.fol)}</b><span>Followers</span></div><div><b>${so.hype}</b><span>Hype</span></div><div><b>${so.backed}–${so.ate}</b><span>Callouts</span></div><div><b>${deals.length}</b><span>Partners</span></div></div>
   <div class="hypebar"><i style="width:${so.hype}%"></i></div>
   <div class="hypek"><span style="left:25%" aria-label="At 25 hype partners stay">25 · partners</span><span style="left:55%" aria-label="At 55 hype offers come">55 · offers</span></div>
   ${folTrend(so)}
   ${calloutHtml()}${offerHtml()}
-  ${so.posted !== pracKey() ? `<div class="spost"><small>Post something \u00b7 once a week</small><div class="seg wrap"><button data-sp="fans">Thank the fans</button><button data-sp="hype">${C.phase === 'done' ? 'Stay hungry' : 'Hype the next game'}</button><button data-sp="mate">Shout out a teammate</button></div></div>` : ''}
+  ${so.posted !== pracKey() ? `<div class="spost"><small>Post something \u00b7 once a week</small><div class="seg wrap"><button data-sp="fans">Thank the fans</button><button data-sp="hype">${C.phase === 'done' ? 'Stay hungry' : 'Hype the next game'}</button><button data-sp="mate">Shout out a teammate</button><button data-sp="pic">Post a photo</button></div></div>` : ''}
   <div class="seg stab">${st('feed', 'Mentions')}${st('dm', 'Messages')}${st('rec', 'On the record')}${st('deals', 'Partners')}</div>${body}`;
   }
 
@@ -1838,7 +1849,7 @@
     if (C.pos === 'QB') weak = m.pint > 1 ? `${m.pint} interceptions` : m.pint === 1 ? 'an interception' : m.att >= 6 && m.comp / m.att < 0.5 ? `${m.comp} of ${m.att} passing` : '';
     if (C.pos === 'WR') weak = m.tgt >= 3 && m.rec / m.tgt < 0.5 ? `${m.rec} catches on ${m.tgt} targets` : m.tgt === 0 ? 'not one target all day' : m.tgt === 1 ? 'one target all day' : '';
     // coachLine: his first sentence, or the first two when the first is only a word or two ("Solid.")
-    const ctx = { name: C.name, pos: C.pos, team: C.team, opp, won, us, them, m, pts, star, rival: C.rival, rivalGame: !!C.rival && C.rival.team === opp, playoff, callRes, coachName: so.coachName, away, prime, inj: inj0, season: C.season, left: deal().left, seen: C.pressSeen || [],
+    const ctx = { name: C.name, num: C.num, pos: C.pos, team: C.team, opp, won, us, them, m, pts, star, rival: C.rival, rivalGame: !!C.rival && C.rival.team === opp, playoff, callRes, coachName: so.coachName, away, prime, inj: inj0, season: C.season, left: deal().left, seen: C.pressSeen || [],
       streakW: won ? streak('W') : 0, streakL: !won && us !== them ? streak('L') : 0,
       coachLine: (C.coach.match(/^[^.!?]{12,}[.!?]|^[^.!?]+[.!?][^.!?]+[.!?]/) || [C.coach])[0].trim(), next: C.phase === 'done' ? null : nextOpp(), week: C.log.length, wk, head: `${wk} \u00b7 ${res} ${us}\u2013${them} vs ${TEAMS[opp].name}`, weak, role0, role1, mates: so.mates,
       roleUp: ROLES.findIndex(r => r[1] === role1) < ROLES.findIndex(r => r[1] === role0),
@@ -1853,7 +1864,8 @@
     ctx.buzz = bz.b;
     ctx.trending = bz.b >= 7.5 || (!!callRes && callRes.backed);
     if (prime) so.hype = clamp(so.hype + 6, 0, 100);  // the nation saw it
-    const posts = PG.media.reaction(ctx).concat(endorseWeek()), dFol = so.fol - fol0;
+    const posts = PG.media.reaction(ctx).concat(endorseWeek()), dFol = so.fol - fol0, mile = MILES.filter(v => fol0 < v && so.fol >= v).pop();
+    if (mile) posts.splice(1, 0, myPost(anyOf(['Thank you. Every one of you.', 'Never thought I’d see this. Love y’all.', `${PG.media.short(mile)}. Let’s keep going.`]), 1.5, { t: 'mile', v: PG.media.short(mile) }));
     if (potw) posts.unshift({ who: 'The League', at: 'theleague', bio: 'Official account', kind: 'press', col: '#334155', ver: true, text: `${C.name} is the ${confName} Player of the Week. ${line(m)} against the ${TEAMS[opp].name}.`, rep: 120 + Math.round(so.fol / 400), rt: 300 + Math.round(so.fol / 150), likes: 1800 + Math.round(so.fol / 20) });
     const trophies = checkTrophies();
     persist();
@@ -1893,6 +1905,9 @@
       else show();
     } else show();
   }
+
+  // a heart or a poll vote in a feed changes a saved post
+  PG.media.onChange = () => C && C.social && persist();
 
   PG.career = {
     hall() {

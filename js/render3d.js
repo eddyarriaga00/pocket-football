@@ -4494,7 +4494,7 @@
   }
 
   function portrait(team, home, num, look) {
-    if (!renderer) return null;
+    if (!renderer || renderer.getContext().isContextLost()) return null;  // a lost context reads back noise: no picture rather than a wrong one
     const key = team.ab + (home ? 'h' : 'a') + num + (look ? JSON.stringify(look) : '') + team.c1 + team.c2;
     if (portraits.has(key)) return portraits.get(key);
     const st = studioOf(), cv = document.createElement('canvas');

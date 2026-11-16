@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `3b38a41`, before the social feed's pictures: faces, score and stat cards, polls, likes, photos (2026-11-16, from the Mac).
   - `f3f4ee8`, before the live play grade, teammate chemistry and the wider social feed (2026-11-16, from the Mac).
   - `381dfb4`, before uniforms picked up grass stains through the game (2026-11-16, from the Mac).
   - `68745cb`, before the jersey was tucked into the pants (2026-11-16, from the Mac).
@@ -2483,6 +2484,21 @@ six were done as the pro game has them; the choices where there was one are mine
   Play outside careers is untouched: fingerprint unchanged. Audit empty at 320x568 and 390x844 (the grade chip and
   the hub card included); exhibition, season, careers (whole seasons at both positions), camp and the rough test
   player clean.
+
+- The owner: "improve socials even more". Done in the feed's drawing, kept to his taste (more pictures, less text):
+  players post with a face, the helmet and shoulders from the uniform portrait, cropped to the avatar (teammates,
+  the rival, opposing players, your own account and the profile at the top of the Social tab). Counts under a post
+  are small icons, and the heart can be tapped to like a post (saved with the career). Posts carry cards: the
+  reporter's final is a scoreboard (two team badges, the winner's score bright), the stat accounts' line is big
+  figures, the team account posts a player-of-the-game card with your picture in the kit you wore, a fan poll each
+  week (grade the day, or call the next game) answers with bars once you vote, a follower milestone (10K, 25K, 50K,
+  100K, 250K, 500K, 1M and on) gets a post of your own, and "Post a photo" joins the weekly posts (your picture on
+  the team's colors with your number behind).
+  The audit no longer counts what is inside a folded week (it is not on screen), nor a control that has scrolled
+  under a bar pinned to the bottom while the list can still scroll it out. A portrait is no longer drawn from a lost
+  WebGL context (it read back noise, or an old picture, and was kept): no picture instead. Fingerprint unchanged;
+  audit empty at 320x568 and 390x844, a page with every card type included; whole seasons at both positions,
+  exhibition, season and the rough test player clean.
 
 ## Morning hand-off
 

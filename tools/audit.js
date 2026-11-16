@@ -58,6 +58,7 @@ window.A = (() => {
     if (r.width < 0.5 || r.height < 0.5) return false;
     for (let e = el; e && e.nodeType === 1; e = e.parentElement) {
       if (e.hidden) return false;
+      if (e !== el && e.tagName === 'DETAILS' && !e.open && !el.closest('summary')) return false;  // folded away: not on screen
       const cs = getComputedStyle(e);
       if (cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity < 0.05) return false;
       if (e.id === 'app') break;
@@ -67,6 +68,24 @@ window.A = (() => {
 
   /* the touch area: the element's box, grown by any absolutely placed pseudo-element */
   const px = v => parseFloat(v) || 0;
+  /* a control in a scrolling list that has slid under a bar pinned to the bottom (a sticky Continue button): scrolled
+     past, not blocked, as long as the list can still scroll it out from under */
+  const pinned = el => {
+    for (let e = el; e && e.id !== 'app'; e = e.parentElement) {
+      const p = getComputedStyle(e).position;
+      if (p === 'sticky' || p === 'fixed') return e;
+    }
+    return null;
+  };
+  const slidUnder = (el, bar) => {
+    const pb = pinned(bar);
+    if (!pb || pinned(el)) return false;
+    for (let e = el.parentElement; e && e.id !== 'app'; e = e.parentElement) {
+      if (e.scrollHeight > e.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(e).overflowY)) return e.contains(pb) && e.scrollTop + e.clientHeight < e.scrollHeight - 1;
+    }
+    return false;
+  };
+
   const hit = el => {
     const r = el.getBoundingClientRect(), es = getComputedStyle(el);
     let l = r.left, t = r.top, rt = r.right, b = r.bottom;
@@ -198,12 +217,12 @@ window.A = (() => {
       const cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2;
       if (cx > A.left && cx < A.right && cy > Math.max(0, A.top) && cy < Math.min(innerHeight, A.bottom)) {
         const top = document.elementFromPoint(cx, cy);
-        if (top && top !== el && !el.contains(top) && !top.contains(el)) add('blocked', path(el), 'covered by ' + path(top), 3);
+        if (top && top !== el && !el.contains(top) && !top.contains(el) && !slidUnder(el, top)) add('blocked', path(el), 'covered by ' + path(top), 3);
       }
     }
     for (let i = 0; i < ctl.length; i++) for (let j = i + 1; j < ctl.length; j++) {
       const a = ctl[i], b = ctl[j];
-      if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
+      if (a.el.contains(b.el) || b.el.contains(a.el) || slidUnder(a.el, b.el) || slidUnder(b.el, a.el)) continue;
       const w = Math.min(a.h.right, b.h.right) - Math.max(a.h.left, b.h.left), h = Math.min(a.h.bottom, b.h.bottom) - Math.max(a.h.top, b.h.top);
       if (w > 1 && h > 1) add('overlap', path(a.el) + ' and ' + path(b.el), `${Math.round(w)}×${Math.round(h)} shared`, 3);
     }
