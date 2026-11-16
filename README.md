@@ -153,6 +153,8 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   result sheet and the league's own account say so. Your season so far is drawn against each season mark.
 - The kicking game plays like the league's: punts are fair caught, downed inside the 10 or returned, punters
   pin you deep from short fields, and field goals go in at the real rates by distance.
+- Overtime follows the NFL: a ten-minute period with two timeouts each in the regular season, full-length periods
+  with three timeouts each in the playoffs.
 - No two players in a game share a surname (180 of them now, where there were 30).
 - Computer coaches go for two by the modern chart (down 2, 5, 8 or 10, up 1, 4, 5 or 12 late; earlier in the
   second half down 2 or 5, or up 1).

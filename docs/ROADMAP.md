@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `000449a`, before NFL overtime length and timeouts (2026-11-16 night).
   - `4be9e17`, before 180 surnames and no two men in a game sharing one (2026-11-16 night).
   - `a2e755a`, before the modern two-point chart (2026-11-16 night).
   - `6d70c24`, before the kicking game by the numbers (punt outcomes, the coffin corner, field goal rates) (2026-11-16 night).
@@ -2790,6 +2791,17 @@ six were done as the pro game has them; the choices where there was one are mine
   440x956; whole seasons at both positions, careers at both, exhibitions and a season with the rough test player
   clean; the playbook check passes.
 
+- Tonight, round 16 (09:22): overtime's length and timeouts. An overtime period was a full quarter every time, and
+  each side went into it with whatever timeouts it had left from the fourth. NFL rule: a regular-season overtime is
+  one ten-minute period with two timeouts a side; a playoff overtime is fifteen-minute periods, with three timeouts a
+  side for each pair of them. Now advance() sets the period to two thirds of a quarter in the regular season (2:00 at
+  3-minute quarters) and a full quarter in the playoffs (mustWin), and gives fresh timeouts at the start of overtime
+  (and of a playoff game's third period). Checked over 8 games forced to overtime: 2:00 and 2 each in the regular
+  season, 3:00 and 3 each in the playoffs, every game ending properly. Seen on screen: "OT 2:00" with two timeout dots
+  a side. Fingerprint unchanged (its sim has no overtime). Audit empty at 320x568, 390x844 and 440x956; whole seasons
+  at both positions, careers at both, exhibitions and a season with the rough test player clean; the playbook check
+  passes.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3173,3 +3185,5 @@ NFL rules first, every item checked the full way before it ships.
   1, 4, 5 and 12 in the fourth quarter; down 2 or 5 and up 1 in the third).
 - [x] Players on different teams sharing a surname (one game had both leading rushers named the same): keep
   surnames apart across the two sides of a game, or show a first initial where they clash.
+- [x] Overtime by NFL rule: ten minutes and two timeouts a side in the regular season, fifteen-minute periods and
+  three timeouts per pair of periods in the playoffs.

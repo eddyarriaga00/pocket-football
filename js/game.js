@@ -3420,7 +3420,11 @@
         if (tie && (G.q === 4 || (G.mustWin && G.q < 8))) {
           G.q++;
           G.ot = true;
-          G.clock = G.ql;
+          /* NFL overtime: in the regular season one period of ten minutes (two thirds of a quarter) with two timeouts
+             a side; in the playoffs fifteen-minute periods, three timeouts a side for each pair of them. (It was a
+             full quarter every time, with whatever timeouts were left from the fourth.) */
+          G.clock = G.mustWin ? G.ql : Math.round(G.ql * 2 / 3);
+          if (G.q === 5 || (G.mustWin && G.q === 7)) G.to = G.mustWin ? [3, 3] : [2, 2];
           const otr = rnd() < .5 ? 0 : 1;
           kickoff(otr);
           if (!G.otS) G.otS = { first: otr, a: false, b: false };  // after the kickoff, so that is not counted as a change of possession
