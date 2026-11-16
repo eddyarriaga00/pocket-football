@@ -1,71 +1,54 @@
-# Going online: what to decide
+# Online
 
-The owner plans head-to-head play and a global chat. This page is the short list of decisions that only he can
-make, and what each one needs from him. Nothing here is signed up for, connected or switched on.
+The owner's choices (2026-11-16), all on free plans:
+
+| | Choice | Cost |
+|---|---|---|
+| Global chat | Firebase Realtime Database, the Spark plan | Free, no card. 100 phones connected at once, 1 GB stored, 10 GB downloaded a month. With no card on file nothing can be billed. |
+| Head to head | Phone to phone through PeerJS 1.5.5 (cdnjs) and its free public matchmaking server | Free, nothing to sign up for. Some mobile networks block direct links; those pairs cannot connect. |
+| Who a player is | A typed name, plus a hidden id Firebase gives the device (anonymous sign-in) | Nothing to log in to. |
+| Chat safety | Word filter, one line every 2.5 seconds (also enforced by the database), mute and report on every line, the owner deletes and bans in the Firebase console | |
 
 ## Where things stand
 
-- `js/online.js` is in the game and does nothing yet. It holds the parts that do not depend on the service: the
-  player's online name and id (kept on the device), the rules a chat line has to pass (plain text, 140 characters,
-  no links, one line every two and a half seconds), and the shape of the adapter a service plugs into.
-- There is no screen for it. The menu gets an Online entry once a service is chosen.
-- Careers already have their own ids, so a career could later belong to an account.
+- **Global chat: built, waiting for the Firebase project.** The Online screen (main menu) has the name, the chat,
+  the online count, mute and report. It is tested end to end against Firebase's own local emulator with the real
+  rules in `docs/firebase-rules.json`: sending, the filter, the server's slow mode, forged ids and over-long lines
+  refused, reports stored, deleted lines vanishing, bans blocking. Until the config below is pasted in, the screen
+  says "Not set up".
+- **Head to head: next.** The game assumes one person on team 0 throughout; letting a second phone control team 1
+  is the next build (see the roadmap).
+- The chat connects only while the Online screen is open, and lets go while the app is in the background, so a
+  phone uses one of the hundred places only while someone is reading.
 
-## Why a decision is needed
+## Setting up Firebase (the owner, about five minutes)
 
-The game is plain files on GitHub Pages. Pages can send those files to a phone, and that is all it can do: it
-cannot keep a connection open between two phones, or hold a chat message until the next person reads it. So both
-features need something else to carry messages, and that something has an owner, limits and, past a free allowance,
-a bill.
+1. Open https://console.firebase.google.com and sign in with a Google account. **Create a project**, any name (for
+   example `pocket-gridiron`). Google Analytics is not needed: switch it off.
+2. **Build → Authentication → Get started → Sign-in method → Anonymous → Enable → Save.**
+3. **Build → Realtime Database → Create database.** Pick a location (United States is fine), then **Start in locked
+   mode**.
+4. On the database's **Rules** tab, replace everything with the contents of `docs/firebase-rules.json` and press
+   **Publish**.
+5. **Project settings** (the gear) → **Your apps** → the web icon `</>` → give it a nickname, leave Hosting off,
+   **Register app**. It shows a `firebaseConfig` with `apiKey`, `authDomain`, `databaseURL`, `projectId` and a few
+   more. Copy that block into the conversation.
 
-## Decision 1: head to head
+That block is meant to be inside a web page (the rules are what protect the data). Do not paste a service account,
+a private key or anything from **Service accounts**: those are secret.
 
-| Choice | What it is | Needs from you | Trade-offs |
-|---|---|---|---|
-| Phone to phone (recommended to start) | The two phones talk directly. One shows a short code, the other types it in. A public relay is used only to introduce them. Library: PeerJS 1.5.5, on cdnjs. | Nothing to sign up for to try it. | Free. A share of phone pairs cannot connect directly (some mobile networks block it); fixing that means renting a relay later. No matchmaking with strangers: you need the code. |
-| Through a hosted service | Both phones send every play through the service, the same one the chat uses. | An account with that service. | Works on every network, and strangers can be matched. Uses the service's allowance for every game played. |
+## Moderating (Firebase console → Realtime Database → Data)
 
-Either way the game would run on one phone (the host) and send the other what happened, play by play. That is the
-simplest design that cannot fall out of step.
+- **Delete a line:** open `chat` → `global`, find the line, the trash icon. It disappears from every phone at once.
+- **Reports:** under `reports`. Each has the line's text, its key (`msg`), the reported player's id (`uid`) and the
+  reporter's id (`by`).
+- **Ban a player:** add a child under `bans` (create `bans` at the top the first time) whose key is the player's
+  `uid` and whose value is `true`. Their lines are refused from then on. Delete the entry to lift it.
+- **Mute** is each player's own: it hides someone on that phone only.
+- Old lines can be cleared by deleting `chat/global` as a whole; the screen only ever shows the last fifty.
 
-## Decision 2: global chat
+## Head to head (planned)
 
-A global chat cannot be done phone to phone: somebody has to hold the room. The candidates whose libraries are on
-cdnjs (the project's rule for libraries):
-
-| Service | Library on cdnjs | Notes |
-|---|---|---|
-| Firebase Realtime Database | firebase 13.3.0 | Run by Google. Needs a Google account and a project. Has a free plan. |
-| Ably | ably 2.30.0 | A messaging service. Needs an account. Has a free plan. |
-| Pusher Channels | pusher 8.6.0 | A messaging service. Needs an account. Has a free plan. |
-
-I have not checked today's limits or prices for any of them: look at each one's pricing page before choosing, in
-particular how many phones may be connected at once on the free plan and what happens when that is passed.
-
-What you would do: create the account and the project, then give me the public configuration it shows for a web
-app. That configuration is meant to be in a web page; a secret or admin key is not, and should never be pasted
-into the game or into this conversation.
-
-## Decision 3: who the players are
-
-- **A name only (simplest):** a player types a name and gets a random id on their device. Nothing to log in to.
-  Anyone can use any name.
-- **Sign-in:** the service's own sign-in (for example with an email). Names are then tied to a person, and bans
-  hold. More to build, and you take on holding people's sign-in details with that service.
-
-## Decision 4: keeping the chat fit to read
-
-A room that anyone on the internet can type into will get abuse and spam. Before it opens, pick what applies:
-
-- a word filter and a limit on how fast anyone can post (the limit is already in `js/online.js`);
-- mute for each player (hide somebody on your own phone) and a report button;
-- who can remove messages or ban, and how they do it;
-- whether chat is on by default or has to be switched on in Settings;
-- whether younger players are expected, which changes what is acceptable to collect and show.
-
-## A suggested order
-
-1. Head to head, phone to phone. Nothing to sign up for, and it shows whether playing a person is fun before
-   anything is paid for.
-2. Pick the chat service and the moderation rules together.
-3. Chat, with mute and report from the first day.
+One phone hosts and runs the game; the other joins with a short code and is sent what happens, play by play, and
+sends back its controls. PeerJS's public server only introduces the two phones; the game itself goes between them
+directly.

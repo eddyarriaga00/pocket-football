@@ -69,6 +69,9 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
 - **Season.** Take one team through the ten-week season and the eight-team playoff, calling and playing every snap. Your roster
   keeps its names, numbers and ratings all season, with a stat line for every player and team leaders.
 - **Exhibition.** One game between any two teams. You pick the difficulty, quarter length, kickoff time and weather.
+- **Online.** A global chat on the main menu: a name, the people online, mute and report on every line, a word
+  filter and slow mode. It runs on Firebase's free plan once the project is set up (docs/ONLINE.md has the steps and
+  how to moderate). Head to head, phone to phone with a code, is next.
 - **Milestones.** Twelve things worth doing once (a shutout, a win in the rain, a title), earned in any mode.
 - **Training camp.** Three short guided drills (passing, running, tackling), five plays each. A coaching card before
   every snap says what to try, and each drill is scored with one to three stars. The game offers it the first time
@@ -362,7 +365,7 @@ js/vo.js                the index of the commentators' clips (written by tools/v
 audio/vo.pack           the clips every game uses, end to end in one file (about 4 MB of AAC)
 audio/vo/NE.pack ...    each team's own lines (about 140 kB a team), fetched when a game with that team starts
 js/league.js            schedule, standings and playoffs shared by Career and Season
-js/online.js            the online layer, set up but not switched on (see docs/ONLINE.md)
+js/online.js            the Online screen and global chat (Firebase); docs/ONLINE.md, docs/firebase-rules.json
 js/career.js            Career mode
 js/media.js             The press conference and the social feed around a career (career.js draws the screens)
 js/season.js            Season mode

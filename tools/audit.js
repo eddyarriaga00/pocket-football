@@ -210,10 +210,27 @@ window.A = (() => {
     for (const el of qa('.menu,.sheet,.dlg', root)) if (shown(el) && el.scrollWidth > el.clientWidth + 1) add('scroll', path(el), `${el.scrollWidth} wide in ${el.clientWidth}`, 2);
 
     /* controls */
-    const ctl = qa('button,input,a[href],[role=button]', root).filter(el => shown(el) && !el.disabled).map(el => ({ el, h: hit(el) }));
-    for (const { el, h } of ctl) {
+    const all = qa('button,input,a[href],[role=button]', root).filter(el => shown(el) && !el.disabled).map(el => ({ el, h: hit(el) }));
+    /* A control in a list that scrolls inside the screen (a chat log, say) can only be touched where the list shows
+       it: its touch area is cut to the list's box, and one scrolled wholly out of it is not on screen at all. Its
+       size is still checked whole, as it will be when scrolled into view. */
+    const seen = c => {
+      let h = c.h, r = c.el.getBoundingClientRect();
+      for (let e = c.el.parentElement; e && e.id !== 'app'; e = e.parentElement) {
+        if (!/auto|scroll/.test(getComputedStyle(e).overflowY) || e.scrollHeight <= e.clientHeight + 4 || e.matches('.menu,.sheet')) continue;
+        const b = e.getBoundingClientRect();
+        h = { ...h, top: Math.max(h.top, b.top), bottom: Math.min(h.bottom, b.bottom) };
+        r = { left: r.left, right: r.right, top: Math.max(r.top, b.top), bottom: Math.min(r.bottom, b.bottom) };
+        if (h.bottom - h.top <= 1 || r.bottom - r.top <= 1) return null;
+      }
+      return { el: c.el, h, r };
+    };
+    for (const { el, h } of all) {
       const w = Math.round(h.width * 10) / 10, ht = Math.round(h.height * 10) / 10, r = el.getBoundingClientRect();
       if (w < MIN - 0.5 || ht < MIN - 0.5) add('target', path(el), `${Math.round(r.width)}×${Math.round(r.height)} drawn, ${w}×${ht} to touch`, w < FLOOR || ht < FLOOR ? 3 : Math.min(w, ht) < 32 ? 2 : 1);
+    }
+    const ctl = all.map(seen).filter(Boolean);
+    for (const { el, r } of ctl) {
       const cx = (r.left + r.right) / 2, cy = (r.top + r.bottom) / 2;
       if (cx > A.left && cx < A.right && cy > Math.max(0, A.top) && cy < Math.min(innerHeight, A.bottom)) {
         const top = document.elementFromPoint(cx, cy);

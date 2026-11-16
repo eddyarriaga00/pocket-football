@@ -6188,6 +6188,7 @@
     camp: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 3a7 7 0 110 14 7 7 0 010-14zm0 3a4 4 0 100 8 4 4 0 000-8zm0 2.500a1.500 1.500 0 110 3 1.500 1.500 0 010-3z"/></svg>',
     set: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h9v2H4zm13 0h3v2h-3zm-3-2h2v6h-2zM4 16h3v2H4zm7 0h9v2h-9zm-3-2h2v6H8z"/></svg>',
     how: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm-1 15h2v2h-2zm1.200-11c2.100 0 3.600 1.300 3.600 3.200 0 1.400-.7 2.200-1.900 3-.9.600-1.100.9-1.100 1.800h-2c0-1.600.4-2.300 1.600-3.100.900-.6 1.300-1 1.300-1.700s-.600-1.200-1.500-1.200-1.600.5-1.800 1.500l-2-.5C8.800 7.100 10.200 6 12.200 6z"/></svg>',
+    online: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm6.900 9h-3a15.600 15.600 0 00-1.400-6.300A8 8 0 0118.900 11zM12 4.100c.900 1.100 1.800 3.400 2 6.900h-4c.200-3.500 1.100-5.800 2-6.900zM9.500 4.700A15.600 15.600 0 008.100 11h-3a8 8 0 014.400-6.300zM5.100 13h3a15.600 15.600 0 001.400 6.300A8 8 0 015.100 13zm6.900 6.900c-.900-1.100-1.800-3.400-2-6.900h4c-.200 3.500-1.100 5.800-2 6.900zm2.500-.600a15.600 15.600 0 001.400-6.300h3a8 8 0 01-4.400 6.300z"/></svg>',
     mile: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.900 6.300 6.800.7-5.100 4.600 1.500 6.800L12 16.900 5.900 20.400l1.500-6.800L2.300 9l6.800-.7z"/></svg>',
     hall: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l10 5v2H2V7zM4 11h3v7H4zm6.500 0h3v7h-3zM17 11h3v7h-3zM2 20h20v2H2z"/></svg>',
   };
@@ -6217,6 +6218,7 @@
   <button class="mode" id="mSe">${menuBadge(st, 'season')}<b>Season</b><span>${ss||'Take one team through ten games and the playoffs.'}</span><i>›</i></button>
   <button class="mode" id="mE">${menuBadge(null, 'exh')}<b>Exhibition</b><span>Pick two teams and play one game.</span><i>›</i></button>
   ${camp?`<button class="mode" id="mT">${menuBadge(null, 'camp')}<b>Training camp</b><span>${camp.summary()}</span><i>›</i></button>`:''}
+  ${PG.online?`<button class="mode" id="mO">${menuBadge(null, 'online')}<b>Online</b><span>Talk with everyone playing.</span><i>›</i></button>`:''}
   <div class="row2 mrow"><button class="btn2" id="mS">${MENU_ICON.set}Settings</button><button class="btn2" id="mH">${MENU_ICON.how}How to play</button></div>
   <div class="row2 mrow" style="margin-top:8px">${PG.milestones?`<button class="btn2" id="mM">${MENU_ICON.mile}${PG.milestones.summary()}</button>`:''}${PG.career&&PG.career.hall?`<button class="btn2" id="mF">${MENU_ICON.hall}Hall of fame</button>`:''}</div></div>`;
     /* the offer is for the first look at the menu: any choice here answers it */
@@ -6228,6 +6230,7 @@
     $('#mSe').onclick = go(() => PG.season ? PG.season.open() : showExh());
     $('#mE').onclick = go(showExh);
     if (camp) $('#mT').onclick = go(camp.open);
+    if (PG.online) $('#mO').onclick = go(PG.online.open);
     if (offer) {
       $('#oY').onclick = go(camp.open);
       $('#oN').onclick = go(showMenu);

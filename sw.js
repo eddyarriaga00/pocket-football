@@ -8,9 +8,12 @@ self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
+/* only the game's own files, its libraries and its fonts: the chat and the head-to-head services answer live and
+   must never be answered from an old copy */
+const OURS = u => u.origin === self.location.origin || /^(cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com)$/.test(u.hostname);
 self.addEventListener('fetch', e => {
   const req = e.request;
-  if (req.method !== 'GET' || !/^https?:/.test(req.url)) return;
+  if (req.method !== 'GET' || !/^https?:/.test(req.url) || !OURS(new URL(req.url))) return;
   e.respondWith(
     fetch(req).then(res => {
       if (res && (res.ok || res.type === 'opaque')) {       // opaque: the library and the font come from other sites

@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `477b88b`, before the Online screen and global chat (2026-11-16).
   - `4ec74d0`, before the dash-timer and booth-key guards (2026-11-16 morning).
   - `000449a`, before NFL overtime length and timeouts (2026-11-16 night).
   - `4be9e17`, before 180 surnames and no two men in a game sharing one (2026-11-16 night).
@@ -2814,6 +2815,27 @@ six were done as the pro game has them; the choices where there was one are mine
   scores (4.11 s, grade 100). Fingerprint unchanged; audit empty at 320x568 and 440x956 with no console errors;
   sims, exhibitions, careers at both positions, a QB season, the three drills and the rough test player clean.
 
+- 2026-11-16 (12:10), the owner: "i want online play and global chat with free options". He chose Firebase's free
+  Spark plan for the chat, phone to phone (PeerJS) for head to head, a name only, and the word filter with slow mode,
+  mute and report, and deleting and banning from the console (docs/ONLINE.md). Built: an Online entry on the main menu
+  and its screen (js/online.js): the name with its own colored badge, the global chat (the last fifty lines, the
+  number online), a composer, mute and report on other players' lines, and unmute. The chat connects only while the
+  screen is open and lets go in the background (the free plan's limit is 100 phones at once). Libraries load on
+  first use from cdnjs with their integrity hashes. docs/firebase-rules.json is the database's rules: signed-in
+  devices only, a line's own id, 1-16 character names, 1-140 character lines, the server's own one line per 2.5
+  seconds, bans, write-once reports. Tested end to end against Firebase's local emulator (a demo project, no
+  account): live with "1 online", sending, no name refused, a bad name refused, slow mode in the screen and in the
+  database, a forged id, a 141-character line and reading the ban list all refused, another player's slur drawn as
+  dots, a report stored with the line and both ids, a mute hiding a player, a line deleted as the owner vanishing at
+  once, a ban blocking this device, the presence cleared on leaving. The filter: 16 disguises caught ("f u c k",
+  "sh1t", "kill yourself") and 17 ordinary lines passed ("assistant", "Dickens", "music until"). Until the owner
+  pastes the project's public config the screen says "Not set up" and has no composer. The audit now cuts a control
+  in a list that scrolls inside the screen (the chat log) to the list's box, as a finger can only reach it there;
+  page-level scrolling is judged as before. The service worker now caches only the game's own files, cdnjs and the
+  fonts, so the chat and the matchmaking server are never answered from an old copy. Fingerprint unchanged; audit
+  empty at 320x568 and 440x956 (the Online screen live, not set up, with a line's actions open and scrolled); sims,
+  exhibitions, careers at both positions and the three drills clean, no console errors.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3199,3 +3221,10 @@ NFL rules first, every item checked the full way before it ships.
   surnames apart across the two sides of a game, or show a first initial where they clash.
 - [x] Overtime by NFL rule: ten minutes and two timeouts a side in the regular season, fifteen-minute periods and
   three timeouts per pair of periods in the playoffs.
+
+### Online (the owner at 12:10 on 2026-11-16: "i want online play and global chat with free options")
+- [x] The Online screen and the global chat on Firebase's free plan, with the filter, slow mode, mute, report and
+  console bans (docs/ONLINE.md). Live once the owner pastes the project's public config.
+- [ ] Wire in the owner's Firebase config and check the chat on the live site and a phone.
+- [ ] Head to head, phone to phone (PeerJS): host and join with a code; the host runs the game and the guest
+  controls team 1 (its play calls, its ball carrier and passer, a defender), drawn from what the host sends.
