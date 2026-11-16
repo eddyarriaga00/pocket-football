@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `1e549e8`, before the injury scene (trainers out, helped off, the cart for the worst) (2026-11-16 night).
   - `634d2d2`, before the tackle drive (tackler and runner carried on through the hit together) (2026-11-16 night).
   - `5ddc9bc`, before the record book (league single-game and season marks, a card when one falls) (2026-11-16 night).
   - `5e105a8`, before surer open-field tackles after a catch and pursuit angles on the throw (2026-11-16 night).
@@ -2636,6 +2637,23 @@ six were done as the pro game has them; the choices where there was one are mine
   unchanged. Audit empty at 320x568, 390x844 and 440x956; whole seasons at both positions, careers at both,
   exhibitions and a season with the rough test player clean.
 
+- Tonight, round 6 (04:22): injuries, the rest. A shaken-up player (shaken() in game.js, about 0.8% of tackles,
+  unchanged) used to stay down for a moment under a banner. Now, with cutscenes on, it is a short scene
+  (SCENES.injury, 7 to 8 s, tap to skip): two trainers in team gear jog out (from about ten yards, already on their
+  way) and kneel over him; then he is helped up and walks off to his sideline with an arm over each of their
+  shoulders, three of his unit clapping him off, the crowd applauding. About one in six is the cart: a white cart
+  with a stripe in his team's color drives out with a driver at the wheel, he is lifted onto its padded bed (the
+  camera cuts as he is) and is driven off lying lengthways. The caption names him and who comes in; the booth line
+  is the old one. render3d: new actor poses 'aid' (a trainer kneeling over him, reusing the bench kneel) and 'sit'
+  (the driver), arms for a walk ('over' his shoulders, 'L'/'R' round his back) laid over an ordinary walk, a lying
+  actor that starts down (p.lying), the cart prop, the scene camera (low on him, then wider following him off), and
+  team gear (HOOD) now in the actor's own team's colors (the one existing use is team 0, so unchanged). Without
+  cutscenes the banner says it as before ("carted off" for the cart). Also found by the audit and fixed: the watch
+  pad's fast-forward and skip buttons, stacked, had touch areas overlapping by 5 px; now 45 px each and they meet.
+  Play unchanged: fingerprint the same. Audit empty at 320x568, 390x844 and 440x956 (the scene itself looked at, both
+  endings run to the end); whole seasons at both positions, careers at both, exhibitions and a season with the rough
+  test player clean.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -2999,7 +3017,7 @@ NFL rules first, every item checked the full way before it ships.
 - [x] A record book: the league's single-game and season marks, kept as careers play; the booth and a card when a
   career player breaks one.
 - [x] The form tackle as a paired motion: tackler and runner keyed to each other (wrap, drive, fall together).
-- [ ] Injuries, the rest: the trainers jog out and a hurt man is helped off (a short scene), the cart for the worst.
+- [x] Injuries, the rest: the trainers jog out and a hurt man is helped off (a short scene), the cart for the worst.
 - [ ] A roof over the roofed stadiums: the sky and light towers give way to a dome and a ring of lights.
 - [ ] An all-star game after the season for each conference's best (a career player who makes it plays it).
 - [ ] Yards after the catch, part 3: the receiver still runs about 8 yards before the first hand touches him (NFL about

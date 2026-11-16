@@ -751,6 +751,29 @@
       }
       return false;
     }
+    if (a === 'sit') {
+      // the cart's driver on his bench: thighs level, shins down, hands forward on the wheel
+      tg[PELY] = 0.68;
+      tg[HL] = tg[HR] = 1.5;
+      tg[KL] = tg[KR] = -1.45;
+      tg[SLX] = tg[SRX] = 0.95;
+      tg[EL] = tg[ER] = 1.15;
+      tg[CHRX] = 0.08;
+      return false;
+    }
+    if (a === 'aid') {
+      // a trainer on one knee beside a hurt man, leaning over him, both hands down on him
+      for (let i = 0; i < NPOSE; i++) tg[i] = KNEEL[i];
+      tg[CHRX] = -0.5;  // over him (forward is negative)
+      tg[SLX] = 0.75;
+      tg[SRX] = 0.6;
+      tg[SLZ] = 0.15;
+      tg[SRZ] = -0.15;
+      tg[EL] = 0.35;
+      tg[ER] = 0.55;
+      tg[HEADRX] = 0.45;
+      return false;
+    }
     if (a === 'wave') {
       // a wave to the crowd, the right arm high, the hand going side to side
       const w = Math.sin(time * 5);
@@ -987,7 +1010,20 @@
     g.add(bust);
     const coin = new T.Mesh(new T.CylinderGeometry(0.17, 0.17, 0.03, 24), new T.MeshPhongMaterial({ color: 0xd4d9e2, specular: 0xffffff, shininess: 110 }));
     g.add(coin);
-    props = { g, walk: { tun, skin, rim, signC, signTex, smoke, flames }, champ: { stage, skirt, cup, bursts }, coin, draft: { board: draftBoard, boardC, boardTex, shirt, shirtC, shirtTex, key: '' }, press: { pod, podC, podTex, wall, wallC, wallTex, pops, key: '' }, hof: { bust, cloth, clothMat, plaqueC, plaqueTex, key: '' }, teamKey: '' };
+    /* the medical cart (an injury scene), built along its own x axis, drawn at the figures' 1.6 scale: a driver's bench
+       under a roof at the front, a flat padded bed behind, four wheels, a stripe in the team's color */
+    const cart = new T.Group(), white = new T.MeshLambertMaterial({ color: 0xeef1f5 }), dark = new T.MeshLambertMaterial({ color: 0x22262e }), cartStripe = new T.MeshLambertMaterial({ color: 0x3a6fd8 });
+    cart.add(new T.Mesh(new T.BoxGeometry(5.6, 0.36, 2.2).translate(0, 0.62, 0), white));  // the chassis
+    cart.add(new T.Mesh(new T.BoxGeometry(5.62, 0.14, 2.22).translate(0, 0.5, 0), cartStripe));
+    cart.add(new T.Mesh(new T.BoxGeometry(3.1, 0.16, 2.0).translate(-1.15, 0.88, 0), dark));  // the bed's pad
+    cart.add(new T.Mesh(new T.BoxGeometry(1.5, 0.3, 2.0).translate(1.6, 1.0, 0), dark));  // the bench
+    cart.add(new T.Mesh(new T.BoxGeometry(0.16, 0.95, 2.0).translate(0.85, 1.45, 0), white));  // its back
+    for (const [px, pz] of [[2.4, 1.0], [2.4, -1.0], [0.9, 1.0], [0.9, -1.0]]) cart.add(new T.Mesh(new T.CylinderGeometry(0.05, 0.05, 1.9, 6).translate(px, 1.75, pz), dark));  // roof posts
+    cart.add(new T.Mesh(new T.BoxGeometry(1.9, 0.1, 2.3).translate(1.65, 2.72, 0), white));  // the roof
+    for (const [px, pz] of [[1.95, 1.1], [1.95, -1.1], [-1.9, 1.1], [-1.9, -1.1]]) cart.add(new T.Mesh(new T.CylinderGeometry(0.42, 0.42, 0.3, 14).rotateX(Math.PI / 2).translate(px, 0.42, pz), dark));
+    cart.visible = false;
+    g.add(cart);
+    props = { g, cart, cartStripe, walk: { tun, skin, rim, signC, signTex, smoke, flames }, champ: { stage, skirt, cup, bursts }, coin, draft: { board: draftBoard, boardC, boardTex, shirt, shirtC, shirtTex, key: '' }, press: { pod, podC, podTex, wall, wallC, wallTex, pops, key: '' }, hof: { bust, cloth, clothMat, plaqueC, plaqueTex, key: '' }, teamKey: '' };
   }
 
   /* The stage board is 13 yards wide: on a phone held upright the close shots saw only its middle, and a long
@@ -1023,6 +1059,13 @@
     if (!props) buildProps();
     props.g.visible = true;
     const W = props.walk, on = sc.kind === 'walkout', t = sc.t, Ch = props.champ, champ = sc.kind === 'trophy';
+    const Ca = sc.kind === 'injury' && sc.cart;
+    props.cart.visible = !!Ca;
+    if (Ca) {
+      props.cart.position.set(Ca.x, 0, -Ca.y);
+      props.cart.rotation.y = Ca.h;
+      props.cartStripe.color.set(sc.o.c1 || '#3a6fd8');
+    }
     W.tun.visible = on;
     for (const sp of W.smoke) sp.visible = on;
     for (const sp of W.flames) sp.visible = on;
@@ -1227,6 +1270,17 @@
 
   /* the camera for each scene: where it stands (v3) and what it looks at (v3b), from the scene's clock */
   const SCENECAM = {
+    injury(sc, P, v3, v3b) {
+      /* low and close on him and the trainers, then wider, following him (or the cart) off to the sideline */
+      const me = sc.me || P[0], s = sc.side || -1, late = sc.cut, C = sc.cart && sc.onCart ? sc.cart : null, fx = C ? C.x : me.x, fy = C ? C.y : me.y;
+      if (!late) {
+        v3.set(fx - s * 6.5, 3.4, -(fy - 5.5));
+        v3b.set(fx - s * 0.6, 0.7, -fy);
+      } else {
+        v3.set(fx - s * 9.5, 4.6, -(fy - 8.5));
+        v3b.set(fx, 1.5, -fy);
+      }
+    },
     hof(sc, P, v3, v3b) {
       const t = sc.t, me = sc.me || P[0];
       if (t < 2.2) {
@@ -2255,6 +2309,7 @@
           }  // hit from the side: bowled over the other way
         } else if (p.fell || pileOn) f.fallDir = 1;  // the tackler, and anyone piling on, lands forward on his man
         else if (p.slide) f.fallDir = -1;  // a quarterback's slide: onto his back, feet first
+        if (p.lying) f.fall = 0.999;  // a cutscene's hurt man: already down when it starts
       }
       f.fall = Math.min(1, f.fall + dt / 0.3);
       const e = f.fall * f.fall * (3 - 2 * f.fall), wrap = (p.fell || pileOn) && !p.down && !flat;
@@ -3073,6 +3128,26 @@
           for (let j = 0; j < 6; j++) tg[I[j]] = lerp(tg[I[j]], LEG[j], e);
         }
       }
+    }
+    if (p.arms === 'over') {
+      /* helped off: an arm over each trainer's shoulders, head down, a little bent */
+      tg[SLZ] = 1.25;
+      tg[SRZ] = -1.25;
+      tg[SLX] = 0.25;
+      tg[SRX] = 0.25;
+      tg[EL] = 0.55;
+      tg[ER] = 0.55;
+      tg[CHRX] = Math.min(tg[CHRX], -0.05) - 0.12;
+      tg[HEADRX] = 0.35;
+    } else if (p.arms === 'L' || p.arms === 'R') {
+      /* a trainer helping him: the arm on his side round the man's back, the other one holding his wrist in front */
+      const near = p.arms === 'L' ? [SLX, SLZ, EL] : [SRX, SRZ, ER], far = p.arms === 'L' ? [SRX, SRZ, ER] : [SLX, SLZ, EL], sg = p.arms === 'L' ? 1 : -1;
+      tg[near[0]] = 0.35;
+      tg[near[1]] = 0.95 * sg;
+      tg[near[2]] = 1.1;
+      tg[far[0]] = 0.9;
+      tg[far[1]] = -0.35 * sg;
+      tg[far[2]] = 1.5;
     }
     /* A forward lean comes partly from the hips: the seat goes back and the jersey stays tucked in,
        instead of the chest folding over a level pelvis. The thighs counter-rotate so the feet stay put. */
@@ -4120,7 +4195,7 @@
         f.hide = p.suit || p.hoodie ? BARE_HIDE : p.ref ? REF_HIDE : p.look && p.look.trim === 'none' ? LOOK_HIDE : null;
         f.extra = p.hoodie ? CAP_ON : p.suit ? HAIR_ON : gearOf(p);  // a cutscene's referee is dressed like the officials, the commissioner in a suit
         setBuild(f, p.ref || p.suit ? BUILD.ref : p.hoodie ? BUILD.qb : buildOf(p.role));
-        const home = p.team === 0, kit = p.team === (G.home || 0), c = p.hoodie ? HOOD(t0) : p.suit ? SUIT : p.ref ? { ...REF_COLORS, skin: SKIN[(i * 2 + 1) % SKIN.length], glove: SKIN[(i * 2 + 1) % SKIN.length], visor: SKIN[(i * 2 + 1) % SKIN.length] } : lookColors(teamColors(home ? t0 : t1, kit, SKIN[(p.num * 7 + i) % SKIN.length]), p.look, home ? t0 : t1);  // kit: home colors for the home side, white for the visitors
+        const home = p.team === 0, kit = p.team === (G.home || 0), c = p.hoodie ? HOOD(p.team === 1 ? t1 : t0) : p.suit ? SUIT : p.ref ? { ...REF_COLORS, skin: SKIN[(i * 2 + 1) % SKIN.length], glove: SKIN[(i * 2 + 1) % SKIN.length], visor: SKIN[(i * 2 + 1) % SKIN.length] } : lookColors(teamColors(home ? t0 : t1, kit, SKIN[(p.num * 7 + i) % SKIN.length]), p.look, home ? t0 : t1);  // kit: home colors for the home side, white for the visitors
         if (envSnow && !p.ref && !p.suit && !p.hoodie && !p.look && (p.num * 13 + i) % 5 < 3) c.arm = p.num % 2 ? '#f1f1f1' : '#17191e';  // in the snow most of them wear long sleeves under the jersey, white or black
         if (dirtGame !== G) {
           dirtGame = G;

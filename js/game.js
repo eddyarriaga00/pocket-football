@@ -475,6 +475,107 @@
     ],
   };
 
+  /* An injury timeout: he stays down, two trainers in team gear jog out from his bench and kneel by him, and then
+     help him off, an arm over each of their shoulders, while his teammates clap him off; the crowd applauds. For the
+     worst of them the cart drives out instead and takes him off lying on its bed. o: { team, role, num, name, x, y,
+     cart, sub }. The camera and the cart are in render3d.js (SCENECAM.injury, props.cart). */
+  SCENES.injury = {
+    dur: 7.4,
+    setup(sc) {
+      const o = sc.o, side = o.team === 0 ? -1 : 1, x = clamp(o.x, 5, FW - 5), y = clamp(o.y, 6, 94), A = [];
+      const bx = side < 0 ? Math.max(-1.6, x - 10) : Math.min(FW + 1.6, x + 10);  // on their way out already (the scene opens on them a few strides away)
+      sc.side = side;
+      sc.edge = o.team === 0 ? -2.2 : FW + 2.2;  // where his walk ends, at his sideline
+      /* the trainers come from the sideline at a jog; a beat with him once they are there, then up (or the cart) */
+      sc.upAt = 0.35 + Math.abs(x - bx) / 6.6 + 1.3;
+      sc.dur = sc.upAt + (o.cart ? 5 : 4);
+      const me = { x, y, vx: 0, vy: 0, team: o.team, role: o.role, num: o.num, name: o.name, act: null, down: true, slide: true, lying: true, face: side < 0 ? Math.PI / 2 : -Math.PI / 2 };
+      sc.me = me;
+      A.push(me);
+      sc.tr = [0, 1].map(k => {
+        const g = [x - side * 1.05, y + (k ? 0.8 : -0.8)], t = { x: bx, y: y + (k ? 2 : -2), vx: 0, vy: 0, team: o.team, role: 'TR', num: 0, name: 'Trainer', hoodie: true, go: g, spd: 6.6, at: 0.15 + k * 0.15, then: 'aid' };
+        t.face = Math.atan2(-(x - g[0]), y - g[1]);
+        A.push(t);
+        return t;
+      });
+      // three of his own unit stand by, helmets off in spirit: they clap him off
+      const unit = OFFR.includes(o.role) ? ['C', 'LT', 'RB', 'X', 'TE'] : ['MLB', 'DE1', 'FS', 'CB1', 'OLB1'];
+      sc.mates = unit.filter(r => r !== o.role).slice(0, 3).map((r, k) => {
+        const m = rosterMan(o.team, r, k + 2), a = (k - 1) * 0.8 + (side < 0 ? 0 : Math.PI);
+        m.x = clamp(x + side * 2.6 + Math.cos(a) * 1.2 * -side, 2, FW - 2);
+        m.y = y + (k - 1) * 1.6;
+        m.face = Math.atan2(-(x - m.x), y - m.y);
+        A.push(m);
+        return m;
+      });
+      if (o.cart) {
+        const d = { x: x - side * 2.4, y }, cx0 = bx + side * 1.5, drv = { x: cx0, y: y - 5, vx: 0, vy: 0, team: o.team, role: 'TR', num: 0, name: 'Driver', hoodie: true, act: 'sit', face: 0 };
+        sc.cart = { x: cx0, y: y - 5, h: Math.atan2(d.y - (y - 5), d.x - cx0), to: d, spd: 0, at: 0.4 };  // out a beat behind the trainers, and there before they are done
+        sc.drv = drv;
+        A.push(drv);
+      }
+      sc.cap = `<small>Injury timeout</small><b>#${o.num} ${esc(o.name)}</b><span>${o.cart ? 'The cart is out' : 'Shaken up'} · ${esc(o.sub)} comes in</span>`;
+      return A;
+    },
+    update(sc, dt) {
+      if (!sc.up && sc.t >= sc.upAt) {
+        sc.up = true;
+        (sc.o.cart ? INJ_CART : INJ_UP)(sc);
+      }
+      const C = sc.cart;
+      if (C && sc.t >= C.at && C.to) {
+        // the cart: out to him, a stop, then back to the sideline with him on the bed
+        const dx = C.to.x - C.x, dy = C.to.y - C.y, d = hyp(dx, dy), want = d > 0.15 ? Math.min(4.2, d * 1.6) : 0;
+        C.spd += (want - C.spd) * Math.min(1, dt * 2.5);
+        if (d > 0.05) {
+          C.h = Math.atan2(dy, dx);
+          C.x += dx / d * C.spd * dt;
+          C.y += dy / d * C.spd * dt;
+        }
+      }
+      if (C && sc.drv) {
+        const cx = Math.cos(C.h), cy = Math.sin(C.h);
+        sc.drv.x = C.x + cx * 1.2;
+        sc.drv.y = C.y + cy * 1.2;
+        sc.drv.face = Math.atan2(-cx, cy);
+        sc.drv.lift = 0.05;
+        if (sc.onCart) {
+          sc.me.x = C.x - cx * 1.25;
+          sc.me.y = C.y - cy * 1.25;
+          sc.me.face = Math.atan2(-cx, cy) + Math.PI / 2;  // lengthways on the bed (a man lying down lies across his facing)
+        }
+      }
+    },
+    cues: [
+      [0.1, sc => {
+        vo('inj.down', { pri: 1 });
+        if (PG.audio) PG.audio.crowd.settle();
+      }],
+    ],
+  };
+  /* the injury scene's two endings, run from its update when the trainers have had their moment with him */
+  const INJ_UP = sc => {
+    // up and off: his arms over their shoulders, a slow walk to his sideline, his teammates clapping
+    const me = sc.me, y = me.y;
+    Object.assign(me, { down: false, slide: false, lying: false, arms: 'over', go: [sc.edge, y + 1.5], spd: 1.45 });
+    sc.tr.forEach((t, k) => Object.assign(t, { act: null, then: null, x: me.x + (k ? 0.05 : -0.05), y: y + (k ? 0.78 : -0.78), arms: k ? 'R' : 'L', go: [sc.edge, y + 1.5 + (k ? 0.78 : -0.78)], spd: 1.45, at: 0 }));
+    for (const m of sc.mates) m.act = 'clap';
+    snd('applause', { level: 0.75, dur: 3.6 });
+    sc.cut = true;
+  };
+  const INJ_CART = sc => {
+    // onto the bed (the camera cuts as he is lifted), and back to the sideline
+    const C = sc.cart;
+    sc.onCart = true;
+    sc.me.lift = 1.02;
+    C.to = { x: sc.edge, y: C.y + 9 };
+    C.at = sc.t + 0.5;
+    sc.tr.forEach((t, k) => Object.assign(t, { act: null, then: null, go: [sc.edge + sc.side * 0.6, C.y + 9 + (k ? 1.6 : -1.6)], spd: 2.6, at: sc.t + 0.6 }));
+    for (const m of sc.mates) m.act = 'clap';
+    snd('applause', { level: 0.8, dur: 4 });
+    sc.cut = true;
+  };
+
   /* Halftime: both teams jog off toward their own ends while the band comes on; the score on the caption. */
   SCENES.half = {
     dur: 4.4,
@@ -2739,9 +2840,13 @@
     c.flat = 4;  // he stays down
     G.deadT += 2.6;
     G.runoff = 0;  // an injury timeout: the clock waits
+    const at = { x: c.x, y: c.y }, cart = Math.random() < 0.18;  // about one in six: the cart
     setTimeout(() => {
       if (!G.ros || G.state === 'menu' || G.state === 'over') return;
-      banner('Injury timeout', `#${orig.num} ${orig.name} is shaken up · ${G.ros[c.team][c.role].name} comes in`, 2300);
+      const sub = G.ros[c.team][c.role].name;
+      // the trainers out to him and the walk off (or the cart), as a short scene; without cutscenes a banner says it
+      if (G.state === 'dead' && cutsOn()) return playScene('injury', { team: c.team, role: c.role, num: orig.num, name: orig.name, x: at.x, y: at.y, cart, sub, c1: TEAMS[G.tm[c.team]].c1 }, () => {});
+      banner('Injury timeout', `#${orig.num} ${orig.name} is ${cart ? 'carted off' : 'shaken up'} · ${sub} comes in`, 2300);
       vo('inj.down', { pri: 1 });
       if (PG.audio) PG.audio.crowd.settle();
     }, 1500);
