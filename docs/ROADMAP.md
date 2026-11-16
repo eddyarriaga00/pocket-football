@@ -2713,6 +2713,21 @@ six were done as the pro game has them; the choices where there was one are mine
   Computer kickoffs untouched: fingerprint unchanged. Audit empty at 320x568, 390x844 and 440x956; whole seasons at
   both positions, careers at both, exhibitions and a season with the rough test player clean.
 
+- Tonight, round 11 (06:52): the pocket, measured and not shipped. Sacks in simulated games run at 4.3 to 5.4% of
+  dropbacks against the league's 6.5 to 7%, and penalties at 3.5% of plays (the league's is about 8%, but several of
+  the game's flags are only called in watched games, so the simulator undercounts them and that number is not a
+  fair comparison). The quarterback (qbAI) throws as soon as he may: 99% of balls inside 2.2 s of the snap, an
+  average of 1.45 s against the league's 2.8, almost never a scramble (0.1% of dropbacks) or a throwaway (1 in 687).
+  Tried, in turn, over 20 to 24 games each: a progression (3.6 yards of room wanted at the top of the drop, coming
+  down to 1.3 late): time to throw 1.53, because men are already 3.6 clear at 1.4 s; his first read moved to 1.9 s
+  (feet set): sacks 21.8%, nearly all (74 of 75) by blitzing linebackers nobody blocked, arriving at 1.7 s; pass
+  blocks held longer (2.2 to 4.6 s): no change, the blitzers are free; a hot throw when a blitzer comes free inside
+  7 yards: sacks 3.6%, but interceptions 4.6%, 10.3 yards an attempt and 0.59 points a play, all further from the
+  league. So it was all taken out again; nothing in play changed this round.
+  What it shows: the quarterback's timing, the protection (backs and tight ends picking up blitzers, a slide), the
+  hot read and the coverage tightness (round 9) are one system; tuning one knob a night moves the others the wrong
+  way. Added to the list as one item for a session of its own, with these numbers.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3085,3 +3100,6 @@ NFL rules first, every item checked the full way before it ships.
 - [x] The clock on a runner out of bounds: NFL timing (it restarts on the ready signal except in the last two
   minutes of a half or an overtime period and the last five of the game).
 - [x] The kickoff landing zone: your kickoff that lands short of their 20 is not returned; their ball at the 40.
+- [-] (deferred to a session of its own) The pocket as one system: quarterback timing (1.45 s to throw against the
+  league's 2.8), blitz pickup by backs and tight ends, hot reads and coverage tightness, tuned together against the
+  league's numbers (round 11's log; round 9's for coverage).
