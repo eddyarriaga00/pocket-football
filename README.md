@@ -151,6 +151,8 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   for the worst, the cart drives out and takes him off.
 - A record book: the league's single-game and season marks, kept across careers; break one and the broadcast, the
   result sheet and the league's own account say so. Your season so far is drawn against each season mark.
+- Computer coaches make modern fourth-down calls: they go for it on 4th and 1 past their own 35, on 4th and short
+  near midfield and on 4th and goal from the 2, and play it safe when ahead late.
 - Kickoffs follow the current rules: a touchback comes out to the 35, and a kick that lands short of the landing
   zone (outside the receiving 20) gives them the ball at their 40.
 - Both feet in: a ball caught out of bounds is incomplete, and a catch at the sideline or end line needs a toe tap.

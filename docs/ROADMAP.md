@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `a51cc01`, before the computer's modern fourth-down calls (2026-11-16 night).
   - `64ee905`, before the kickoff landing zone (a short kick gives the ball at the 40) (2026-11-16 night).
   - `09e544d`, before the NFL clock rule for a runner out of bounds (2026-11-16 night).
   - `28bee05`, before the All-Star Game for invited career players (2026-11-16 night).
@@ -2728,6 +2729,17 @@ six were done as the pro game has them; the choices where there was one are mine
   hot read and the coverage tightness (round 9) are one system; tuning one knob a night moves the others the wrong
   way. Added to the list as one item for a session of its own, with these numbers.
 
+- Tonight, round 12 (07:22): the computer's fourth-down calls. It went for it only when desperate late, or on 4th
+  and a yard or less outside field goal range; everything else was a punt or a kick, so 4th and a yard inside the
+  other side's 35 was always a field goal (4 of 4 in the sims). Now callPlan follows the modern chart: go on 4th and 1 from its own 35 on
+  (field goal range included), on 4th and 2 or 3 between its own 45 and the edge of range, on 4th and goal from the
+  2, and, two scores down in the second half, on 4th and 4 or less past its own 40; ahead in the last five minutes,
+  or with a half about to end, it kicks. Measured over 24 sim games: fourth downs went 13% go / 62% punt / 25% kick
+  before, 18% / 53% / 29% after (the league goes for it on about 17 to 18% of fourth downs). Seen on screen: a 4th
+  and 1 at the offense's own 44, converted. Play changed: fingerprint re-pinned, the old value in
+  pg.fingerprint.before-4th. Audit empty at 320x568, 390x844 and 440x956; whole seasons at both positions, careers
+  at both, exhibitions and a season with the rough test player clean; the playbook check passes.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3103,3 +3115,5 @@ NFL rules first, every item checked the full way before it ships.
 - [-] (deferred to a session of its own) The pocket as one system: quarterback timing (1.45 s to throw against the
   league's 2.8), blitz pickup by backs and tight ends, hot reads and coverage tightness, tuned together against the
   league's numbers (round 11's log; round 9's for coverage).
+- [x] The computer's fourth-down calls follow the modern chart (4th and 1 from its own 35 on, 4th and 2 or 3 in
+  no man's land, 4th and goal from the 2; safe when ahead late).

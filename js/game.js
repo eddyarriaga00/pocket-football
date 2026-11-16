@@ -3673,9 +3673,17 @@
     const toGoal = t === 0 ? 100 - G.los : G.los, ld = G.score[t] - G.score[1 - t], S = schemeOf(t), c = { fixed: null };
     if (G.q === 4 && ld > 0 && G.down <= 3 && G.clock <= Math.max(0, 4 - G.down - G.to[1 - t]) * 40) c.fixed = OFF.find(p => p.quick === 'kneel');  // ahead late: run it out
     else if (G.down === 4 && !(G.go4 && t === 0)) {
-      const desp = G.q >= 4 && ld < 0 && G.clock < 100;
-      if (toGoal + 17 <= 52 && !(desp && ld < -3)) c.fixed = OFF.find(p => p.n === 'Field Goal');
-      else if (!(desp || (G.togo <= 1.5 && toGoal < 60))) c.fixed = OFF.find(p => p.n === 'Punt');
+      const desp = G.q >= 4 && ld < 0 && G.clock < 100, inRange = toGoal + 17 <= 52;
+      /* the modern fourth-down chart: go on 4th and 1 from your own 35 on (inside field goal range too), on 4th and 2
+         or 3 between your own 45 and the edge of range (a punt gains little there and a kick is long), and on 4th and
+         goal from the 2; two scores down in the second half, on 4th and 4 or less past your own 40. Ahead in the last
+         five minutes, or with the half about to end, it is the kick. */
+      const safe = (G.q >= 4 && ld > 0 && G.clock < 300) || ((G.q === 2 || G.q >= 4) && G.clock < 30);
+      const go = !safe && ((G.togo <= 1.5 && toGoal <= 65) || (G.togo <= 3.5 && toGoal > 35 && toGoal <= 55) || (G.togo <= 2.5 && toGoal <= 2.5) ||
+        (G.q >= 3 && ld <= -9 && G.togo <= 4.5 && toGoal <= 60));
+      if (desp) {
+        if (inRange && ld >= -3) c.fixed = OFF.find(p => p.n === 'Field Goal');
+      } else if (!go) c.fixed = OFF.find(p => p.n === (inRange ? 'Field Goal' : 'Punt'));
     }
     /* how often he runs: about even on first down, a little under on second and long, mostly runs on short yardage,
        seldom on third and long. (It was 30% on first and ten: teams ran on 28% of their snaps, well under the pro
