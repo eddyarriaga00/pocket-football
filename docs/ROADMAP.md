@@ -2412,6 +2412,11 @@ six were done as the pro game has them; the choices where there was one are mine
   the change, run side by side; `H.sim`, `H.exh`, both careers, the three camp drills and the chaos player clean;
   gait, tackles, the catch and the helmet's aim identical to before (the block test varies run to run on the old
   code too); whole games drawn at night in the clear, by day in the rain and at dusk in the snow, every pose finite.
+  The audit at 320x568 and 390x844 found no contrast problem against the new stadium, but five team buttons at
+  43.4 pixels to touch: the same on the code before the change, so a matter of how this machine (Linux, headless
+  Chromium) measures the type, not of this change. `.tm` and the arrows beside it have a 44-pixel floor now, so
+  the buttons cannot come out short on any machine.
+  Audit run again after that: empty at 320x568 and 390x844.
 
 ## Morning hand-off
 
