@@ -22,7 +22,7 @@ window.H = (() => {
   function bot() {
     const G = d().G, ps = d().ps;
     if (throwKey) {
-      if (!G.chg || G.chg.t >= 0.3 || G.state !== 'live') {
+      if (!G.chg || G.chg.t >= (window.H_HOLD ?? 0.3) || G.state !== 'live') {  // H_HOLD: how long the test player holds (0.55 is a full bar)
         // also let go when the play dies under him, or the key would be held for ever
         dispatchEvent(new KeyboardEvent('keyup', { code: 'Digit1', key: throwKey }));
         throwKey = null;
@@ -54,6 +54,7 @@ window.H = (() => {
           b = i;
         }
       });
+      if (window.H_PICK === 'random') b = Math.floor(Math.random() * ps.recs.length);  // a careless thrower, for checking the open ring
       throwKey = String(b + 1);
       dispatchEvent(new KeyboardEvent('keydown', { code: 'Digit1', key: throwKey }));  // released by a later step, when the bar is a little past half
     }

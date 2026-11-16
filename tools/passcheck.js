@@ -7,7 +7,7 @@
 window.PC = (() => {
   const D = () => PG.dbg, q = s => document.querySelector(s);
   function run(games = 4, lvl) {
-    const rec = [];
+    const rec = [], ring = new Map();
     let cur = null;
     for (let g = 0; g < games; g++) {
       PG.showMenu();
@@ -20,17 +20,21 @@ window.PC = (() => {
       q('#go').click();
       let n = 0;
       while (D().G.state !== 'over' && D().G.state !== 'menu' && n++ < 400000) {
+        // the green ring as it stood just before the ball left (what you saw when you let go)
+        if (D().G.state === 'live' && D().ps.recs && !D().ps.thrown) for (const r of D().ps.recs) ring.set(r, D().roomFor(r) >= 2.4);
         H.bot();
         D().step(0.02);
         const ps = D().ps, a = ps && ps.air;
-        if (a && a.target && a.dist !== undefined && ps.thrown && !cur) cur = { a, off: ps.offTeam, you: ps.offTeam === 0, d: a.dist, c0: D().G.stats[ps.offTeam].comp };
+        if (a && a.target && a.dist !== undefined && ps.thrown && !cur) cur = { a, off: ps.offTeam, you: ps.offTeam === 0, d: a.dist, c0: D().G.stats[ps.offTeam].comp, ring: ring.get(a.target) };
         if (!cur) continue;
         if (a === cur.a) {
           const r = a.target;
           cur.dr = Math.hypot(r.x - a.x1, r.y - a.y1);
+          cur.nd = Math.min(...D().P.filter(o => o.team !== cur.off && !o.down).map(o => Math.hypot(o.x - a.x1, o.y - a.y1)));
         } else {
           cur.comp = D().G.stats[cur.off].comp > cur.c0;
           cur.int = !!(ps && ps.turnover && ps.carrier && ps.carrier.team !== cur.off);
+          cur.why = D().G.last || '';
           delete cur.a;
           rec.push(cur);
           cur = null;
@@ -43,7 +47,8 @@ window.PC = (() => {
       return { n: s.length, comp: Math.round(s.filter(x => x.comp).length / n * 100), int: s.filter(x => x.int).length, miss: +(s.reduce((t, x) => t + x.dr, 0) / n).toFixed(2),
         hard: s.filter(x => x.dr > 1.2 && x.dr <= 2.2).length, gone: s.filter(x => x.dr > 2.2).length };
     };
-    return { you: sum(x => x.you), youShort: sum(x => x.you && x.d <= 12), youMid: sum(x => x.you && x.d > 12 && x.d <= 20), youDeep: sum(x => x.you && x.d > 20),
+    PC.rec = rec;
+    return { you: sum(x => x.you), youOpen: sum(x => x.you && x.nd >= 2.6), ringOn: sum(x => x.you && x.ring), ringOff: sum(x => x.you && !x.ring), youTight: sum(x => x.you && x.nd < 1.3), youShort: sum(x => x.you && x.d <= 12), youMid: sum(x => x.you && x.d > 12 && x.d <= 20), youDeep: sum(x => x.you && x.d > 20),
       cpu: sum(x => !x.you), cpuDeep: sum(x => !x.you && x.d > 20) };
   }
   return { run };

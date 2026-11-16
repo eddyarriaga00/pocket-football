@@ -60,6 +60,8 @@
     "pass.rb": { "v": "p", "e": 0.4, "t": ["Out of the backfield to the running back.", "Dumped off to the back.", "A check-down to the running back.", "Swing pass to the back."] },
     "pass.inc": { "v": "p", "e": 0.25, "t": ["Incomplete.", "Falls incomplete.", "And it falls to the turf, incomplete.", "Can't come up with it. Incomplete.", "The pass is incomplete."] },
     "pass.over": { "v": "p", "e": 0.3, "t": ["Overthrown.", "Just off his fingertips.", "Out of reach. Too much on that one.", "Sailed over his head."] },
+    "pass.drop": { "v": "p", "e": 0.45, "t": ["Dropped!", "Right through his hands.", "He had it, and he let it get away."] },
+    "pass.under": { "v": "p", "e": 0.3, "t": ["Underthrown.", "He left that one short.", "Not enough on it. Falls short."] },
     "pass.away": { "v": "p", "e": 0.2, "t": ["Thrown away.", "He throws it away.", "Nothing there, so he throws it away."] },
     "deep": { "v": "p", "e": 0.7, "t": ["He goes deep!", "Going deep!", "He lets it fly!", "Here comes the deep shot!", "Long ball!"] },
     "pass.broken": { "v": "p", "e": 0.5, "t": ["Broken up!", "Great play on the ball! Knocked away!", "Swatted away!"] },

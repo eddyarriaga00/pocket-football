@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `fcc0158`, before the catch model, the open ring and incompletion reasons (2026-11-16 night).
   - `c3a5b21`, before the new commentary lines and social posts (2026-11-16 late).
   - `dbf6e55`, before the difficulty slider and receivers timing their run to the ball (2026-11-16 evening).
   - `c432a89`, before safe save reading and the playoff overtime and two-minute warning fixes (2026-11-16 afternoon).
@@ -2890,6 +2891,22 @@ six were done as the pro game has them; the choices where there was one are mine
   with a hole in it. Also: the menu figure, squeezed to about 22px when a career and a season are both saved, cut
   its name tag (audit at 440x956); it now hides under 90px (a container query). Fingerprint unchanged; audit empty
   at 320x568 and 440x956; exhibitions with the booth on and careers clean.
+
+- 2026-11-16 (night, "it feels like i can't hit throws that should be made and feel good, i don't understand how it
+  works accuracy wise improve it"). Measured with tools/passcheck.js: a wide-open receiver (3+ yards of room at the
+  catch) with the ball on him (0.1 yards off) still failed to catch it about one time in five, shown only as
+  "Incomplete"; the league's 66% leaned on those random misses, because nearly half of all throws arrived with no
+  defender within five yards. Now: (1) the catch (resolvePass) runs from 92% with 3.2 yards of room (less 0.8 a yard
+  past twenty in the air, plus or minus his hands) down to 15% with a defender on him, with no cliff; interceptions
+  0.16. (2) Defenders break on the ball whenever they can get there in time (defAI), so a bullet beats the men
+  closing and a floater lets them arrive. (3) A green ring on a receiver's letter, on the field and on the pad's
+  button, when a throw to him now would arrive with room (`roomFor`, the same flight and reach as the play, and the
+  difficulty's reaction speed). Checked: thrown at random, ringed throws were caught 20 of 20, others 34%; at Pro and
+  Legend ringed throws 91 to 100%. (4) An incompletion says why: Pass broken up, Dropped, Overthrown, Underthrown or
+  Off target; two new booth calls (pass.drop, pass.under, recorded). The tips explain the ring and the power. League:
+  30 games, 71 to 74% completions, 1.4 to 2% picks (raised to 0.16 after), 4.2 to 4.4 a carry, 33 points. Controls
+  unchanged. Fingerprint re-pinned (old in pg.fingerprint.before-catch); drills, careers, the rough player and the
+  audit at 320x568 and 440x956 clean.
 
 ## Morning hand-off
 
