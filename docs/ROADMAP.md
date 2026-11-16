@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `c3a5b21`, before the new commentary lines and social posts (2026-11-16 late).
   - `dbf6e55`, before the difficulty slider and receivers timing their run to the ball (2026-11-16 evening).
   - `c432a89`, before safe save reading and the playoff overtime and two-minute warning fixes (2026-11-16 afternoon).
   - `e68b326`, before the chat was connected to the owner's Firebase project (2026-11-16).
@@ -2874,6 +2875,21 @@ six were done as the pro game has them; the choices where there was one are mine
   The throwing controls are unchanged. New tool `tools/passcheck.js`. Fingerprint re-pinned (old value in
   pg.fingerprint.before-passing); X.bad empty in exhibitions and careers at both positions; drills, season start,
   career settings and old-save levels checked; a hand-thrown 40-yard ball at 440x956 caught for a touchdown.
+
+- 2026-11-16 (late, "improve the commentary lines and social media comments"). Booth: 15 lines rewritten and 119
+  takes added (361 to 480), recorded with the same local Kokoro voices (135 new clips; the syllable check flagged
+  none; every common clip decodes at its length). The most heard calls (short and good passes, runs, incompletions,
+  touchdowns, sacks, picks, field goals) have more takes, and the analyst explains plays (the safety biting, a
+  hat on a hat, the cutback lane, eyes on the receiver). A wording bug fixed with it: the final whistle and halftime
+  calls said "the home side" wins or leads whenever your team did, home or away; they no longer say who is home.
+  Pack 4.2 to 5.6 MB. Social: the thinner pools roughly doubled; fans on both sides react to how the game went
+  (`shapeOf` in media.js: a nail-biter, a rout, overtime, a tie, with the score, each side's own score first) and to
+  a big stat day (300 passing yards, three touchdown passes, 100 receiving yards, two touchdown catches); podium
+  answers in the confident, respect and deflect tones now draw posts too (only own, team, humble, trash and
+  guarantee did). Career passes `ot` to the reaction. 400 generated games: 22,787 posts, 1,432 different, none
+  with a hole in it. Also: the menu figure, squeezed to about 22px when a career and a season are both saved, cut
+  its name tag (audit at 440x956); it now hides under 90px (a container query). Fingerprint unchanged; audit empty
+  at 320x568 and 440x956; exhibitions with the booth on and careers clean.
 
 ## Morning hand-off
 

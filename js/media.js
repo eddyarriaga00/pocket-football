@@ -29,7 +29,7 @@
     const nx = c.next != null ? TEAMS[c.next] : null, qb = mate(c, 'QB');
     return { N: c.name, L, LU: L.toUpperCase(), T: T.name, C: T.city, AB: T.ab, O: O.name, OC: O.city, OAB: O.ab, S, us: c.us, them: c.them, R: c.rival ? rivalName(c.rival) : '', RL: c.rival ? c.rival.name : '',
       pos: c.pos === 'QB' ? 'quarterback' : 'receiver', NX: nx ? nx.name : '', NXC: nx ? nx.city : '', unit: c.pos === 'QB' ? 'secondary' : 'corners', help: c.pos === 'QB' ? 'the guys up front' : qb ? `${qb.first} ${qb.last}` : 'our quarterback',
-      coach: c.coachName || 'Coach', Q: c.quote || '' };
+      coach: c.coachName || 'Coach', Q: c.quote || '', SC: `${c.us}–${c.them}`, YD: c.pos === 'QB' ? m.pyd : m.recyd, TDS: c.pos === 'QB' ? m.ptd : m.rectd };
   }
 
   /* how loud the reaction is, 0 to 10, and which way it leans (-1 to 1) */
@@ -125,59 +125,84 @@
   /* ---------- the lines ----------
      By tier (great, good, meh, bad: how you played) and, for the losing side's view, by the result. */
   const FAN = {
-    great: ['{L} IS HIM. I’ve been saying it for weeks.', 'Somebody check on the {O} {unit} 😭', '{S}. Put some respect on {L}’s name.', 'WHAT A GAME FROM {LU}!!! 🔥🔥🔥', 'Pay {L}. Right now. Whatever it takes.', 'We got a real one in {C}.', '{L} cooked them all day. Not close.', 'I need a {L} jersey by Sunday 💯', 'Best I’ve felt about the {T} in years.', 'My dad just called me about {L}. My dad does not call me.', '{L} went full video game mode on the {O}.', 'The {O} are gonna see {L} in their sleep tonight.', 'Put {L} on the cover. I’m serious.', '{LU} SZN 🐐', 'Rewatched every {L} play twice. Still not tired of it.', 'Whoever drafted {L} deserves a raise.'],
-    good: ['Solid day from {L}. Trending the right way.', '{L} keeps showing up. Love to see it.', '{S}. I’ll take that every week.', 'Quietly one of the best in the league. Watch.', '{L} made the plays when it mattered.', 'That’s a grown-up game from {L}.', 'Not flashy. Just good. That’s {L}.', '{L} is earning that spot week by week.'],
-    meh: ['{L} was fine. We need more than fine.', 'Not his best, not his worst. Next week.', 'Quiet one for {L}. Let’s see the bounce back.', 'Some good, some bad from {L}. Still believe.', 'We need {L} to take over games, not just play in them.', 'Get {L} the ball more. Simple.'],
-    bad: ['Rough one for {L}. It happens.', '{L} has to be better than that. Period.', 'Bench him? No. Fix it? Yes.', 'Still riding with {L}. Bad days happen.', 'That was hard to watch, {L}.', 'I’m not panicking. I’m concerned. There’s a difference.', 'One game doesn’t define {L}. Two might.'],
-    goodLoss: ['{L} held up his end. Can’t say that for everyone.', 'Decent game from {L}. Just not enough today.', 'Can’t pin this one on {L}.', '{L} was fine. The rest of us need to catch up.'],
-    badWin: ['W is a W, but {L} has to get going.', 'Won without {L} doing much. Can’t count on that every week.', 'Get {L} involved earlier next week.', 'Ugly win. {L} will be better.'],
-    wasted: ['{L} did everything he could. The rest of the team didn’t show up.', 'Wasting a day like that from {L} should be illegal.', '{S} in a LOSS. Somebody explain that to me.', 'Not on {L}. Not even a little.', '{L} played winning football. The scoreboard didn’t get the memo.', 'Fix the defense and {L} wins us games like this.'],
+    great: ['{L} IS HIM. I’ve been saying it for weeks.', 'Somebody check on the {O} {unit} 😭', '{S}. Put some respect on {L}’s name.', 'WHAT A GAME FROM {LU}!!! 🔥🔥🔥', 'Pay {L}. Right now. Whatever it takes.', 'We got a real one in {C}.', '{L} cooked them all day. Not close.', 'I need a {L} jersey by Sunday 💯', 'Best I’ve felt about the {T} in years.', 'My dad just called me about {L}. My dad does not call me.', '{L} went full video game mode on the {O}.', 'The {O} are gonna see {L} in their sleep tonight.', 'Put {L} on the cover. I’m serious.', '{LU} SZN 🐐', 'Rewatched every {L} play twice. Still not tired of it.', 'Whoever drafted {L} deserves a raise.', 'I have watched the highlights eleven times. Going for twelve.', 'The {O} game plan was “hope {L} has a bad day.” He did not.', 'Nobody in {C} is going to work tomorrow. We’re all just watching {L} clips.', 'Every time {L} touched the ball my neighbors heard about it.', '{L} turned the {O} into a highlight reel. For us.'],
+    good: ['Solid day from {L}. Trending the right way.', '{L} keeps showing up. Love to see it.', '{S}. I’ll take that every week.', 'Quietly one of the best in the league. Watch.', '{L} made the plays when it mattered.', 'That’s a grown-up game from {L}.', 'Not flashy. Just good. That’s {L}.', '{L} is earning that spot week by week.', 'Didn’t need a highlight to know {L} played well. Watch the chains move.', '{L} does the boring stuff right and I love him for it.', 'Another week, another {L} game you can count on.', 'Steady {L} is the best kind of {L}.', 'Coaches will love the tape on {L} this week.'],
+    meh: ['{L} was fine. We need more than fine.', 'Not his best, not his worst. Next week.', 'Quiet one for {L}. Let’s see the bounce back.', 'Some good, some bad from {L}. Still believe.', 'We need {L} to take over games, not just play in them.', 'Get {L} the ball more. Simple.', 'Kept waiting for the {L} play. Never really came.', 'Not mad. Just expected more from {L}.', '{S}. Feels like there was more out there.', 'A {L} game you forget by Tuesday. Hope next week’s isn’t.', 'Somebody tell the play caller {L} is on the roster.'],
+    bad: ['Rough one for {L}. It happens.', '{L} has to be better than that. Period.', 'Bench him? No. Fix it? Yes.', 'Still riding with {L}. Bad days happen.', 'That was hard to watch, {L}.', 'I’m not panicking. I’m concerned. There’s a difference.', 'One game doesn’t define {L}. Two might.', 'Turned it off in the third. Turned it back on. Regretted it.', '{S}. I’m going to need a minute.', 'Love you {L} but that was a long afternoon.', 'Film room is gonna be awkward this week.', 'That one goes straight in the trash. Next.'],
+    goodLoss: ['{L} held up his end. Can’t say that for everyone.', 'Decent game from {L}. Just not enough today.', 'Can’t pin this one on {L}.', '{L} was fine. The rest of us need to catch up.', '{S} in a loss. {L} did his part.', 'Lost the game, didn’t lose faith in {L}.', 'Wasn’t {L}. Look at the other side of the ball.'],
+    badWin: ['W is a W, but {L} has to get going.', 'Won without {L} doing much. Can’t count on that every week.', 'Get {L} involved earlier next week.', 'Ugly win. {L} will be better.', 'Winning while {L} has an off day? That’s a good team.', 'We’ll take the W. {L} owes us a big one next week.', 'Not pretty. Don’t care. {SC}.'],
+    wasted: ['{L} did everything he could. The rest of the team didn’t show up.', 'Wasting a day like that from {L} should be illegal.', '{S} in a LOSS. Somebody explain that to me.', 'Not on {L}. Not even a little.', '{L} played winning football. The scoreboard didn’t get the memo.', 'Fix the defense and {L} wins us games like this.', 'A {YD}-yard day and we lost. I don’t understand this sport.', 'Give {L} some help. Please. I’m begging.'],
   };
 
   // the other side's fans: their team lost (beaten) or won (won)
   const OPP = {
     beaten: {
-      great: ['Refs gave {L} half those yards.', 'Ok {L} is actually good. I hate it here.', 'Our defense owes the whole city of {OC} an apology.', 'Can’t even be mad. {L} was cooking.', 'We made {L} look like a Hall of Famer smh', 'Fire our defensive coordinator. Tonight.', 'Who was supposed to cover {L}?? Anybody??'],
-      good: ['{L} got lucky on a couple of those.', 'We’ll see {L} again. Different story next time.', 'Not that impressed with {L} tbh.', 'We beat ourselves today. {L} just showed up.'],
-      meh: ['We lost to THAT? Embarrassing.', 'Their whole team beat us, not {L}.', 'Our {unit} actually held {L} in check. The rest of us didn’t.'],
-      bad: ['We lost to a team where {L} did nothing?? Unreal.', 'Held {L} to nothing and still lost. Classic {O}.'],
+      great: ['Refs gave {L} half those yards.', 'Ok {L} is actually good. I hate it here.', 'Our defense owes the whole city of {OC} an apology.', 'Can’t even be mad. {L} was cooking.', 'We made {L} look like a Hall of Famer smh', 'Fire our defensive coordinator. Tonight.', 'Who was supposed to cover {L}?? Anybody??', 'We let {L} have a career day. Again.', 'Hate to say it. {L} is the real deal.', '{S} against us. I’m going to bed.'],
+      good: ['{L} got lucky on a couple of those.', 'We’ll see {L} again. Different story next time.', 'Not that impressed with {L} tbh.', 'We beat ourselves today. {L} just showed up.', '{L} was decent. Our tackling was not.', 'Fine. {L} is good. Happy?'],
+      meh: ['We lost to THAT? Embarrassing.', 'Their whole team beat us, not {L}.', 'Our {unit} actually held {L} in check. The rest of us didn’t.', 'Shut down their best guy and still lost. Make it make sense.', '{SC}. We had that one.'],
+      bad: ['We lost to a team where {L} did nothing?? Unreal.', 'Held {L} to nothing and still lost. Classic {O}.', 'Their star did nothing and we STILL found a way to lose.', 'Not even {L} beat us. We beat us.'],
     },
     won: {
-      great: ['{L} can keep the yards. We’ll keep the W.', 'Great game from {L}. Shame about the scoreboard 😂', 'Let him have his stats. Scoreboard.'],
-      good: ['W. {L} did some stuff, didn’t matter.', 'We’ll take that win. Next.', '{L} had a few. We had the last laugh.'],
-      meh: ['{L} who? 😂', 'All that hype for that?', 'Our {unit} did their job on {L}.', 'Easy work. Next.'],
+      great: ['{L} can keep the yards. We’ll keep the W.', 'Great game from {L}. Shame about the scoreboard 😂', 'Let him have his stats. Scoreboard.', '{S} and a loss. Tough way to live, {L}.', 'Bend, don’t break. {SC}. Goodnight.'],
+      good: ['W. {L} did some stuff, didn’t matter.', 'We’ll take that win. Next.', '{L} had a few. We had the last laugh.', '{SC}. That’s the only number that matters.', 'Respect to {L}. Now get on the bus.'],
+      meh: ['{L} who? 😂', 'All that hype for that?', 'Our {unit} did their job on {L}.', 'Easy work. Next.', 'Kept {L} quiet all day. Defense eats.', 'They said {L} was the problem. Didn’t look like it.'],
       bad: ['{L} who? 😂', 'Our defense ate {L} alive.', 'Overrated. Said it all week.', 'Thank you {L} for the free win 🙏', 'Hey {C}, you can have {L} back now.', 'Put {L} on the scout team.'],
     },
   };
 
   // people with no side
   const NEUTRAL_LINES = {
-    great: ['{L} is the best story in the league right now.', 'Whatever {L} is doing in practice, keep doing it.', '{S}. Fantasy managers who started {L}: you’re welcome.', 'That’s a statement game from {L}.'],
-    good: ['{L} keeps stacking quietly good games.', 'Steady from {L}. The {T} will need more of that.', 'Underrated performance from {L} today.'],
-    meh: ['Middle of the road for {L}. On to next week.', 'Not a lot to say about {L} today, honestly.'],
-    bad: ['Tough watch if you’re a {T} fan.', '{L} will want this one back.', 'Long week of film coming for {L}.'],
+    great: ['{L} is the best story in the league right now.', 'Whatever {L} is doing in practice, keep doing it.', '{S}. Fantasy managers who started {L}: you’re welcome.', 'That’s a statement game from {L}.', 'Whole league is going to be talking about {L} tomorrow.', 'Not a {T} fan. Still had to stand up for some of those {L} plays.'],
+    good: ['{L} keeps stacking quietly good games.', 'Steady from {L}. The {T} will need more of that.', 'Underrated performance from {L} today.', 'Nobody’s talking about {L}. They should be.', '{S}. Solid, efficient, forgettable to everyone but the coaches.'],
+    meh: ['Middle of the road for {L}. On to next week.', 'Not a lot to say about {L} today, honestly.', 'Some good, some bad. {L} is still figuring it out.', 'Fantasy managers with {L}: not a disaster, not a win.'],
+    bad: ['Tough watch if you’re a {T} fan.', '{L} will want this one back.', 'Long week of film coming for {L}.', 'Every player has a game like this. {L} just had his on a big stage.', 'Benched {L} in fantasy this week. Didn’t miss much.'],
   };
   const THREAD = {
-    great: ['This is the game people will remember from this season.', 'Big day. Bigger week coming.'],
-    good: ['Fair line. On to next week.', 'Good, not great. Fine by me.'],
-    meh: ['Ok, noted.', 'Forgettable. Next.'],
-    bad: ['Long week ahead for that guy.', 'Film session is gonna be quiet.'],
+    great: ['This is the game people will remember from this season.', 'Big day. Bigger week coming.', 'Saving this one.', 'Somebody frame this box score.'],
+    good: ['Fair line. On to next week.', 'Good, not great. Fine by me.', 'Solid. Next.', 'I’ll take that every week.'],
+    meh: ['Ok, noted.', 'Forgettable. Next.', 'That sure was a game.', 'Moving on.'],
+    bad: ['Long week ahead for that guy.', 'Film session is gonna be quiet.', 'Delete the tape.', 'Rough.'],
   };
   const ANALYST = {
     great: ['{N}: {S}. That’s not a hot streak, that’s a player arriving.', 'Go watch the tape on {L}. The decisions were as good as the numbers.', 'Defensive coordinators around the league just added {L} to the Monday meeting.', 'If you’re still calling {L} a project, you’re not watching.'],
     good: ['Efficient day from {L}. The {T} are a different team when he’s this involved.', '{L} did the little things right today. That’s what keeps you on the field.', '{S}. Steady. Coaches love steady.'],
-    meh: ['Middle-of-the-road game for {L}. The tools are there; the consistency isn’t yet.', '{L} left a couple of plays on the field. Fixable.'],
+    meh: ['Middle-of-the-road game for {L}. The tools are there; the consistency isn’t yet.', '{L} left a couple of plays on the field. Fixable.', 'The {O} took away {L}’s first look all day. Watch how he adjusts next week.', 'Not a bad game from {L}. Just not one that moves the needle.'],
     bad: ['{L} looked rushed all day. Expect teams to copy what the {O} did to him.', 'Hard to win with that line from your {pos}. {L} knows it.', 'This is the week we learn who {L} is. How you bounce back matters more than this game.'],
-    goodLoss: ['{L} was efficient. The {T} needed more from everyone else.', 'Quietly solid from {L} in a loss. Nothing to fix there.'],
+    goodLoss: ['{L} was efficient. The {T} needed more from everyone else.', 'Quietly solid from {L} in a loss. Nothing to fix there.', 'Don’t pin {SC} on {L}. The problems were elsewhere.'],
     wasted: ['{L} did his job today. The {T} lost this one somewhere else.', 'Don’t let the result hide it: {S} is a winning line from {L}.', 'The {T} wasted a really good {L} game. That can’t keep happening.'],
   };
   const MATE = {
     great: ['Told y’all about my guy {L} 💯', 'Different breed. Proud of you {L}.', '{L} said get on my back and we did.', 'That man {L} was locked in all week in practice. This was not an accident.'],
-    good: ['Big win. {L} made his plays. On to the next.', 'Love playing with {L}. Dude prepares like crazy.'],
-    meh: ['W is a W. Back to work.', 'We all got more in us. Starting tomorrow.'],
+    good: ['Big win. {L} made his plays. On to the next.', 'Love playing with {L}. Dude prepares like crazy.', 'Proud of this group. {L} was big today.', 'That’s {L}. Shows up every week.'],
+    meh: ['W is a W. Back to work.', 'We all got more in us. Starting tomorrow.', 'Got the job done. Not satisfied.', 'Win today, fix it tomorrow.'],
     bad: ['We got your back {L}. Next one.', 'Short memory. We go again.', 'One game. That’s all it was. Locked in.'],
-    goodLoss: ['Tough one. {L} did his part. We’ll get it back.', 'Proud of how {L} competed. On to the next.'],
+    goodLoss: ['Tough one. {L} did his part. We’ll get it back.', 'Proud of how {L} competed. On to the next.', 'Gonna sting all night. Back at it tomorrow.'],
     wasted: ['{L} balled out. We owe him one. That’s on the rest of us.', 'My guy {L} did his part. We gotta finish for him.'],
+  };
+
+  /* what kind of game it was, by the score: lines for both sides that a box score can't give you */
+  const shapeOf = c => {
+    const d = c.us - c.them;
+    return d === 0 ? 'tie' : c.ot ? (d > 0 ? 'otW' : 'otL') : d >= 17 ? 'routW' : d > 0 && d <= 3 ? 'closeW' : d <= -17 ? 'routL' : d < 0 && d >= -3 ? 'closeL' : '';
+  };
+  const SHAPE = {
+    closeW: ['{SC}. My heart cannot take another one of these.', 'Won by a whisker and I aged five years.', 'Close games are bad for my health. Great for my mood. {SC}!', 'Nail-biter. Nails gone. Worth it.'],
+    routW: ['{SC}. Somebody stop the fight.', 'Starters on the bench by the fourth. That’s how you do it.', 'Never in doubt. {SC}.', 'That was a statement. {SC}.'],
+    closeL: ['{SC}. One play. ONE PLAY.', 'Lost by a whisker. I’ll be staring at the ceiling tonight.', 'So close it hurts. {SC}.', 'Can’t keep losing the close ones.'],
+    routL: ['{SC}. I have no words.', 'Turned it off at halftime. Best decision I made today.', 'That was a beatdown. No excuses.', 'Let’s never speak of {SC} again.'],
+    otW: ['OVERTIME WIN!!! {SC}!!!', 'Extra football, extra happy. What a finish.', 'I need to lie down after that overtime.'],
+    otL: ['Lost in overtime. That’s the worst way to lose.', 'All that and we lose in OT. {SC}.', 'Overtime heartbreak. I’m done for the night.'],
+    tie: ['A tie. Nobody’s happy. {SC}.', 'Sixty minutes plus overtime and nothing to show for it.', 'A tie. I genuinely don’t know how to feel.'],
+  };
+  const flip = { closeW: 'closeL', closeL: 'closeW', routW: 'routL', routL: 'routW', otW: 'otL', otL: 'otW', tie: 'tie' };
+  /* a big day by the numbers, for his own fans */
+  const bigDay = c => {
+    const m = c.m, out = [];
+    if (c.pos === 'QB' && m.pyd >= 300) out.push('{YD} passing yards. {L} was dealing all day.', '300-yard {L} is my favorite {L}.');
+    if (c.pos === 'QB' && m.ptd >= 3) out.push('{TDS} touchdown passes. {L} is cooking.', '{TDS} TDs through the air. Who’s stopping this?');
+    if (c.pos === 'WR' && m.recyd >= 100) out.push('{YD} receiving yards. {L} is a cheat code.', 'Triple digits for {L} 💯', 'Cover {L}? With who?');
+    if (c.pos === 'WR' && m.rectd >= 2) out.push('{TDS} touchdowns for {L}. The end zone is his house.', '{L} scores. {L} scores again. Repeat.');
+    return out;
   };
 
   /* ---------- more voices ----------
@@ -301,7 +326,9 @@
       const s = deal(arr);
       return s == null ? null : F(s);
     };
-    const myLines = wasted ? FAN.wasted : goodLoss ? FAN.goodLoss : badWin ? FAN.badWin : FAN[t], theirs = OPP[c.won || tie ? 'beaten' : 'won'][t];
+    const sh = shapeOf(c), big = t === 'great' || t === 'good' ? bigDay(c) : [];
+    const myLines = (wasted ? FAN.wasted : goodLoss ? FAN.goodLoss : badWin ? FAN.badWin : FAN[t]).concat(SHAPE[sh] || [], big);
+    const theirs = OPP[c.won || tie ? 'beaten' : 'won'][t].concat((SHAPE[flip[sh]] || []).map(l => l.replace('{SC}', `${c.them}–${c.us}`)));
     const mateLines = tie ? ['Not the result we wanted. Back to work.', 'We’ll learn from this one. Locked in.'] : wasted ? MATE.wasted : goodLoss ? MATE.goodLoss : badWin ? MATE.meh : MATE[lost ? 'bad' : t];
     const analystLines = wasted ? ANALYST.wasted : goodLoss ? ANALYST.goodLoss : ANALYST[t];
     const myFan = k => post(fan(c.team), D(myLines), c, k), theirFan = k => post(fan(c.opp), D(theirs), c, k);
@@ -638,7 +665,16 @@
       keep(out, post(teammate(c, any(['LT', 'C', c.pos === 'QB' ? 'WR' : 'QB'])), D(['Interesting.', 'We win as a team and we lose as a team. That’s all I’ll say.', '👀']), c, 2.2));
       keep(out, post(neutral(), fill('Throwing teammates under the bus on the podium is a choice, {L}.', x), c, 1.2));
     } else if (pick.tone === 'own' || pick.tone === 'team' || pick.tone === 'humble') {
-      keep(out, post(fan(c.team), D(['This is why I love {L}. Takes it on the chin.', 'Leader. {L} gets it.', 'Accountability from {L}. Love to see it.', 'That’s a captain answer from {L}.']), c, 0.9));
+      keep(out, post(fan(c.team), D(['This is why I love {L}. Takes it on the chin.', 'Leader. {L} gets it.', 'Accountability from {L}. Love to see it.', 'That’s a captain answer from {L}.', 'Says all the right things. Plays the right way too.']), c, 0.9));
+      if (pick.tone === 'own') keep(out, post(analyst(), D(['Owning it at the podium buys you a lot of grace in a locker room. Smart from {L}.', 'Players notice when the guy at the mic takes the blame. {L} gets it.']), c, 1.1));
+    } else if (pick.tone === 'confident') {
+      keep(out, post(fan(c.team), D(['{L} knows exactly who he is. I love it.', 'Confidence like that wins games. Let’s go.', 'That’s my {pos}. No fear.']), c, 1.1));
+      if (at !== c.team) keep(out, post(fan(at), D(['Somebody’s feeling himself.', 'Confident words. We’ll see.', 'Big words, {L}. Big words.']), c, 1));
+    } else if (pick.tone === 'respect') {
+      keep(out, post(neutral(), D(['Classy from {L}. More of that in this league, please.', 'Respect the respect. {L} handled that well.']), c, 0.8));
+      if (c.rival && at === c.rival.team) keep(out, post(rivalBy(c, x), D(['Appreciate it. See you out there.', 'Respect. Still coming for you.']), c, 1.8));
+    } else if (pick.tone === 'deflect') {
+      keep(out, post(neutral(), D(['Ten minutes at the podium and {L} said absolutely nothing. Impressive, honestly.', '{L} giving the media nothing. Respect the craft.', 'That was a whole lot of nothing from {L}.']), c, 0.7));
     }
     return out;
   }
