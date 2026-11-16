@@ -168,7 +168,7 @@
     G.pendKO = t;
   };  // the ball is spotted for a touchback; a live return can move it
   const ab = t => TEAMS[G.tm[t]].ab, tname = t => TEAMS[G.tm[t]].name;
-  const vk = i => (TEAMS[i].custom ? '-' : TEAMS[i].vo || TEAMS[i].ab);  // the key of a team's recorded calls; a renamed team has none, so the booth leaves its name out
+  const vk = i => (!TEAMS[i] || TEAMS[i].custom ? '-' : TEAMS[i].vo || TEAMS[i].ab);  // the key of a team's recorded calls; a renamed team has none, so the booth leaves its name out (nor a side gone from the list, as the All-Star teams are after their game)
 
   function spotTxt(y) {
     y = Math.round(y);

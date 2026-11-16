@@ -760,6 +760,11 @@
       PG.banner(time.toFixed(2) + ' seconds', grade >= 90 ? 'The scouts are writing. Speed +1' : grade >= 70 ? 'A solid time' : 'A slow one', 2200);
     };
     const tick = () => {
+      if (!$('#dr')) {  // the screen was left mid-race: stop the clock and the space bar with it
+        done = true;
+        clearInterval(timer);
+        return removeEventListener('keydown', onKey);
+      }
       const now = performance.now(), dt = Math.min(0.25, (now - last) / 1000), t = (now - t0) / 1000;
       last = now;
       v *= Math.exp(-0.9 * dt);

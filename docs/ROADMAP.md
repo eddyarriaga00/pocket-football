@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `4ec74d0`, before the dash-timer and booth-key guards (2026-11-16 morning).
   - `000449a`, before NFL overtime length and timeouts (2026-11-16 night).
   - `4be9e17`, before 180 surnames and no two men in a game sharing one (2026-11-16 night).
   - `a2e755a`, before the modern two-point chart (2026-11-16 night).
@@ -2801,6 +2802,17 @@ six were done as the pro game has them; the choices where there was one are mine
   a side. Fingerprint unchanged (its sim has no overtime). Audit empty at 320x568, 390x844 and 440x956; whole seasons
   at both positions, careers at both, exhibitions and a season with the rough test player clean; the playbook check
   passes.
+
+- Morning, 2026-11-16 (11:35), the owner's go-ahead after the status check: two console errors fixed, both found
+  only by test runs. The 40-yard dash's clock kept ticking when another screen replaced it mid-race (the audit does
+  this), throwing about sixty errors a second, and its space-bar listener stayed behind; now the tick stops the
+  clock and drops the listener once the dash is gone. The booth's opening lines asked for a team's voice key about
+  two seconds into the intro; when the game was already over by then (only instant test games), the All-Star sides
+  had been taken off the team list and the lookup failed; vk() now treats a missing side as a renamed one (no
+  name said). Each was reproduced on the old code first (31 errors in half a second for the dash; one for the
+  booth, the All-Star sides removed while the intro was up) and gone with the fix; a full dash still finishes and
+  scores (4.11 s, grade 100). Fingerprint unchanged; audit empty at 320x568 and 440x956 with no console errors;
+  sims, exhibitions, careers at both positions, a QB season, the three drills and the rough test player clean.
 
 ## Morning hand-off
 
