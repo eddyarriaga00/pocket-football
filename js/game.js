@@ -4912,10 +4912,13 @@
         return;
       }
       if (koMine()) {
-        // the kickoff on the timing bar, like a field goal: the middle of the green is a deep, straight kick (this used
-        // to sit after the 'pre' check below, which returned first, so the Kick button did nothing on a kickoff)
+        // the kickoff on the timing bar, like a field goal: the middle of the green is a deep, straight kick into the
+        // landing zone, a couple of yards short of the goal line (the coverage gets a return to stop; now and then the
+        // leg carries it in for a touchback). Further from the middle, shorter, and off to the side. (This used to sit
+        // after the 'pre' check below, which returned first, so the Kick button did nothing on a kickoff; and the green
+        // used to be a touchback every time.)
         const pos = 0.5 + 0.5 * Math.sin(G.meter * 4.2), acc = 1 - Math.abs(pos - 0.5) * 2;
-        kickoffBy(0.5 + acc * 0.55, (pos - 0.5) * 0.5 * (1 - acc * 0.6));
+        kickoffTo(lerp(23, 2, acc), (pos - 0.5) * 0.5 * (1 - acc * 0.6));
         toast(acc > 0.8 ? 'Deep kick' : acc > 0.45 ? 'Kick is away' : 'Short kick');
         return;
       }
@@ -5180,15 +5183,29 @@
       const fg = G.op.n === 'Field Goal', d = ((G.poss === 0 ? 100 : 0) - ps.los) * G.dir + 17, need = clamp((d - 12) / 52, 0.15, 1);
       const straight = clamp(1 - Math.abs(aim) / 0.4, 0, 1), leg = clamp(1 - Math.max(0, need - pw) * 3, 0, 1) * (1 - Math.max(0, pw - 1) * 0.6);
       doKick(fg ? straight * leg : clamp(pw, 0, 1) * (1 - Math.min(0.5, Math.abs(aim) * 0.6)), clamp(aim, -0.6, 0.6));
-    } else kickoffBy(pw, aim);
-    toast(`Power ${Math.round(Math.min(1, pw) * 100)} · ${Math.abs(aim) < 0.03 ? 'straight' : Math.round(Math.abs(aim) * 57.3) + '° ' + (aim > 0 ? 'right' : 'left')}`);
+      toast(`Power ${Math.round(Math.min(1, pw) * 100)} · ${Math.abs(aim) < 0.03 ? 'straight' : Math.round(Math.abs(aim) * 57.3) + '° ' + (aim > 0 ? 'right' : 'left')}`);
+      return;
+    }
+    /* a kickoff takes a bigger swing: a long, quick flick up the screen reaches the end zone, an ordinary swipe drops
+       it in the landing zone */
+    const kp = clamp(0.55 * len / (0.55 * H) + 0.45 * (len / Math.max(60, ms)) / 3.2, 0, 1.15);
+    kickoffBy(kp, aim);
+    toast(`Power ${Math.round(Math.min(1, kp) * 100)} · ${Math.abs(aim) < 0.03 ? 'straight' : Math.round(Math.abs(aim) * 57.3) + '° ' + (aim > 0 ? 'right' : 'left')}`);
   }
 
-  /* your kickoff: the swipe decides where it comes down. Full power reaches the end zone; less leaves a ball to return.
-     Too little, and it comes down short of the landing zone (outside their 20): under the current kickoff rules that is
-     no return at all, their ball at their own 40. */
+  /* your kickoff: the swipe decides where it comes down. Only full power reaches the end zone; less leaves a ball to
+     return. Too little, and it comes down short of the landing zone (outside their 20): under the current kickoff rules
+     that is no return at all, their ball at their own 40. Into the end zone in the air is a touchback to their 35, so
+     the kick a coach wants usually lands inside their 10 and has to be returned. */
   function kickoffBy(pw, aim) {
-    const k = ps.ko, own = 100, dir = -1, deep = -6 + (1 - clamp(pw, 0, 1.1)) * 42;
+    kickoffTo(-4 + (1 - clamp(pw, 0, 1.15)) * 44, aim);
+  }
+
+  /* deep: yards from their goal line where it was aimed to come down (below 0 is in the end zone); a leg is not a
+     machine, so it comes down a couple of yards either side */
+  function kickoffTo(deep, aim) {
+    const k = ps.ko, own = 100, dir = -1;
+    deep += rnd(-2.5, 2.5);
     k.y = clamp(own + dir * deep, 55, 109);
     k.x = clamp(FW / 2 + aim * 40, 6, FW - 6);
     k.tb = (k.y - own) * dir < 0;
@@ -7594,7 +7611,7 @@
         SEEDED = !!n;
         SEED = n | 0;
       },
-      step, render, startCall, resolveChallenge, playScene, endScene, skipDrive, watching,
+      step, render, startCall, resolveChallenge, playScene, endScene, skipDrive, watching, beginKickoff, kickBySwipe,
       pad: dt => pollPad(dt || 0.016),  // one read of the controller (the test page fakes navigator.getGamepads)
       /* The play lab, for balancing the playbook: one offensive play run n times, headless, from first and ten at the
          35 (o.los, o.down, o.togo to change that) against the computer's defense or o.def, every other snap mirrored.

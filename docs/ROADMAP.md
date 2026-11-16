@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `7d4de40`, before the harder kickoff power (2026-11-16 night).
   - `8c2c671`, before the perfect throw and its band on the power bar (2026-11-16 night).
   - `fcc0158`, before the catch model, the open ring and incompletion reasons (2026-11-16 night).
   - `c3a5b21`, before the new commentary lines and social posts (2026-11-16 late).
@@ -2921,6 +2922,18 @@ six were done as the pro game has them; the choices where there was one are mine
   75% in tight coverage; floated ones into tight coverage 23% with picks; league 75 to 78% completions (75% before,
   same sample size), 1.8% picks, 4.4 a carry, 38 points. Fingerprint re-pinned (old in pg.fingerprint.before-perfect);
   drills, careers, the rough player and the audit at both sizes clean.
+
+- 2026-11-16 (night, "improve kickoff strength because it's so easy to have a touchback always"). Your kickoff: the
+  timing bar's green was a touchback every time (and under the current rule a touchback is their ball at the 35, the
+  worst deep result for the kicking side), and an ordinary swipe reached full power. Now the middle of the green
+  lands about two yards short of the goal line (12% carry in for a touchback), the edge of the green about five,
+  further off shorter, and a miss short of the landing zone (their ball at the 40); a kickoff swipe takes a bigger
+  swing (0.55 of the screen for the length part, 3.2 px/ms for the speed part): an ordinary swipe lands at their 11
+  to 19, a strong one near the goal line (15% touchbacks), only a long, quick flick goes deep into the end zone; and
+  every kick varies 2.5 yards either side (`kickoffTo`). Measured on 30 kicks each: their drive starts at the 20 on
+  average after a kick in the middle of the green, the 24 at the edge, 26 to 28 weaker, against the 35 on a
+  touchback. Field goals, punts and the computer's kickoffs unchanged; fingerprint unchanged; the rough player, an
+  exhibition with the harness player, a career and the audit clean. Test hooks: dbg.beginKickoff, dbg.kickBySwipe.
 
 ## Morning hand-off
 
