@@ -662,7 +662,25 @@
   }
 
   function colorFigure(i, c) {
-    for (const p of parts) for (let k = 0; k < p.joints.length; k++) p.mesh.setColorAt(i * p.joints.length + k, col.set(c[p.color] || (p.color === 'arm' ? c.skin : '#f1f1f1')));  // 'arm' is bare skin unless he wears sleeves
+    for (const p of parts) for (let k = 0; k < p.joints.length; k++) p.mesh.setColorAt(i * p.joints.length + k, col.set((c.byPart && c.byPart[p.name]) || c[p.color] || (p.color === 'arm' ? c.skin : '#f1f1f1')));  // 'arm' is bare skin unless he wears sleeves
+  }
+
+  /* Grass stains. A uniform gets dirtier through the game the way a real one does: every time a man goes to the
+     ground he picks up turf, most of it on the thighs and knees, some on the socks, a little on the jersey and the
+     seat. Green-brown on a dry field, mud in the rain, a wet grey in the snow. Kept per player (team and number) for
+     the game; drawn by tinting his parts' colors when the next play is set, so it costs nothing per frame and never
+     touches how a play runs. */
+  const DIRT = new Map(), DIRT_PART = { thigh: 0.5, pantStripe: 0.4, shin: 0.34, hips: 0.2, torso: 0.18, pads: 0.12, sleeveCap: 0.12 }, dcA = new T.Color(), dcB = new T.Color();
+  let dirtGame = null;
+  function dirtied(c, d, wx) {
+    if (!(d > 0)) return c;
+    const mud = wx === 'rain' ? '#4b3a26' : wx === 'snow' ? '#6f7377' : '#5f6a33', k = Math.min(1, d / 7), byPart = {};
+    for (const name in DIRT_PART) {
+      const key = PART_DEFS.find(x => x[0] === name), base = key && c[key[2]];
+      if (!base) continue;
+      byPart[name] = '#' + dcA.set(base).lerp(dcB.set(mud), DIRT_PART[name] * k).getHexString();
+    }
+    return { ...c, byPart };
   }
 
   /* A career player's own look (C.look in career.js): his skin tone, and his own choice of gloves, cleats, socks,
@@ -4088,7 +4106,13 @@
         setBuild(f, p.ref || p.suit ? BUILD.ref : p.hoodie ? BUILD.qb : buildOf(p.role));
         const home = p.team === 0, kit = p.team === (G.home || 0), c = p.hoodie ? HOOD(t0) : p.suit ? SUIT : p.ref ? { ...REF_COLORS, skin: SKIN[(i * 2 + 1) % SKIN.length], glove: SKIN[(i * 2 + 1) % SKIN.length], visor: SKIN[(i * 2 + 1) % SKIN.length] } : lookColors(teamColors(home ? t0 : t1, kit, SKIN[(p.num * 7 + i) % SKIN.length]), p.look, home ? t0 : t1);  // kit: home colors for the home side, white for the visitors
         if (envSnow && !p.ref && !p.suit && !p.hoodie && !p.look && (p.num * 13 + i) % 5 < 3) c.arm = p.num % 2 ? '#f1f1f1' : '#17191e';  // in the snow most of them wear long sleeves under the jersey, white or black
-        colorFigure(SIDELINE + i, c);
+        if (dirtGame !== G) {
+          dirtGame = G;
+          DIRT.clear();
+        }
+        f.dirtKey = p.ref || p.suit || p.hoodie || G.state === 'scene' ? null : p.team + ':' + p.num;
+        f.dirtSeen = false;
+        colorFigure(SIDELINE + i, f.dirtKey ? dirtied(c, DIRT.get(f.dirtKey), G.env && G.env.weather) : c);
         f.num.material = p.ref ? stripeMaterial() : p.suit || p.hoodie ? NO_NAME : numberMaterial(p.num, c.number);
         f.nameplate.material = p.ref || p.suit || p.hoodie ? NO_NAME : nameMaterial(p.name, c.number);
         f.patch.material = p.capt && !p.ref && !p.suit && !p.hoodie ? patchMaterial(c.number) : NO_NAME;
@@ -4099,6 +4123,11 @@
         f.heading = (p.team === ps.offTeam ? st.dir : -st.dir) > 0 ? 0 : Math.PI;
       }
       poseFor(f, p, st, dt);
+      if (f.dirtKey && !f.dirtSeen && (p.down || p.fell || p.flat > 0 || p.dive > 0) && G.state !== 'replay') {
+        f.dirtSeen = true;  // once a play: he went to the ground (it shows from the next play on)
+        const wet = G.env && (G.env.weather === 'rain' || G.env.weather === 'snow');
+        DIRT.set(f.dirtKey, (DIRT.get(f.dirtKey) || 0) + (wet ? 1.6 : 1));
+      }
       writeFigure(f, SIDELINE + i);
       contact.setMatrixAt(SIDELINE + i, m4.makeTranslation(f.root.position.x, 0.04, f.root.position.z));
       if (s.isCtl(p)) ctl = p;

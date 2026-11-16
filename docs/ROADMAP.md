@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `381dfb4`, before uniforms picked up grass stains through the game (2026-11-16, from the Mac).
   - `68745cb`, before the jersey was tucked into the pants (2026-11-16, from the Mac).
   - `a782106`, before the 2026-11-16 player and stadium detail pass (chin strap, collar, tape; gooseneck posts,
     padded wall, sideline gear, field marks, the ball's shape).
@@ -2441,6 +2442,16 @@ six were done as the pro game has them; the choices where there was one are mine
   lineman in his stance is still big from behind: that was so before this change and is left.
   Socks checked against the same rule (white from the shoe to mid-calf, team color above, meeting the pants below
   the knee): they already were. Fingerprint unchanged; audit empty at 320x568 and 390x844; exhibition, season,
+  careers, camp and the rough test player clean.
+
+- Grass stains, after Madden's own notes on its 2025 models (uniforms that get dirtier with the conditions; EA's
+  Madden 26 presentation deep dive). Each player (by team and number) picks up turf every play he goes to the
+  ground: most on the thighs and knees, then the socks, a little on the seat and the jersey. Green-brown on a dry
+  field, mud in the rain, wet grey in the snow; a wet field soils faster. It is drawn by tinting his parts when the
+  next play is set (`DIRT`, `dirtied`, a per-part color in `colorFigure`), so it costs nothing per frame and is
+  render-only: simulations and the fingerprint never see it. Officials, the cutscene cast and the benches stay
+  clean. Seen after a half in the rain: the back who had been tackled had muddy thighs under a cleaner seat, a
+  receiver who had not was clean. Fingerprint unchanged; audit empty at 320x568 and 390x844; exhibition, season,
   careers, camp and the rough test player clean.
 
 ## Morning hand-off

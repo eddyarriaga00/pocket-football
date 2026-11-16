@@ -139,6 +139,8 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   man off the line goes in motion; a forward pass is legal only from behind the line of scrimmage.
 - A missed field goal gives the other side the ball at the spot of the kick, or at its own 20.
 - Team totals follow the pro game: a sack's lost yards come off net passing, not rushing.
+- Jerseys are tucked into the pants at the waist, with a belt; uniforms pick up grass stains (mud in the rain)
+  as players go to the ground through the game.
 - On the sideline the reserves stand unevenly, each turned his own way, and one or two take a knee to watch.
 - Two more cutscenes: at halftime both teams jog off the field, and after the final whistle the two leaders meet at
   midfield and shake hands while the winners celebrate behind them. Tap to skip, as with the others.
