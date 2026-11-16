@@ -13,8 +13,16 @@
 
   /* The Firebase project's public web configuration, as its console shows it for a web app (docs/ONLINE.md says
      how to get it). It is meant to sit in a web page: what protects the data is docs/firebase-rules.json. Never put
-     a secret or admin key here. null: the chat is not set up yet. */
-  const FIREBASE = null;
+     a secret or admin key here. null: the chat is not set up yet. Pasted by the owner on 2026-11-16. */
+  const FIREBASE = {
+    apiKey: 'AIzaSyC1TuSiIplRT4FeNyIZ3EoHzAJ4PM1dFxY',
+    authDomain: 'blockfootball-a13c9.firebaseapp.com',
+    databaseURL: 'https://blockfootball-a13c9-default-rtdb.firebaseio.com',
+    projectId: 'blockfootball-a13c9',
+    storageBucket: 'blockfootball-a13c9.firebasestorage.app',
+    messagingSenderId: '884284719107',
+    appId: '1:884284719107:web:ebc6b62de8d3392f974e36'
+  };
 
   const NAME_MAX = 16, TEXT_MAX = 140, EVERY = 2500, KEEP = 50;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);

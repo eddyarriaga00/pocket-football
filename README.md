@@ -70,8 +70,7 @@ the season, the wet ones more rain, the warm ones never snow; the career hub giv
   keeps its names, numbers and ratings all season, with a stat line for every player and team leaders.
 - **Exhibition.** One game between any two teams. You pick the difficulty, quarter length, kickoff time and weather.
 - **Online.** A global chat on the main menu: a name, the people online, mute and report on every line, a word
-  filter and slow mode. It runs on Firebase's free plan once the project is set up (docs/ONLINE.md has the steps and
-  how to moderate). Head to head, phone to phone with a code, is next.
+  filter and slow mode. It runs on Firebase's free plan (docs/ONLINE.md has how to moderate). Head to head, phone to phone with a code, is next.
 - **Milestones.** Twelve things worth doing once (a shutout, a win in the rain, a title), earned in any mode.
 - **Training camp.** Three short guided drills (passing, running, tackling), five plays each. A coaching card before
   every snap says what to try, and each drill is scored with one to three stars. The game offers it the first time

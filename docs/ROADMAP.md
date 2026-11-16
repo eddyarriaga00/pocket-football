@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `e68b326`, before the chat was connected to the owner's Firebase project (2026-11-16).
   - `477b88b`, before the Online screen and global chat (2026-11-16).
   - `4ec74d0`, before the dash-timer and booth-key guards (2026-11-16 morning).
   - `000449a`, before NFL overtime length and timeouts (2026-11-16 night).
@@ -2836,6 +2837,13 @@ six were done as the pro game has them; the choices where there was one are mine
   empty at 320x568 and 440x956 (the Online screen live, not set up, with a line's actions open and scrolled); sims,
   exhibitions, careers at both positions and the three drills clean, no console errors.
 
+- 2026-11-16 (afternoon): the owner made the Firebase project from his phone (anonymous sign-in on, a Realtime
+  Database in locked mode, docs/firebase-rules.json published) and pasted its public web config, now in js/online.js.
+  Checked against the real project from the test page: signed in anonymously, live with "1 online"; a forged line,
+  a line without its slow-mode stamp, reading or writing the ban list and reading the whole database all refused, so
+  the published rules are the right ones; one line posted through the screen ("Setup check: Chat is open. Say hi!",
+  his to delete); leaving the screen closed the connection. No console errors.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3225,6 +3233,6 @@ NFL rules first, every item checked the full way before it ships.
 ### Online (the owner at 12:10 on 2026-11-16: "i want online play and global chat with free options")
 - [x] The Online screen and the global chat on Firebase's free plan, with the filter, slow mode, mute, report and
   console bans (docs/ONLINE.md). Live once the owner pastes the project's public config.
-- [ ] Wire in the owner's Firebase config and check the chat on the live site and a phone.
+- [x] Wire in the owner's Firebase config and check the chat on the live site (a phone of his still to try it).
 - [ ] Head to head, phone to phone (PeerJS): host and join with a code; the host runs the game and the guest
   controls team 1 (its play calls, its ball carrier and passer, a defender), drawn from what the host sends.

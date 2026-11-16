@@ -11,11 +11,12 @@ The owner's choices (2026-11-16), all on free plans:
 
 ## Where things stand
 
-- **Global chat: built, waiting for the Firebase project.** The Online screen (main menu) has the name, the chat,
-  the online count, mute and report. It is tested end to end against Firebase's own local emulator with the real
-  rules in `docs/firebase-rules.json`: sending, the filter, the server's slow mode, forged ids and over-long lines
-  refused, reports stored, deleted lines vanishing, bans blocking. Until the config below is pasted in, the screen
-  says "Not set up".
+- **Global chat: live** on the owner's project `blockfootball-a13c9` (set up 2026-11-16, config in `js/online.js`).
+  The Online screen (main menu) has the name, the chat, the online count, mute and report. Tested end to end against
+  Firebase's local emulator with the rules in `docs/firebase-rules.json` (sending, the filter, the server's slow
+  mode, forged ids and over-long lines refused, reports stored, deleted lines vanishing, bans blocking), then on the
+  real project: anonymous sign-in, the count, a forged line, the ban list and the whole database refused, and one
+  line posted ("Setup check: Chat is open. Say hi!", which the owner can delete).
 - **Head to head: next.** The game assumes one person on team 0 throughout; letting a second phone control team 1
   is the next build (see the roadmap).
 - The chat connects only while the Online screen is open, and lets go while the app is in the background, so a
