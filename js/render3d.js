@@ -131,10 +131,10 @@
   /* The chest: one recipe at two finenesses, so the number on the jersey (laid over this same surface) fits both models.
      Wide at the shoulders, narrow at the waist, three quarters as deep as it is wide, with a little chest in front and
      shoulder blade behind. The hem hangs just over the pants. */
-  const TORSO = [[0.01, -0.06], [0.15, -0.055], [0.176, -0.03], [0.178, 0.08], [0.19, 0.2], [0.216, 0.32], [0.24, 0.43], [0.247, 0.5], [0.224, 0.58], [0.158, 0.64], [0.108, 0.675], [0.092, 0.69]];  // an athlete's taper: a narrow waist under a wide chest
+  const TORSO = [[0.01, 0.0], [0.142, 0.004], [0.162, 0.04], [0.174, 0.1], [0.19, 0.2], [0.216, 0.32], [0.24, 0.43], [0.247, 0.5], [0.224, 0.58], [0.158, 0.64], [0.108, 0.675], [0.092, 0.69]];  // an athlete's taper: a narrow waist under a wide chest
   const chestOut = y => 0.02 * bell((y - 0.4) / 0.1), backOut = y => 0.012 * bell((y - 0.45) / 0.11);
   const mkTorso = seg => sculpt(TORSO, seg, (v, front, back) => {
-    v.z = v.z * (v.y < 0.1 ? lerp(0.8, 0.74, clamp((v.y + 0.03) / 0.13, 0, 1)) : 0.74) - chestOut(v.y) * front + backOut(v.y) * back;  // the hem flares, to hang outside the pants
+    v.z = v.z * 0.74 - chestOut(v.y) * front + backOut(v.y) * back;  // tucked in: the jersey narrows into the waist of the pants (it used to flare out over them, and he looked to be in a bodysuit)
   });
 
   /* how far the jersey's surface is from the spine at (x, y), on the front or the back: the chest, or the shoulder pads
@@ -219,10 +219,12 @@
   /* The hips, as football pants sit: a yoke wider than it is deep that wraps over the tops of both thighs, so the legs
      come out of the pants instead of hanging under a ball (it was a near-sphere, and read as one from behind a lineman).
      Shallow in front, a seat behind, and it stops higher between the legs. */
-  const mkHips = seg => sculpt([[0.01, -0.2], [0.065, -0.195], [0.135, -0.16], [0.186, -0.095], [0.192, -0.025], [0.176, 0.03], [0.12, 0.058], [0.01, 0.064]], seg, (v, front, back) => {
+  /* ...and they come up to the waist, where the jersey is tucked into them (the uniform rule), with a belt round the
+     top (baked into the shading: no extra draw) */
+  const mkHips = seg => sculpt([[0.01, -0.2], [0.065, -0.195], [0.135, -0.16], [0.186, -0.095], [0.19, -0.025], [0.182, 0.04], [0.175, 0.094], [0.177, 0.1], [0.177, 0.13], [0.173, 0.136], [0.167, 0.144], [0.163, 0.146], [0.12, 0.152], [0.01, 0.154]], seg, (v, front, back) => {
     const side = Math.abs(v.x) / (Math.hypot(v.x, v.z) || 1);
     v.x *= 1.12;  // out over the thighs
-    v.z = v.z * (0.6 + 0.06 * back) + 0.022 * bell((v.y + 0.1) / 0.07) * back * (1 - side * 0.6);  // flat in front, the seat behind
+    v.z = v.z * (lerp(0.6, 0.8, clamp(v.y / 0.1, 0, 1)) + 0.06 * back) + 0.015 * bell((v.y + 0.1) / 0.07) * back * (1 - side * 0.6);  // flat in front, the seat behind, round at the waist over the tucked jersey; narrower at the waist than at the hips
     if (v.y < -0.1) v.y += 0.03 * (1 - side) * Math.min(1, (-0.1 - v.y) / 0.08);  // cut up between the legs
   });
   const mkNeck = seg => new T.CylinderGeometry(0.076, 0.092, 0.12, seg).translate(0, 0.69, 0);  // a football neck
@@ -352,7 +354,7 @@
     torso: (x, y) => lerp(0.6, 1, ease(0.57, 0.4, y)) * lerp(0.7, 1, ease(-0.06, 0.03, y)) * (y > 0.2 ? lerp(0.78, 1, ease(0.21, 0.15, Math.abs(x))) : 1),  // under the pads, at the hem, under the arms
     pads: (x, y, z, ny) => lerp(0.66, 1, ease(-0.55, 0.1, ny)),  // the underside
     neck: () => 0.68,
-    hips: (x, y) => lerp(0.66, 1, ease(0.04, -0.07, y)),  // under the hem of the jersey
+    hips: (x, y) => (y > 0.098 && y < 0.134 ? 0.42 : 1) * (y > 0.14 ? 0.6 : 1) * lerp(0.86, 1, ease(0.12, 0.02, y)),  // the belt, the waistband's lip, a shade under it
     helmet: (x, y, z, ny) => lerp(0.7, 1, ease(-0.8, -0.25, ny)),  // the rim
     upperArm: (x, y) => lerp(0.68, 1, ease(-0.02, -0.17, y)),  // in the sleeve
     foreArm: (x, y) => lerp(0.84, 1, ease(0.03, -0.06, y)),
@@ -373,7 +375,7 @@
   const SHADOW_GEO = {
     torso: lathe([[0.178, -0.04], [0.215, 0.32], [0.235, 0.47], [0.2, 0.6], [0.09, 0.67]], 6).scale(1, 1, 0.74),
     pads: new T.SphereGeometry(0.22, 6, 4).scale(1.58, 0.6, 0.98).translate(0, 0.565, 0),
-    hips: lathe([[0.11, -0.215], [0.166, -0.11], [0.17, -0.02]], 6).scale(1, 1, 0.78),
+    hips: lathe([[0.11, -0.215], [0.166, -0.11], [0.17, 0.13]], 6).scale(1.1, 1, 0.78),
     helmet: new T.SphereGeometry(0.17, 8, 5).scale(1, 1.02, 1.12),
     upperArm: lathe([[0.07, 0], [0.06, -0.3]], 5),
     foreArm: lathe([[0.054, 0], [0.056, -0.08], [0.058, -0.34]], 5),  // long enough to stand in for the hand

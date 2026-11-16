@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `68745cb`, before the jersey was tucked into the pants (2026-11-16, from the Mac).
   - `a782106`, before the 2026-11-16 player and stadium detail pass (chin strap, collar, tape; gooseneck posts,
     padded wall, sideline gear, field marks, the ball's shape).
 - **Technology:** the owner also wrote "use more complex languages and change code and anything if needed".
@@ -2425,6 +2426,22 @@ six were done as the pro game has them; the choices where there was one are mine
   Chromium) measures the type, not of this change. `.tm` and the arrows beside it have a 44-pixel floor now, so
   the buttons cannot come out short on any machine.
   Audit run again after that: empty at 320x568 and 390x844.
+
+
+### From the Mac, 2026-11-16
+
+- The owner, back at the Mac after the phone session: "continue that and just make the game better, research".
+  Pulled the cloud session's four commits first; checked here: fingerprint unchanged, audit empty, no errors.
+  The model, looked at large (`modelStrip`) and in play: the jersey ended in a low curve between the legs and the
+  pants started under it as two tubes, so he looked to be in a bodysuit. The uniform rule is the other way round
+  (jerseys tucked into the pants; sources: the NFL uniform code as summarised by Dummies, and ESPN's piece on
+  uniform inspectors). Now the jersey narrows into the waist (`TORSO`, no flare) and the pants come up to it and
+  round over it, narrower at the waist than at the hips, with a belt shaded in at the top (`mkHips`, `SHADE.hips`;
+  no extra draw). Home and away, near and far models, looked at from four sides and in play from eight cameras. A
+  lineman in his stance is still big from behind: that was so before this change and is left.
+  Socks checked against the same rule (white from the shoe to mid-calf, team color above, meeting the pants below
+  the knee): they already were. Fingerprint unchanged; audit empty at 320x568 and 390x844; exhibition, season,
+  careers, camp and the rough test player clean.
 
 ## Morning hand-off
 
