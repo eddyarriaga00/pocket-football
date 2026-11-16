@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `6d70c24`, before the kicking game by the numbers (punt outcomes, the coffin corner, field goal rates) (2026-11-16 night).
   - `a51cc01`, before the computer's modern fourth-down calls (2026-11-16 night).
   - `64ee905`, before the kickoff landing zone (a short kick gives the ball at the 40) (2026-11-16 night).
   - `09e544d`, before the NFL clock rule for a runner out of bounds (2026-11-16 night).
@@ -2740,6 +2741,26 @@ six were done as the pro game has them; the choices where there was one are mine
   pg.fingerprint.before-4th. Audit empty at 320x568, 390x844 and 440x956; whole seasons at both positions, careers
   at both, exhibitions and a season with the rough test player clean; the playbook check passes.
 
+- Tonight, round 13 (07:53): the kicking game by the numbers. Measured over 16 sim games first: punts went 44.5
+  yards gross and 37.8 net (the league: about 47 and 42), 13% touchbacks (about 8%), and not one fair catch, because
+  a punt nobody returns live was always run back 0 to 9 yards; field goals from 50 and beyond were coin flips, since
+  the computer's strike was drawn evenly from 0.55 to 1 against a bar that rises with distance.
+  Now, in doKick: from his own 38 on, the computer's punter hangs it 3 to 15 yards short of the goal line instead of
+  kicking it as far as he can (the coffin corner), and a punt nobody returns live ends the league's way: a fair catch
+  about a third of the time, downed or out of bounds about one in seven (most of those short of the goal line), the
+  rest returned about nine yards and now and then many more; one coming down inside the 10 is mostly downed or fair
+  caught, and the nearer the goal line, the likelier it bounces in for a touchback. The result line says "Fair catch"
+  or "47 yards, downed". The computer's leg is a little stronger (0.7 to 1). Field goals: cpuFg() draws make or miss
+  from the league's rates by distance (about 97% at 30, 90% at 40, 78% at 50, 68% at 55, 50% at 60; rain and snow
+  take some off) and hands doKick a strike to match, so the flight, the upright and the miss side are unchanged.
+  Your own kicks, on the meter or by swipe, are untouched. After, over 32 games: punts 43.8 gross (more of them from
+  short fields, which this league's offenses reach more often than the real one's), 41.0 net and 43.8 net from a
+  team's own 35 or deeper, 4% touchbacks, 42% fair catches, 18% downed; field goals 8 of 11 from the 40s in clear
+  weather. Seen on screen: "Punt · Fair catch" at the 20. Play changed: fingerprint re-pinned, the old value in
+  pg.fingerprint.before-kicking. (Round 12 had stored its pin JSON-encoded twice; both values are plain strings now.)
+  Audit empty at 320x568, 390x844 and 440x956; whole seasons at both positions, careers at both, exhibitions and a
+  season with the rough test player clean; the playbook check passes.
+
 ## Morning hand-off
 
 - Going live is settled: the owner said to always push to `main`. Done at 07:12 on 2026-11-12.
@@ -3117,3 +3138,5 @@ NFL rules first, every item checked the full way before it ships.
   league's numbers (round 11's log; round 9's for coverage).
 - [x] The computer's fourth-down calls follow the modern chart (4th and 1 from its own 35 on, 4th and 2 or 3 in
   no man's land, 4th and goal from the 2; safe when ahead late).
+- [x] The kicking game by the numbers: the computer's punts end the league's way (fair catches, downed, the coffin
+  corner, returns of about nine yards) and its field goals make the league's rates by distance.

@@ -3156,7 +3156,7 @@
       setBall(off, off === 0 ? 40 : 60, FW / 2);
     } else if (kind === 'punt') {
       big = 'Punt';
-      sub = arg.tb ? 'Touchback' : `${arg.fair?'Fair catch':arg.d+' yards'} · ${tname(1-off)} ball at ${spotTxt(arg.y)}`;
+      sub = arg.tb ? 'Touchback' : `${arg.fair ? 'Fair catch' : arg.down ? `${arg.d} yards, downed` : arg.d + ' yards'} · ${tname(1 - off)} ball at ${spotTxt(arg.y)}`;
       stop = true;
       setBall(1 - off, arg.y, arg.x);
     }
@@ -4067,7 +4067,7 @@
       for (const z of mo.zs) z.q.vx = 0;
       mo.done = true;
     }
-    if (ps.mode === 'kick') return doKick(rnd(0.55, 1));
+    if (ps.mode === 'kick') return doKick(G.op.n === 'Field Goal' ? cpuFg() : rnd(0.7, 1));
     if (flagsOn()) {
       // once in a long while somebody jumps
       const r = rnd(), loud = G.home === 1 && ps.offTeam === 0 ? 0.008 : 0;  // on the road the crowd is at full voice when you snap it
@@ -4086,6 +4086,23 @@
     G.state = 'live';
     ps.t = 0;
     snd('snap');
+  }
+
+  /* The computer's kicker, by the league's make rates: all but certain inside 30, about 93% in the 30s, 84% in the
+     40s, 70% from 50 to 55, falling away past 60; rain and snow take some off. It returns a strike (acc) that doKick
+     reads as made or missed, so the flight, the upright and the miss side work as before. (A strike drawn evenly
+     from 0.55 to 1 made only about half from 50 and a third from 55.) */
+  const FG_RATE = [[20, 0.995], [30, 0.97], [40, 0.9], [50, 0.78], [55, 0.68], [60, 0.5], [64, 0.3]];
+  function cpuFg() {
+    const d = ((G.poss === 0 ? 100 : 0) - ps.los) * G.dir + 17, need = clamp(0.22 + Math.max(0, d - 22) * 0.019, 0.22, 0.96) + G.wx.kick;
+    let p = 0.3;
+    for (let i = 0; i < FG_RATE.length - 1; i++) if (d <= FG_RATE[i + 1][0]) {
+      const [a, pa] = FG_RATE[i], [b, pb] = FG_RATE[i + 1];
+      p = pa + (pb - pa) * clamp((d - a) / (b - a), 0, 1);
+      break;
+    }
+    p -= G.wx.kick * 2;
+    return rnd() < p ? Math.min(1, need + rnd() * (1 - need)) : rnd() * need * 0.999;
   }
 
   /* acc: 0 to 1, how well it was struck. aim (from a swipe, radians, + to the right of the kicker): which way a field
@@ -4110,13 +4127,33 @@
         ps.kick.post = { s: sp, sg, y: py, hit: false };
       }
     } else {
-      const d = 30 + acc * 20 + rnd(-3, 3), y = los + dir * d, xr = rnd(-12, 12), x = clamp(aim === undefined ? ps.bx + xr : ps.bx + dir * aim * 30 + xr * 0.25, 4, FW - 4), tb = off === 0 ? y >= 99 : y <= 1;
-      const fy = tb ? (off === 0 ? 80 : 20) : clamp(y - dir * rnd(0, 9), 2, 98);
+      const toGoal = off === 0 ? 100 - los : los;
+      let d = 30 + acc * 20 + rnd(-3, 3);
+      /* from his own 38 on, the computer's punter does not kick it as far as he can: he hangs it 3 to 15 yards
+         short of the goal line for the coverage to down it (the coffin corner) */
+      if (aim === undefined && toGoal < 62) d = Math.max(20, Math.min(d, toGoal - rnd(3, 15)));
+      const y = los + dir * d, xr = rnd(-12, 12), x = clamp(aim === undefined ? ps.bx + xr : ps.bx + dir * aim * 30 + xr * 0.25, 4, FW - 4);
+      let tb = off === 0 ? y >= 99 : y <= 1, fy = clamp(y - dir * rnd(0, 9), 2, 98), how = 'ret';
+      /* how it ends when nobody returns it live: the league's mix. A fair catch about a third of the time, downed or
+         out of bounds about one in seven, and the rest returned for about nine yards, now and then many more; one
+         landing inside the 10 is mostly downed or fair caught, or (the nearer the goal line, the likelier) bounces in
+         for a touchback. (It used to be returned 0 to 9 yards every time: no fair catches, no coffin corner.) */
+      if (!tb && !ps.ret) {
+        const left = off === 0 ? 100 - y : y, u = rnd();
+        if (left < 10) {
+          if (u < 0.5 * (10 - left) / 10) tb = true;  // the nearer the goal line, the likelier it bounces in
+          else if (u < 0.55) [fy, how] = [clamp(y + dir * rnd(0, 3), 1, 99), 'down'];
+          else [fy, how] = [y, 'fair'];
+        } else if (u < 0.36) [fy, how] = [y, 'fair'];
+        else if (u < 0.5) [fy, how] = [clamp(y + dir * rnd(0, 6), 2, 98), 'down'];
+        else fy = clamp(y - dir * (rnd() < 0.03 ? rnd(20, 45) : 2 + rnd() ** 2 * 18), 2, 98);
+      }
+      if (tb) [fy, how] = [off === 0 ? 80 : 20, 'tb'];
       x1 = x;
-      y1 = tb ? (off === 0 ? 104 : -4) : y;
+      y1 = tb && !(off === 0 ? y < 99 : y > 1) ? (off === 0 ? 104 : -4) : y;  // a bounce into the end zone still comes down where it was kicked
       T = 2.4 + d * 0.02 + (ps.ret ? HANG : 0);  // a punt you can return hangs longer, so the coverage gets there and a fair catch is a real choice
       h = 13;
-      ps.kick = { type: 'punt', arg: { y: fy, x, d: Math.round(d), tb } };
+      ps.kick = { type: 'punt', arg: { y: fy, x, d: Math.round(d), tb, fair: how === 'fair', down: how === 'down' } };
     }
     ps.air = { x0: k.x, y0: k.y, x1, y1, t: 0, T, h, kick: true, x: k.x, y: k.y, z: 0 };
     ps.carrier = null;
