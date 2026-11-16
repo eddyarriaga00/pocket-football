@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `8c2c671`, before the perfect throw and its band on the power bar (2026-11-16 night).
   - `fcc0158`, before the catch model, the open ring and incompletion reasons (2026-11-16 night).
   - `c3a5b21`, before the new commentary lines and social posts (2026-11-16 late).
   - `dbf6e55`, before the difficulty slider and receivers timing their run to the ball (2026-11-16 evening).
@@ -2907,6 +2908,19 @@ six were done as the pro game has them; the choices where there was one are mine
   30 games, 71 to 74% completions, 1.4 to 2% picks (raised to 0.16 after), 4.2 to 4.4 a carry, 33 points. Controls
   unchanged. Fingerprint re-pinned (old in pg.fingerprint.before-catch); drills, careers, the rough player and the
   audit at 320x568 and 440x956 clean.
+
+- 2026-11-16 (night, "i want it to be like, u could be covered super well, but if the throw is perfect and the person
+  catches it then it's a catchable ball"). The perfect throw, with the same controls: every throw has a right power
+  (`idealPow`: zip short, touch long, from 0.9 of the bar at six yards to 0.3 at forty-five), drawn as a white band on
+  the power bar and a white arc on the letter's ring while you hold. Let go within a tenth of it and the throw's
+  quality is 1, fading to 0 a quarter of the bar away (`throwQ`). Quality makes the ball tighter (error down to 40%),
+  lifts the catch with a man on him from 15% to 60% (good hands count double there), and cuts picks (by up to 75%).
+  After the throw the bar says Perfect, Good, Too soft or Too hard; the analyst has three new lines for a perfect
+  ball caught in tight coverage (a.perfect, recorded). The computer's quarterbacks keep throwing at a half (their
+  ball speed unchanged) and roll their quality by accuracy. Measured: perfect throws to random receivers 86% caught,
+  75% in tight coverage; floated ones into tight coverage 23% with picks; league 75 to 78% completions (75% before,
+  same sample size), 1.8% picks, 4.4 a carry, 38 points. Fingerprint re-pinned (old in pg.fingerprint.before-perfect);
+  drills, careers, the rough player and the audit at both sizes clean.
 
 ## Morning hand-off
 

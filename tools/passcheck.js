@@ -25,7 +25,7 @@ window.PC = (() => {
         H.bot();
         D().step(0.02);
         const ps = D().ps, a = ps && ps.air;
-        if (a && a.target && a.dist !== undefined && ps.thrown && !cur) cur = { a, off: ps.offTeam, you: ps.offTeam === 0, d: a.dist, c0: D().G.stats[ps.offTeam].comp, ring: ring.get(a.target) };
+        if (a && a.target && a.dist !== undefined && ps.thrown && !cur) cur = { a, off: ps.offTeam, you: ps.offTeam === 0, d: a.dist, c0: D().G.stats[ps.offTeam].comp, ring: ring.get(a.target), q: a.q || 0 };
         if (!cur) continue;
         if (a === cur.a) {
           const r = a.target;
@@ -48,7 +48,7 @@ window.PC = (() => {
         hard: s.filter(x => x.dr > 1.2 && x.dr <= 2.2).length, gone: s.filter(x => x.dr > 2.2).length };
     };
     PC.rec = rec;
-    return { you: sum(x => x.you), youOpen: sum(x => x.you && x.nd >= 2.6), ringOn: sum(x => x.you && x.ring), ringOff: sum(x => x.you && !x.ring), youTight: sum(x => x.you && x.nd < 1.3), youShort: sum(x => x.you && x.d <= 12), youMid: sum(x => x.you && x.d > 12 && x.d <= 20), youDeep: sum(x => x.you && x.d > 20),
+    return { you: sum(x => x.you), youOpen: sum(x => x.you && x.nd >= 2.6), ringOn: sum(x => x.you && x.ring), ringOff: sum(x => x.you && !x.ring), perfTight: sum(x => x.you && x.q >= 0.99 && x.nd < 1.6), plainTight: sum(x => x.you && x.q < 0.4 && x.nd < 1.6), cpuTight: sum(x => !x.you && x.nd < 1.6), youTight: sum(x => x.you && x.nd < 1.3), youShort: sum(x => x.you && x.d <= 12), youMid: sum(x => x.you && x.d > 12 && x.d <= 20), youDeep: sum(x => x.you && x.d > 20),
       cpu: sum(x => !x.you), cpuDeep: sum(x => !x.you && x.d > 20) };
   }
   return { run };

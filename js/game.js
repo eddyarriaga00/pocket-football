@@ -18,7 +18,7 @@
 <div id="banner"></div><div id="toast"></div>
 <div id="deck">
   <div id="meter" hidden><p id="mtxt"></p><div class="bar"><i id="ndl"></i></div></div>
-  <div id="pw" hidden><span>Power</span><div class="trk"><i id="pwf"></i></div><b id="pwl"></b></div>
+  <div id="pw" hidden><span>Power</span><div class="trk"><u id="pwz" hidden></u><i id="pwf"></i></div><b id="pwl"></b></div>
   <div id="bl"><div id="tip" hidden></div><div id="brief" hidden></div></div>
   <div id="pad"></div>
   <div id="ptype" hidden><b></b><span></span></div>
@@ -1717,6 +1717,7 @@
     const pw = clamp(c.t / CHARGE, 0, 1);
     G.pwShow = { pw, t: 1.1 };  // the bar stays up for a moment, showing what was thrown
     throwTo(ps.recs[c.i], null, pw);
+    if (ps.air && ps.air.target) Object.assign(G.pwShow, { q: ps.air.q, ideal: ps.air.ideal });  // and how close it was to the right ball
   }
 
   /* where a throw to r would meet him, and how long it would be in the air (sf: the power's speed factor) */
@@ -1730,6 +1731,16 @@
     }
     return [tx, ty, T];
   }
+
+  /* The right ball for a throw, 0 to 1 on the power bar: zip on a short one, touch on a long one (a bullet at six
+     yards, about two-thirds at twenty-five, a third at forty-five). Let go within a tenth of it and the throw is
+     perfect (quality 1), fading to 0 a quarter of the bar away. A perfect ball is placed where only he can get it:
+     tighter, almost never picked, and catchable even with a man on him (resolvePass). */
+  function idealPow(q, r) {
+    const [tx, ty] = aimAt(q, r, 1);
+    return clamp(0.95 - (hyp(tx - q.x, ty - q.y) - 6) * 0.017, 0.3, 0.9);
+  }
+  const throwQ = dev => clamp(1 - (Math.abs(dev) - 0.1) / 0.15, 0, 1);
 
   /* How open he would be if you threw to him now, at an ordinary pace: the room the nearest defender would leave him
      when the ball got there, after reacting and running at it (as defAI does). The green ring on his letter. */
@@ -1751,8 +1762,12 @@
     if (option) ps.mode = 'pass';  // the option is taken: from here it is a pass play
     let tx, ty, T = 0.6, d;
     /* power, 0 to 1: a floated lob at 0 (slow, high), an ordinary pass at a half, a bullet at 1 (fast, flat).
-       The computer's quarterbacks throw at a half; yours throws what the power bar says. */
-    const pw = typeof type === 'number' ? clamp(type, 0, 1) : type === 'bullet' ? 1 : type === 'lob' ? 0 : 0.5;
+       Yours throws what the power bar says, and how near it is to the right ball (idealPow) is the throw's quality.
+       The computer's quarterbacks throw at a half, and their quality is a roll that is better the more accurate they
+       are. */
+    const ideal = r ? idealPow(q, r) : 0.5, mine = typeof type === 'number';
+    const pw = mine ? clamp(type, 0, 1) : type === 'bullet' ? 1 : type === 'lob' ? 0 : 0.5;
+    const tq = !r ? 0 : mine ? throwQ(pw - ideal) : throwQ((rnd() - rnd()) * (1.2 + (85 - (q.thr ?? q.rt)) * 0.01));
     const sf = pw < 0.5 ? lerp(0.84, 1, pw * 2) : lerp(1, 1.22, pw * 2 - 1), hf = pw < 0.5 ? lerp(1.45, 1, pw * 2) : lerp(1, 0.55, pw * 2 - 1);
     if (r) {
       const range = armRange(q);
@@ -1764,7 +1779,7 @@
         ty = q.y + (ty - q.y) * k;
         d = range;
       }
-      const pr = pressure(q), err = d * 0.03 * (1 + (85 - (q.thr ?? q.rt)) * 0.03) * (pr ? 1.9 : 1) * (ps.rpo ? 1.6 : 1) * (q.team === 1 ? 1 - 0.25 * hard() : 1);  // an option throw comes out of the mesh, feet not set
+      const pr = pressure(q), err = d * 0.03 * (1 + (85 - (q.thr ?? q.rt)) * 0.03) * (pr ? 1.9 : 1) * (ps.rpo ? 1.6 : 1) * (q.team === 1 ? 1 - 0.25 * hard() : 1) * (1 - 0.6 * tq);  // an option throw comes out of the mesh, feet not set; a perfect one is tighter
       tx = clamp(tx + (rnd() - rnd()) * err, 1, FW - 1);
       ty = clamp(ty + (rnd() - rnd()) * err, -9, 109);
     } else {
@@ -1773,7 +1788,7 @@
       d = hyp(tx - q.x, ty - q.y);
       T = d / 20;
     }
-    ps.air = { x0: q.x, y0: q.y, x1: tx, y1: ty, t: 0, T, h: (1.2 + d * 0.11) * hf, target: r, x: q.x, y: q.y, z: 1.8, dist: d };
+    ps.air = { x0: q.x, y0: q.y, x1: tx, y1: ty, t: 0, T, h: (1.2 + d * 0.11) * hf, target: r, x: q.x, y: q.y, z: 1.8, dist: d, q: tq, ideal };
     if (r && watched() && !ps.free && Math.random() < 0.015) ps.dhold = freeSnap();  // a defender had a fistful of jersey downfield
     ps.rel = { q, t: ps.t };  // the release: a rusher who arrives in the next half second may hit him late (see tick)
     if (!r && watched() && Math.abs(q.x - ps.bx) < 4 && (q.y - ps.los) * G.dir < 0 && Math.random() < 0.35) ps.ground = q.y;  // thrown away from inside the pocket, nobody near it: grounding, when the officials see it  // he arrives as the ball leaves, and drives him into the turf
@@ -1994,15 +2009,18 @@
        his run to the ball and gets there (see offAI), so the base is 0.83 and a defender at the ball counts for more
        (0.6, was 0.42): an open man catches it, a covered one is a fight. */
     const room = clamp((ndd - 0.4) / 2.8, 0, 1), hands = ((r.cat ?? r.rt) - 75) * 0.004;
-    let cp = dr > 2.2 ? 0 : lerp(0.15, 0.92 - Math.max(0, a.dist - 20) * 0.008, room) + hands - (dr > 1.2 ? 0.25 : 0);
+    const tq = a.q || 0;  // a perfect ball (see idealPow) can be caught with a man on him: good hands count double there
+    let cp = dr > 2.2 ? 0 : lerp(lerp(0.15, 0.6, tq) + hands, 0.92 - Math.max(0, a.dist - 20) * 0.008, room) + hands - (dr > 1.2 ? 0.25 : 0);
     const ud = nd && nd === G.sel && off === 1 && !AUTO && ndd < 1.8;
     if (ud) cp -= 0.2;
     cp *= G.wx.cat;  // a wet or frozen ball is harder to hold
     if (dr <= 2.2) cp += chemOf(ps.passer, r) * 0.001;  // up to five points either way between a career player and his partner
+    ps.perf = tq >= 0.99 && ndd < 1.6;  // a perfect ball into tight coverage (the analyst says so if it is caught)
     ps.cpT = cp;  // how catchable it was, for the play grade (a drop is a catchable ball not caught)
-    let ip = ndd < 1.5 ? 0.16 * (1 + ((nd.bsk ?? nd.rt) - 75) * 0.02) : 0;  // 0.16 since open men catch it (2026-11-16 late); 0.2 since the receivers reach the ball (2026-11-16 evening; more throws are contested, and a miss is a chance to pick it); 0.3 before, 0.38 until the reads went downfield: more balls are contested now, and picks ran at 4% of throws against the NFL's 2.2%
+    let ip = ndd < 1.5 ? 0.18 * (1 + ((nd.bsk ?? nd.rt) - 75) * 0.02) : 0;  // 0.18 with the perfect throw (fewer picks on those), 0.16 since open men catch it (2026-11-16 late); 0.2 since the receivers reach the ball (2026-11-16 evening; more throws are contested, and a miss is a chance to pick it); 0.3 before, 0.38 until the reads went downfield: more balls are contested now, and picks ran at 4% of throws against the NFL's 2.2%
     if (dr > 2.2 && ndd < 1.6) ip = 0.4;
     if (ud) ip += 0.2;
+    ip *= 1 - 0.75 * tq * tq;  // put where only he can get it, it is rarely picked
     if (off === 0) ip *= 1 + 0.35 * hard();  // your throw: the computer's hands are surer the harder the setting
     /* Both feet in. A ball caught at the sideline or the end line counts only when the receiver comes down in bounds:
        caught with him already over the line it is incomplete, and within a yard of it he has to drag his toes, which
@@ -4994,7 +5012,7 @@
     return 'none';
   }
 
-  const TIPS = { snap: 'Tap Snap to start. Tap a receiver\u2019s letter to change his route. Audible changes the play, Flip mirrors it, Motion sends a receiver across: if a defender runs with him, it is man coverage.', pass: 'A green ring round a letter: he is open, throw now. Hold a letter to build power, let go to throw. A quick tap floats it (it hangs, defenders close); a full bar fires a bullet (it gets there first). Away throws it out of bounds when nobody is open; Pump fakes a throw, and a zone defender may bite.', carryq: 'Past the line your quarterback can Slide: the play ends there, and nobody may hit him.', carry: 'Drag to run. Juke or Spin slips a tackle, Power runs through one, Hurdle clears a diver.',
+  const TIPS = { snap: 'Tap Snap to start. Tap a receiver\u2019s letter to change his route. Audible changes the play, Flip mirrors it, Motion sends a receiver across: if a defender runs with him, it is man coverage.', pass: 'A green ring round a letter: he is open, throw now. Hold a letter to build power, let go to throw. Let go with the bar in the white band and the throw is perfect: catchable even with a man on him. Away throws it out of bounds when nobody is open; Pump fakes a throw, and a zone defender may bite.', carryq: 'Past the line your quarterback can Slide: the play ends there, and nobody may hit him.', carry: 'Drag to run. Juke or Spin slips a tackle, Power runs through one, Hurdle clears a diver.',
     def: 'Drag to chase the ball. Dive or Hit to tackle, Strip goes for the ball, Switch changes player.', deflock: 'Drag to chase the ball. Dive or Hit to tackle, Strip goes for the ball.', route: 'Follow your route. Tap Call when you are open.',
     offball: 'Drag to block for the ball carrier.', timeout: 'Time out stops the clock: you get back the seconds that just ran off.', fair: 'Fair catch: the ball is yours where it lands, with no return and no hit. Tap it if tacklers are closing in.', loose: 'Loose ball! Run to it and Dive on it.', ready: 'Tap Ready, or wait for the snap.', watch: 'You watch the plays you are not on the field for. Fast fwd runs them at three times the speed; Skip drive goes straight to the result.', watchK: 'Their kickoff, with your returner back deep. Skip starts your offense from the touchback spot.', kick: 'Tap Kick when the marker is in the green.', defpre: 'Switch picks the defender you control. Audible changes the coverage.' };
   let tipT;
@@ -5838,7 +5856,8 @@
       else if (pass) said = gain >= 20 ? vo('pass.big', { pri: 2 }) : gain >= 8 ? chance(0.8) && vo('pass.good') : gain >= 0 && chance(0.35) && vo('pass.short', short);
       else said = gain >= 15 ? vo('run.big', { pri: 2 }) : gain >= 6 ? chance(0.8) && vo('run.good') : gain >= 1 ? chance(0.3) && vo('run.short', short) : chance(gain ? 0.75 : 0.6) && vo(gain ? 'run.loss' : 'run.none');
       if (first && chance(said ? 0.7 : 0.55)) vo('first', { ttl: 5 });
-      if (pass && gain >= 20) analyst('a.bigpass', 0.6, { big: true });
+      if (pass && ps.perf && ps.caught) analyst('a.perfect', 0.75, { big: true });
+      else if (pass && gain >= 20) analyst('a.bigpass', 0.6, { big: true });
       else if (!pass && gain >= 15) analyst('a.bigrun', 0.6, { big: true });
       else if (qbRun && said) analyst('a.qbrun', 0.3);
       else if (first) analyst('a.first', 0.15, { every: 40 });
@@ -6528,7 +6547,7 @@
       ['pause', 'Pause and zoom', 'The pause button is under the scoreboard, and beside it − and + zoom the camera out and in.'],
       ['cone', 'Training camp', 'Training camp on the menu teaches the controls in three short drills.']]],
     ['Offense', 'ball', [
-      ['ball', 'Throw', 'Tap Snap. As quarterback, hold a lettered receiver or the matching button: a green bar fills with power. Let go to throw. A green ring round a letter means he is open now. A quick tap floats a lob, which lets defenders close; a full bar fires a bullet, which beats them there.'],
+      ['ball', 'Throw', 'Tap Snap. As quarterback, hold a lettered receiver or the matching button: a green bar fills with power. Let go to throw. A green ring round a letter means he is open now. Let go with the bar in the white band (zip on short throws, touch on long ones) for a perfect throw, catchable even in tight coverage.'],
       ['tag', 'Play tag', 'A tag under the field names every play: Run, Pass, Play action, Screen, RPO or Kick.'],
       ['split', 'RPO', 'RPO plays are run-pass options: for the first second you may throw to a lettered receiver; do nothing and the back takes the ball. Watch the linebackers: if they step up, throw.'],
       ['run', 'Carry', 'With the ball: hold Sprint, tap Juke or Spin to slip a tackle.'],
@@ -7047,6 +7066,12 @@
         }
       } else p.opn = 0;
       if (G.chg && ps.recs[G.chg.i] === p) {
+        const id = idealPow(ps.qb, p), A = f => -Math.PI / 2 + Math.PI * 2 * clamp(f, 0, 1);
+        ctx.strokeStyle = 'rgba(255,255,255,.75)';  // the perfect band: let go while the green is in it
+        ctx.lineWidth = 5.5;
+        ctx.beginPath();
+        ctx.arc(x, by, 15, A(id - 0.1), A(id + 0.1));
+        ctx.stroke();
         // the power you are building, as a green ring closing round his letter
         ctx.strokeStyle = '#3ddc84';
         ctx.lineWidth = 3.5;
@@ -7276,10 +7301,20 @@
     if (pwEl.hidden === !!pwOn) pwEl.hidden = !pwOn;
     if (pwOn) {
       const v = G.chg ? clamp(G.chg.t / CHARGE, 0, 1) : G.pwShow.pw, key = Math.round(v * 100);
-      if (pwEl.dataset.v !== String(key)) {
-        pwEl.dataset.v = key;
+      const r = G.chg && ps.recs[G.chg.i], ideal = r && ps.qb ? idealPow(ps.qb, r) : G.pwShow && G.pwShow.ideal, sq = !G.chg && G.pwShow && G.pwShow.q;
+      // the band where the throw is perfect, and after the throw what it was
+      const verdict = sq === undefined || sq === false || G.chg ? '' : sq >= 0.99 ? 'Perfect' : sq >= 0.4 ? 'Good' : v < ideal ? 'Too soft' : 'Too hard', zk = ideal ? Math.round(ideal * 100) : -1;
+      if (pwEl.dataset.v !== key + verdict + zk) {
+        pwEl.dataset.v = key + verdict + zk;
         $('#pwf').style.width = key + '%';
-        $('#pwl').textContent = (v < 1 / 3 ? 'Lob ' : v < 2 / 3 ? 'Touch ' : 'Bullet ') + key;
+        const z = $('#pwz');
+        z.hidden = zk < 0;
+        if (zk >= 0) {
+          z.style.left = Math.max(0, zk - 10) + '%';
+          z.style.right = Math.max(0, 90 - zk) + '%';
+        }
+        $('#pwl').textContent = verdict || (v < 1 / 3 ? 'Lob ' : v < 2 / 3 ? 'Touch ' : 'Bullet ') + (verdict ? '' : key);
+        pwEl.classList.toggle('perf', verdict === 'Perfect');
       }
     }
     const ko = koMine(), m = $('#meter'), km = G.state === 'kickm' || ko;
@@ -7547,6 +7582,7 @@
     },
     /* test hooks: tools/harness.js drives the game through these */
     dbg: {
+      idealPow,  // the right power for a throw (the perfect band); the test player can aim for it
       roomFor,  // how open a receiver would be if thrown to now (the green ring); tools/passcheck.js checks it against what happens
       set hang(v) {
         HANG = v;
