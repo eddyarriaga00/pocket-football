@@ -3783,7 +3783,7 @@
       if (G.callout && w !== 0) analyst(w > 0 ? 'call.won' : 'call.lost', 1, { big: true, ttl: 12 });
       else analyst('a.final', 0.8, { big: true, ttl: 10 });
     }
-    if (!AUTO && !G.drill && PG.milestones) PG.milestones.game({ us: G.score[0], them: G.score[1], stats: G.stats, ot: G.ot, diff: G.diff, weather: G.env && G.env.weather });
+    if (!AUTO && !G.drill && PG.milestones) PG.milestones.game({ us: G.score[0], them: G.score[1], stats: G.stats, ot: G.ot, diff: G.diff, weather: G.env && G.env.weather, scores: G.scores || [] });
     /* the handshake at midfield first (a cutscene: skipped in simulations, practice, and when they are switched off) */
     const done = () => {
       if (G.onEnd) G.onEnd({ env: G.env, pgr: G.pgr, mateLog: G.mateLog, score: G.score.slice(), my: G.my, stats: G.stats, ot: G.ot, potg: playerOfGame(), wmvp: G.score[0] === G.score[1] ? null : playerOfGame(G.score[0] > G.score[1] ? 0 : 1), potgHtml: potgHtml(), box: G.box, potdHtml: potdHtml(), scoringHtml: scoringHtml(G.scores), drill: G.drill });

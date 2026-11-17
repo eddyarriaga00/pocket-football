@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `3d54435`, before more awards, trophies and milestones, and the comment-free one-file build (2026-11-17).
   - `e14de31`, before landscape and computer layouts and the controller and keyboard upgrades (2026-11-17).
   - `4c07eca`, before more commentary takes, new conversion and long-touchdown calls, and social posts about your events, milestones and deals (2026-11-16 late).
   - `8ce466d`, before the career hub reorganization, league news, contract extensions and incentives, weekly events (2026-11-16 night).
@@ -3148,6 +3149,24 @@ six were done as the pro game has them; the choices where there was one are mine
   off screen. Tested: the audit clean at 740x360, 667x375, 1280x800 and 390x844 (menus, exhibition, career, season,
   camp); the rough player and a career sideways; rotation both ways mid-play; keyboard and a simulated Xbox and
   PlayStation controller through the play call, a snap, a run and a pass; fingerprint unchanged.
+
+- **2026-11-17: more awards and achievements.** Asked for: "add more awards and achievements". Awards night (Career):
+  Comeback Player of the Year (read out when last season graded C or worse and this one is good; wins at a B+
+  average), the All-League second team (read out when you are on it: the next quarterback, the next two receivers),
+  and Man of the Year every season (two or more community events accepted that season, the hospital visit, the
+  autographs, mentoring the rookie, with a decent season), each with its own announcer line. Career trophies, 15 to
+  31: Most valuable, Unstoppable (Offensive Player of the Year), First impression (Rookie of the Year), Back again
+  (Comeback), Man of the people, Player of the Week, Weekly regular (five times), All-Star, Big numbers (2,000 passing
+  or 1,000 receiving yards in a season), End zone regular (20 TD passes or 10 TD catches), Record breaker, Locked up
+  (an extension), New city (a free-agency move), Franchise player (five seasons with one team), Iron man (50 games),
+  Household name (a million followers). Milestones (every mode), 12 to 25: Gunslinger (300 passing yards), Half a
+  hundred (50 points), Statement (win by 28), Nail-biter (win by 3 or fewer), Brick wall (win holding them under 150
+  yards), Comeback (win from 14 down), Clutch (take the lead for good in the 4th or overtime), Legendary (win on
+  Legend), Lifer (50 games), Full slate (finish a regular season), Perfect season (unbeaten regular season), Most
+  valuable (League MVP in Career), Hall of Famer (voted in). Also: the one-file build leaves out code comments
+  (tools/strip.js, checked by the parser to be the same program), which frees about 230 KB under its 16 MB limit;
+  two more hub tile labels shortened. Tested: careers with the new awards forced and won, trophies and milestones
+  earned, the audit clean at 390x844, the rough player, fingerprint unchanged in the game and in the one-file build.
 
 ## Morning hand-off
 

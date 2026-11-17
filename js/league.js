@@ -207,6 +207,7 @@
       }
       L.week++;
       if (L.week < L.sched.length) return null;
+      if (PG.milestones) PG.milestones.regEnd(L.tab[L.team]);  // the regular season is over: an achievement (unbeaten: another)
       return full2(L) ? bracket2(L, end) : bracket1(L, end);
     }
     return full2(L) ? playoff2(L, won, opp, end) : playoff1(L, won, opp, end);

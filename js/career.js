@@ -383,6 +383,38 @@
         won.push(name);
         xp += gain;
       }
+      /* the All-League second team: the next men at your position (the next one at quarterback, the next two receivers),
+         read out only when you are on it */
+      if (who === 'pos' && !wins) {
+        const rank = L.rows.findIndex(x => x.me), first = C.pos === 'WR' ? 2 : 1;
+        if (rank >= first && rank < first * 2) {
+          night.push({ a: 'Second-team All-League · ' + POS[C.pos].label, w: me, n: [], xp: 300 });
+          won.push('Second-team All-League');
+          xp += 300;
+        }
+      }
+      /* Comeback Player of the Year: read out when last season was a hard one (a C or worse) and this one is good */
+      if (who === 'pos') {
+        const prev = (C.hist || []).find(x => x.season === C.season - 1);
+        if (prev && /^[CDF]/.test(prev.grade || '') && avg >= 5.5) {
+          const cw = avg >= 6.5, o = [somebody(pos()), somebody(pos())];
+          night.push({ a: 'Comeback Player of the Year', w: cw ? me : o[0], n: cw ? o : [me, o[1]], xp: cw ? 700 : 0, stat: `Last season ${prev.grade}, this season ${GRADES[Math.min(10, Math.round(avg))]}` });
+          if (cw) {
+            won.push('Comeback Player of the Year');
+            xp += 700;
+          }
+        }
+      }
+    }
+    /* Man of the Year: what you gave off the field (the hospital visits, the autographs, the rookie you helped: the
+       week's events, C.comm) with a good season on it */
+    {
+      const gave = C.comm || 0, mw = gave >= 2 && avg >= 5, o = [somebody(OTHER_POS[Math.floor(r() * OTHER_POS.length)]), somebody(OTHER_POS[Math.floor(r() * OTHER_POS.length)])];
+      night.push({ a: 'Man of the Year', w: mw ? me : o[0], n: mw ? o : gave ? [me, o[1]] : o.slice(1), xp: mw ? 400 : 0, stat: gave ? `${gave} community event${gave > 1 ? 's' : ''} this season` : '' });
+      if (mw) {
+        won.push('Man of the Year');
+        xp += 400;
+      }
     }
     /* the statistical title at your position goes to whoever led the league: the leaders table is the record */
     const top = L.rows[0];
@@ -415,6 +447,8 @@
     }
     C.po.night = night.night;
     C.po.nightSeen = false;
+    C.comm = 0;  // a new season's good works
+    if (aw.includes('League MVP') && PG.milestones) PG.milestones.earn('mvp');
     /* the all-star game: an honor, or a season averaging better than a B, gets you the invitation (more men make the
        all-star game than the All-League team, as in the real game) */
     C.po.star = aw.length || avg >= 6 ? { conf: TEAMS[C.team].conf, done: false } : null;
@@ -670,7 +704,26 @@
     ['ring', 'Champion', 'Win the title', () => C.rings > 0],
     ['dyn', 'Dynasty', 'Win three titles', () => C.rings >= 3],
     ['fmvp', 'Biggest stage', 'Be the championship game MVP', () => (C.awards || []).some(a => a.name === 'Championship Game MVP')],
-    ['riv', 'Settled', 'Finish a season ahead of your rival', () => !!C.beatRival]];
+    ['riv', 'Settled', 'Finish a season ahead of your rival', () => !!C.beatRival],
+    // added 2026-11-17
+    ['mvp', 'Most valuable', 'Win League MVP', () => hasAward('League MVP')],
+    ['opoy', 'Unstoppable', 'Win Offensive Player of the Year', () => hasAward('Offensive Player of the Year')],
+    ['roy', 'First impression', 'Win Rookie of the Year', () => hasAward('Rookie of the Year')],
+    ['cpoy', 'Back again', 'Win Comeback Player of the Year', () => hasAward('Comeback Player of the Year')],
+    ['moty', 'Man of the people', 'Be named Man of the Year', () => hasAward('Man of the Year')],
+    ['potw', 'Player of the Week', 'Be named Player of the Week', () => (C.potw || 0) >= 1],
+    ['potw5', 'Weekly regular', 'Be Player of the Week five times', () => (C.potw || 0) >= 5],
+    ['star', 'All-Star', 'Play in the All-Star Game', () => (C.allstars || 0) >= 1],
+    ['yds', 'Big numbers', C => C.pos === 'QB' ? 'Throw for 2,000 yards in a season' : 'Catch for 1,000 yards in a season', () => (C.pos === 'QB' ? C.stats.pyd : C.stats.recyd) >= (C.pos === 'QB' ? 2000 : 1000)],
+    ['tds', 'End zone regular', C => C.pos === 'QB' ? 'Throw 20 touchdowns in a season' : 'Catch 10 touchdowns in a season', () => (C.pos === 'QB' ? C.stats.ptd : C.stats.rectd) >= (C.pos === 'QB' ? 20 : 10)],
+    ['rec', 'Record breaker', 'Set a league record', () => !!C.setRec],
+    ['ext', 'Locked up', 'Sign a contract extension', () => !!C.extDone],
+    ['move', 'New city', 'Sign with a new team in free agency', () => !!C.movedTeam],
+    ['loyal', 'Franchise player', 'Play five seasons for one team', () => (C.hist || []).filter(h => h.team === C.team).length >= 5],
+    ['g50', 'Iron man', 'Play 50 career games', () => C.career.g >= 50],
+    ['fol', 'Household name', 'Reach a million followers', () => social().fol >= 1e6]];
+  const hasAward = n => (C.awards || []).some(a => a.name === n);
+  const howOf = how => typeof how === 'function' ? how(C) : how;  // a few trophies are worded for your position
 
   function checkTrophies() {
     C.troph = C.troph || {};
@@ -1008,6 +1061,7 @@
       } else PG.toast('They held firm');
     } else if (how === 'yes') {
       C.deal = { years: x.years + 1, left: x.years + 1, pay: x.pay, inc: incOf(C.team) };
+      C.extDone = 1;
       C.xp += x.xp;
       C.xpTotal += x.xp;
       C.ext = null;
@@ -1063,7 +1117,8 @@
     if (e.fol) so.fol = Math.round(so.fol * (1 + e.fol));
     if (e.chem && p) p.chem = clamp(p.chem + e.chem, 0, 100);
     if (e.heal) C.inj = null;
-    C.evPost = i === 0 && ev.id ? ev.id : null;  // the first choice is the one the feed hears about (see media.js extras)
+    C.evPost = i === 0 && ev.id ? ev.id : null;
+    if (i === 0 && ['hospital', 'autographs', 'mentor'].includes(ev.id)) C.comm = (C.comm || 0) + 1;  // for Man of the Year  // the first choice is the one the feed hears about (see media.js extras)
     C.ev = null;
     persist();
     PG.snd('tick');
@@ -1087,8 +1142,8 @@
     const [, role, sh] = roleOf(), d = deal(), p = partner();
     return `<div class="tiles"><div><small>XP</small><b class="xpv">${fmt(C.xp)}</b><span>to spend</span></div>
   <div><small>Contract</small><b>${d.left > 0 ? money(d.pay) : 'Ending'}</b><span>${d.left > 0 ? `${d.left} yr${d.left > 1 ? 's' : ''} left` : 'expiring'}</span></div>
-  <div><small>Trust</small><b>${C.trust}</b><span>${role} · ${Math.round(sh * 10)}/10</span><div class="bar"><i style="width:${C.trust}%"></i></div></div>
-  ${p ? `<div><small>Chemistry</small><b>${Math.round(p.chem)}</b><span>${esc(p.last)} · ${chemTier(p.chem)}</span><div class="bar"><i style="width:${Math.round(p.chem)}%"></i></div></div>` : `<div><small>Earned</small><b>${money(C.cash || 0)}</b><span>career</span></div>`}</div>`;
+  <div><small>Trust</small><b>${C.trust}</b><span title="${Math.round(sh * 10)} of 10 snaps">${role}</span><div class="bar"><i style="width:${C.trust}%"></i></div></div>
+  ${p ? `<div><small>Chemistry</small><b>${Math.round(p.chem)}</b><span title="${chemTier(p.chem)}">with ${esc(p.last)}</span><div class="bar"><i style="width:${Math.round(p.chem)}%"></i></div></div>` : `<div><small>Earned</small><b>${money(C.cash || 0)}</b><span>career</span></div>`}</div>`;
   }
 
   /* ---------- hub ---------- */
@@ -1708,7 +1763,7 @@
   function trophiesHtml() {
     const have = C.troph || {}, n = TROPHIES.filter(t => have[t[0]]).length;
     const list = TROPHIES.filter(t => have[t[0]]).concat(TROPHIES.filter(t => !have[t[0]]));  // the ones you have first
-    return `<h2>Trophies · ${n} of ${TROPHIES.length}</h2><div class="trp"><i style="width:${n / TROPHIES.length * 100}%"></i></div><div class="tro">${list.map(([id,name,how])=>`<div class="${have[id]?'on':''}"><b>${name}</b><span>${how}</span></div>`).join('')}</div>`;
+    return `<h2>Trophies · ${n} of ${TROPHIES.length}</h2><div class="trp"><i style="width:${n / TROPHIES.length * 100}%"></i></div><div class="tro">${list.map(([id,name,how])=>`<div class="${have[id]?'on':''}"><b>${name}</b><span>${howOf(how)}</span></div>`).join('')}</div>`;
   }
 
   /* the end of a career: one last look, then a clean slate */
@@ -1744,6 +1799,7 @@
     $('#keep').onclick = () => showHub('up');
     $('#rt').onclick = () => {
       const tm = C.team, e = retireToHall();
+      if (e.inducted && PG.milestones) PG.milestones.earn('hof');
       dropSave(C.sid);
       C = null;
       try {
@@ -1760,9 +1816,9 @@
      first, the MVP last). Each card starts sealed with its nominees on it; the stadium announcer introduces the award,
      a drum roll, then the winner's name comes up to applause, louder and with a fanfare when it is you. "Reveal all"
      opens every card at once, and Continue works at any point. With the sound off the cards open on a timer. */
-  const AW_CLIP = a => (/^League MVP/.test(a) ? 'mvp' : /^Championship/.test(a) ? 'fmvp' : /^Offensive/.test(a) ? 'opoy' : /^Rookie/.test(a) ? 'roy' : /^All-League/.test(a) ? 'all' : 'title');
+  const AW_CLIP = a => (/^League MVP/.test(a) ? 'mvp' : /^Championship/.test(a) ? 'fmvp' : /^Offensive/.test(a) ? 'opoy' : /^Rookie/.test(a) ? 'roy' : /^All-League/.test(a) ? 'all' : /^Second-team/.test(a) ? 'all2' : /^Comeback/.test(a) ? 'cpoy' : /^Man of the Year/.test(a) ? 'moty' : 'title');
   const AW_SAY = { mvp: 'And now, the league’s Most Valuable Player. The winner is...', opoy: 'The Offensive Player of the Year award goes to...', roy: 'This year’s Rookie of the Year is...',
-    all: 'Named to this year’s All-League team...', fmvp: 'The Championship Game MVP is...', title: 'This season’s statistical champion at the position is...' };
+    all: 'Named to this year’s All-League team...', all2: 'And on the All-League second team...', cpoy: 'The Comeback Player of the Year is...', moty: 'For his work in the community, this year’s Man of the Year is...', fmvp: 'The Championship Game MVP is...', title: 'This season’s statistical champion at the position is...' };
 
   function showAwards(then) {
     const po = C.po, list = (po.night || []).slice().reverse(), mine = list.filter(x => x.w.me);
@@ -1970,7 +2026,10 @@
     scr.querySelectorAll('[data-sign]').forEach(b => b.onclick = () => {
       const i = +b.dataset.sign, o = offers[i], moved = i !== C.team, old = C.team;
       faOffers = null;
-      if (moved) C.trust = o.trust;
+      if (moved) {
+        C.trust = o.trust;
+        C.movedTeam = 1;
+      }
       C.team = i;
       C.deal = { years: o.years, left: o.years, pay: o.pay, inc: o.inc };
       C.xp += o.xp;
@@ -2352,6 +2411,7 @@
     if (!C.reg) C.reg = { ...C.stats };  // a career begun before the record book: its season so far
     if (!playoff0) for (const k in m) C.reg[k] = (C.reg[k] || 0) + m[k];
     const fell = recordsAfter(m, playoff0);  // league records
+    if (fell.length) C.setRec = 1;
     for (const f of fell) items.push([`League record \u00b7 ${f.kind === 'game' ? 'single game' : 'season'} ${f.label.toLowerCase()}`, 500]);
     const xp = items.reduce((t, [, v]) => t + v, 0) + met * GOAL_XP;
     for (const k in m) {
