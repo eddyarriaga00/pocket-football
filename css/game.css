@@ -355,6 +355,22 @@ tr.me td{color:var(--acc);font-weight:700}
 .nx{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
 .nx small{font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
 .nx h4{margin:3px 0 2px;font-family:var(--display);font-weight:800;font-size:15px;line-height:1.25}
+.nx.champ{border-color:var(--c);box-shadow:inset 0 0 0 1px var(--c),0 0 24px -8px var(--c)}   /* a title season: the team's color, never gold */
+.nx.champ h4{display:flex;align-items:center;gap:7px;font-size:17px}
+.nx.champ h4 svg,.chc svg{width:20px;height:20px;fill:currentColor;flex:none}
+.chn{margin:0 0 8px;font-size:12px;color:var(--mute)}
+.chc{display:flex;align-items:center;gap:12px;margin:2px 0 10px;padding:12px 14px;border-radius:12px;background:var(--c);background:linear-gradient(120deg,var(--c),color-mix(in srgb,var(--c) 72%,#000))}
+.chc svg{width:34px;height:34px}
+.chc small{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.9}
+.chc b{display:block;font-family:var(--display);font-weight:800;font-size:18px;line-height:1.2}
+.chc span{font-size:12px;opacity:.92}
+.fmv{position:relative;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
+.fmv.me{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
+.fmv small{display:block;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acc)}
+.fmv b{display:block;font-family:var(--display);font-weight:800;font-size:15px;margin-top:2px}
+.fmv b em{font-style:normal;font-weight:600;font-size:11px;color:var(--mute);margin-left:4px}
+.fmv span{font-size:12px;color:var(--mute)}
+.fmv i{position:absolute;right:12px;top:12px;font-style:normal;font-weight:700;font-size:12px;color:var(--acc)}
 .nx p{margin:0 0 10px;color:var(--mute);font-size:12px;line-height:1.45}
 .nx ul{list-style:none;margin:0 0 12px;padding:0;font-size:12px;line-height:1.45}
 .nx ul li{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-top:1px solid var(--line)}

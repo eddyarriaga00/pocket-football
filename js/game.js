@@ -216,7 +216,7 @@
   function startGame(o) {
     const lock = o.lock || null, first = o.mode && o.mode !== 'exh' && rnd() < 0.5 ? 1 : 0;  // exhibition always opens with the user receiving
     G = { state: 'dead', mode: o.mode || 'exh', tm: [o.a, o.b], ros: (r0 => [r0, mkRoster(o.b, [-6, -3, 0, 5, 9][o.diff ?? 2] ?? 0, o.ovr && o.ovr[1], namesOf(r0))])(o.ros0 || mkRoster(o.a, 0, o.ovr && o.ovr[0])),
-      score: [0, 0], q: 1, ql: o.ql || 180, diff: o.diff ?? 2, clock: o.ql || 180, stats: [0, 1].map(() => ({ pass: 0, rush: 0, comp: 0, att: 0, to: 0 })), stam: 1, pad: null, deadT: 0, ot: false, final: false,
+      score: [0, 0], q: 1, ql: o.ql || 180, title: !!o.title, diff: o.diff ?? 2, clock: o.ql || 180, stats: [0, 1].map(() => ({ pass: 0, rush: 0, comp: 0, att: 0, to: 0 })), stam: 1, pad: null, deadT: 0, ot: false, final: false,
       sel: null, me: null, preT: 0, meter: 0, lock, lockSide: lock ? (OFFR.includes(lock) ? 'off' : 'def') : null, first, drill: o.drill ? { n: o.drill, left: o.drill, side: o.side || (lock && !OFFR.includes(lock) ? 'def' : 'off'), script: o.script || null, dcall: o.dcall || null, title: o.title || 'Practice', reps: [] } : null, lineFn: o.line || null, goalsFn: o.goals || null, mustWin: !!o.mustWin, home: o.away ? 1 : 0, kr: !!o.kr && !!lock, liveP: null, prime: !!o.prime, around: o.around || null, highs: o.highs || null, recs: o.recs || null, onEnd: o.onEnd || null, onQuit: o.onQuit || null, paused: false, last: '', box: {}, scores: [], lastScore: null, drive: null, potd: null, hl: null, rpEnd: null, pat: null, try2: null, introT: 0, to: [3, 3], runoff: 0, share: o.share === undefined ? 1 : o.share, possN: 0, benchN: -1, sit: false, env: o.env || { time: SET.tod || 'night', weather: SET.wx || 'clear' },
       my: { att: 0, comp: 0, pyd: 0, ptd: 0, pint: 0, car: 0, ryd: 0, rtd: 0, rec: 0, recyd: 0, rectd: 0, tgt: 0, tkl: 0, sack: 0, int: 0, pbu: 0 } };
     if (lock && o.hero) {
@@ -2475,18 +2475,20 @@
     b[k] = (b[k] || 0) + v;
   }
 
-  function playerOfGame() {
+  /* only: a side's own best man (the championship game's MVP comes from the winners, as it does in the pro game) */
+  function playerOfGame(only) {
     const win = G.score[0] === G.score[1] ? -1 : G.score[0] > G.score[1] ? 0 : 1, n = k => k || 0;
     let best = null, top = 0;
     for (const key in G.box) {
       const b = G.box[key];
+      if (only !== undefined && b.team !== only) continue;
       const sc = (n(b.pyd) / 25 + n(b.ptd) * 4 - n(b.pint) * 2 + n(b.ryd) / 10 + n(b.recyd) / 10 + n(b.td) * 6 + n(b.tkl) + n(b.sack) * 2 + n(b.int) * 3 + n(b.ff) * 2 + n(b.fr) * 2) * (b.team === win ? 1.2 : 1);
       if (sc > top) {
         top = sc;
         best = b;
       }
     }
-    if (!best || top < 4) return null;
+    if (!best || top < (only !== undefined ? 0.5 : 4)) return null;  // a side's own MVP is named even on a quiet day
     const b = best, parts = [];
     if (b.att) parts.push(`${n(b.comp)}/${b.att}, ${n(b.pyd)} yds` + (b.ptd ? `, ${b.ptd} TD` : ''));
     if (b.car) parts.push(`${b.car} car, ${n(b.ryd)} yds`);
@@ -3770,14 +3772,16 @@
         snd('fanfare');
         react(0, 1.2, 5);
       } else if (w < 0) snd('lose');
-      vo(w === 0 ? 'final.tie' : chance(0.5) ? 'win.team.' + tab(w > 0 ? 0 : 1) : w > 0 ? 'final.win' : 'final.loss', { pri: 2 });
+      // the championship game: the booth names the champions
+      if (G.title && w !== 0) vo(chance(0.6) ? 'champ.team.' + tab(w > 0 ? 0 : 1) : 'champ', { pri: 2 });
+      else vo(w === 0 ? 'final.tie' : chance(0.5) ? 'win.team.' + tab(w > 0 ? 0 : 1) : w > 0 ? 'final.win' : 'final.loss', { pri: 2 });
       if (G.callout && w !== 0) analyst(w > 0 ? 'call.won' : 'call.lost', 1, { big: true, ttl: 12 });
       else analyst('a.final', 0.8, { big: true, ttl: 10 });
     }
     if (!AUTO && !G.drill && PG.milestones) PG.milestones.game({ us: G.score[0], them: G.score[1], stats: G.stats, ot: G.ot, diff: G.diff, weather: G.env && G.env.weather });
     /* the handshake at midfield first (a cutscene: skipped in simulations, practice, and when they are switched off) */
     const done = () => {
-      if (G.onEnd) G.onEnd({ env: G.env, pgr: G.pgr, mateLog: G.mateLog, score: G.score.slice(), my: G.my, stats: G.stats, ot: G.ot, potg: playerOfGame(), potgHtml: potgHtml(), box: G.box, potdHtml: potdHtml(), scoringHtml: scoringHtml(G.scores), drill: G.drill });
+      if (G.onEnd) G.onEnd({ env: G.env, pgr: G.pgr, mateLog: G.mateLog, score: G.score.slice(), my: G.my, stats: G.stats, ot: G.ot, potg: playerOfGame(), wmvp: G.score[0] === G.score[1] ? null : playerOfGame(G.score[0] > G.score[1] ? 0 : 1), potgHtml: potgHtml(), box: G.box, potdHtml: potdHtml(), scoringHtml: scoringHtml(G.scores), drill: G.drill });
       else showFinal();
     };
     playScene('final', {}, done);

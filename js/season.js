@@ -208,7 +208,7 @@
     ensureRoster();
     const pt = LG.prime(S), env = PG.envFor(S.year + 50, LG.weekNo(S), S.phase !== 'reg' || S.week >= S.sched.length - 4, LG.home(S) ? S.team : opp);  // the home city's weather
     if (pt) env.time = 'night';  // primetime is a night game
-    PG.startGame({ a: S.team, b: opp, ql: S.ql, diff: PG.lvlOf(S), mode: 'season', ros0: S.roster, ovr: [S.ovrs[S.team], S.ovrs[opp]], mustWin: S.phase !== 'reg',
+    PG.startGame({ a: S.team, b: opp, ql: S.ql, diff: PG.lvlOf(S), mode: 'season', ros0: S.roster, ovr: [S.ovrs[S.team], S.ovrs[opp]], mustWin: S.phase !== 'reg', title: S.phase === 'final',
       away: !LG.home(S), prime: pt, around: LG.full(S) ? LG.preWeek(S) : null, env,
       onEnd: r => gameEnd(r, opp), onQuit: () => hub('table') });
   }

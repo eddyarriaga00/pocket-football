@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `f74c71a`, before the MVP vote, the Championship Game MVP and the championship experience (2026-11-16 night).
   - `83eb868`, before the single ring again, the reshaped power bar and fewer off-target misses on your throws (2026-11-16 night).
   - `d6ec7b5`, before receivers winning at the break, shifting zones and the two ring strengths (2026-11-16 night).
   - `0e2e039`, before the throwing rebalance from the human-player tests (2026-11-16 night).
@@ -2979,6 +2980,25 @@ six were done as the pro game has them; the choices where there was one are mine
   computer's hands on your throws at the top (was 35%). After, 256 throws: Pro 87% with no picks, All-Pro 82%, picks
   3.6%, floated balls 72%. Fingerprint unchanged (all of it is your throws only); the passing drill 4 to 5 (3 stars);
   careers, the rough player and the audit clean. Test hooks: dbg.CHARGE, dbg.holdFor.
+
+- 2026-11-16 (night, "i just finished a season and won the championship, not a lot of things recognize that i did win
+  it, and i lost the mvp even though i considerably had a lot more of everything than second place, add a finals mvp
+  as well and make that whole experience better"). The MVP bug: your MVP and Offensive Player of the Year came from
+  your average game grade (8.2, or 7.5 with a playoff trip) while the other candidates were judged by numbers, so a
+  far better season could lose. Now a vote (`vote` in career.js): every team's quarterback, back and receiver and you,
+  scored the same way: season production against the median starter at that position, plus the team's record, and
+  for the MVP a lean toward quarterbacks; your grades only break a near tie. The award cards show the winner's line.
+  All-League: leading your position (receivers: the top two) puts you on it whatever the grades. New: the
+  Championship Game MVP, the winning side's best man in the title game (`playerOfGame(only)` in game.js, `wmvp` on
+  the result); yours is +1,000 XP, an honor in the record book and the Hall of Fame, a trophy ("Biggest stage"), and
+  a card at awards night read out just before the MVP (the announcer's line recorded). The title itself: the results
+  sheet says Champions with a card in the team's colors (title number, never gold) and the MVP card; the hub's season
+  card is marked League champions with the MVP; the booth calls "The {team} are your champions!" (recorded for every
+  team) in career and season title games (`title` on startGame); the feed leads with the league, the team, a
+  trending tag, the MVP announcement, fans, the rival and an old player, and a lost final draws its own lines; the
+  first podium question is about the title. Tested: a forced title season (Championship Game MVP to the
+  quarterback), a forced one where you are the MVP (award, XP, trophy, record, awards night), 90 title feeds with no
+  holes; fingerprint unchanged; careers, a season and the audit clean. Test hook: PG.career.vote().
 
 ## Morning hand-off
 

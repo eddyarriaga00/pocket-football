@@ -317,6 +317,33 @@
     ['All-League', 600, avg => avg >= 6.5, 'pos']];
   const OTHER_POS = ['QB', 'RB', 'WR', 'TE', 'DE', 'LB', 'CB', 'S'];
 
+  /* A season line in a few words, at any position (the award cards show the winner's numbers). */
+  const lineAt = (m, pos) => pos === 'QB' ? `${fmt(m.pyd || 0)} yds · ${m.ptd || 0} TD · ${m.pint || 0} INT` : pos === 'RB' ? `${fmt(m.ryd || 0)} yds · ${m.rtd || 0} TD` : `${m.rec || 0} rec · ${fmt(m.recyd || 0)} yds · ${m.rectd || 0} TD`;
+  /* how much a season produced, at each position, on one scale */
+  const yield_ = (m, pos) => pos === 'QB' ? (m.pyd || 0) + (m.ptd || 0) * 20 - (m.pint || 0) * 25 + (m.ryd || 0) * 0.6 : pos === 'RB' ? (m.ryd || 0) + (m.rtd || 0) * 20 + (m.recyd || 0) * 0.8 : (m.recyd || 0) + (m.rectd || 0) * 20 + (m.rec || 0) * 3;
+
+  /* The vote for MVP and Offensive Player of the Year. Every candidate (you, and every team's quarterback, back and
+     receiver) is scored the same way: his season against a normal one at his position (the league's median starter
+     there), plus his team's record, and for the MVP a lean toward quarterbacks, as the voters have. The best score
+     wins; your game grades only break a near tie. (Until 2026-11-16 yours was a grade bar and theirs were numbers, so
+     a far better season than the runner-up's could lose the MVP.) */
+  function vote(name, avg) {
+    const pct = i => {
+      const t = C.tab && C.tab[i];
+      return t && t.w + t.l + t.t ? (t.w + t.t / 2) / (t.w + t.l + t.t) : 0.5;
+    };
+    const cands = [];
+    for (const pos of ['QB', 'RB', 'WR']) {
+      const rows = TEAMS.map((_, i) => i === C.team && pos === C.pos ? { m: C.stats, me: true, i } : { m: starter(i, pos), me: false, i });
+      const vals = rows.map(r => yield_(r.m, pos)).sort((a, b) => a - b), med = Math.max(1, vals[Math.floor(vals.length / 2)]);
+      for (const r of rows) {
+        const dom = yield_(r.m, pos) / med, w = name === 'League MVP' ? { QB: 1, RB: 0.92, WR: 0.9 }[pos] : 1;
+        cands.push({ me: r.me, pos, i: r.i, m: r.m, sc: dom * w + pct(r.i) * (name === 'League MVP' ? 0.5 : 0.2) + (r.me ? (avg - 6) * 0.02 : 0) });
+      }
+    }
+    return cands.sort((a, b) => b.sc - a.sc);
+  }
+
   function awardsNight(finish, avg, L) {
     let h = (C.season * 7919 + C.team * 104729 + C.pos.charCodeAt(0) * 131) >>> 0;
     const r = () => {
@@ -331,23 +358,27 @@
     let xp = 0;
     for (const [name, gain, bar, who] of AWARDS) {
       if (who === 'rookie' && C.season !== 1) continue;
-      const wins = bar(avg, finish), close = wins || bar(avg + 1.2, finish), pos = () => who === 'pos' ? C.pos : OTHER_POS[Math.floor(r() * OTHER_POS.length)];
+      let wins = bar(avg, finish), close = wins || bar(avg + 1.2, finish), stat = '';
+      const pos = () => who === 'pos' ? C.pos : OTHER_POS[Math.floor(r() * OTHER_POS.length)];
       let others = [somebody(pos()), somebody(pos()), somebody(pos())];
-      /* MVP and Offensive Player of the Year, when they are not yours, go to the men whose seasons earned them: the
-         league's best passers for MVP, its best runner and receivers for the offensive award (the same seeded lines
-         the leaders boards show), not to strangers */
       if (who === 'any') {
-        const line = (i, p) => i === C.team && p === C.pos ? null : { ...starter(i, p), ab: TEAMS[i].ab, pos: p };
-        const pool = name === 'League MVP'
-          ? TEAMS.map((_, i) => line(i, 'QB')).filter(Boolean).map(x => ({ x, v: x.pyd + x.ptd * 25 - x.pint * 30 }))
-          : TEAMS.flatMap((_, i) => [line(i, 'RB'), line(i, 'WR')]).filter(Boolean).map(x => ({ x, v: x.pos === 'RB' ? x.ryd + x.rtd * 20 : x.recyd * 1.1 + x.rectd * 20 }));
-        others = pool.sort((a, b) => b.v - a.v).slice(0, 3).map(({ x }) => ({ name: x.name, ab: x.ab, pos: x.pos })).concat(others).slice(0, 3);
+        /* MVP and Offensive Player of the Year: the vote decides (see vote), and the card shows the winner's season */
+        const v = vote(name, avg), mine = v.findIndex(c => c.me), as = c => ({ name: c.me ? C.name : c.m.name, ab: TEAMS[c.i].ab, pos: c.pos, me: c.me });
+        wins = mine === 0;
+        close = mine >= 0 && mine <= 2;
+        others = v.filter(c => !c.me).slice(0, 3).map(as);
+        stat = lineAt(v[0].m, v[0].pos);
       }
       /* All-League at your position goes to the men who led the league there (the leaders table), not to strangers:
-         the passing champion is not left off the All-League team */
-      if (who === 'pos') others = L.rows.filter(x => !x.me).slice(0, 3).map(x => ({ name: x.name, ab: x.ab, pos: C.pos, riv: x.riv })).concat(others).slice(0, 3);
+         the passing champion is not left off the All-League team; and you make it by leading or finishing second there
+         (receivers: the team takes two), whatever your grades */
+      if (who === 'pos') {
+        others = L.rows.filter(x => !x.me).slice(0, 3).map(x => ({ name: x.name, ab: x.ab, pos: C.pos, riv: x.riv })).concat(others).slice(0, 3);
+        const rank = L.rows.findIndex(x => x.me);
+        if (rank >= 0 && rank < (C.pos === 'WR' ? 2 : 1)) wins = close = true;
+      }
       const winner = wins ? me : others[0], noms = (close ? [me, ...others.slice(0, 2)] : others).filter(n => n !== winner);
-      night.push({ a: name + (who === 'pos' ? ' · ' + POS[C.pos].label : ''), w: winner, n: noms.slice(0, 2), xp: wins ? gain : 0 });
+      night.push({ a: name + (who === 'pos' ? ' · ' + POS[C.pos].label : ''), w: winner, n: noms.slice(0, 2), xp: wins ? gain : 0, ...(stat ? { stat } : {}) });
       if (wins) {
         won.push(name);
         xp += gain;
@@ -630,6 +661,7 @@
     ['honor', 'All-League', 'Earn a season honor', () => (C.awards || []).length > 0],
     ['ring', 'Champion', 'Win the title', () => C.rings > 0],
     ['dyn', 'Dynasty', 'Win three titles', () => C.rings >= 3],
+    ['fmvp', 'Biggest stage', 'Be the championship game MVP', () => (C.awards || []).some(a => a.name === 'Championship Game MVP')],
     ['riv', 'Settled', 'Finish a season ahead of your rival', () => !!C.beatRival]];
 
   function checkTrophies() {
@@ -842,12 +874,16 @@
       clips: ['pa.draft.' + pick, 'pa.select.' + PG.vk(tm)].concat(C.pos === 'QB' ? ['pa.qb'] : C.pos === 'WR' ? ['pa.wr'] : []) });  // recorded: the stadium announcer
   }
 
+  const TROPHY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5a5 5 0 01-4 4.9V16h3v3H8v-3h3v-3.1A5 5 0 017 8zM3 4.5h3V9a3.5 3.5 0 01-3-3.4zm18 0v1.1A3.5 3.5 0 0118 9V4.5z"/></svg>';
+
   /* ---------- hub ---------- */
   function nextCard() {
     const t = C.team;
     if (C.phase === 'done') {
       const po = C.po;
-      return `<div class="nx"><small>Season ${C.season} complete</small><h4>${po.finish}</h4>
+      const ch = po.finish === 'Champion';
+      return `<div class="nx${ch?' champ':''}"${ch?` style="--c:${team(t).c1}"`:''}><small>Season ${C.season} complete</small><h4>${ch?`${TROPHY_ICON}League champions`:po.finish}</h4>
+  ${ch?`<p class="chn">${C.rings>1?`Title number ${C.rings}`:'Your first title'}${po.fmvp?` · Championship Game MVP: ${po.fmvp.me?'you':`#${po.fmvp.num} ${esc(po.fmvp.name)}`}`:''}</p>`:po.fmvp?`<p class="chn">Championship Game MVP: #${po.fmvp.num} ${esc(po.fmvp.name)} (${esc(po.fmvp.ab)})</p>`:''}
   ${po.night ? '<button class="btn2" id="an" style="margin:0 0 8px">Awards night</button>' : ''}${po.star && !po.star.done ? '<button class="go" id="asg" style="margin:0 0 8px">All-Star Game \u00b7 you are invited</button>' : ''}<div class="sdn"><span><b>${recTxt(t)}</b>${team(t).ab} record</span><span><b>${team(po.champ).ab}</b>${po.champ===t?'Champions':'Champion'}</span>${po.bonus?`<span><b>+${fmt(po.bonus)}</b>Bonus XP</span>`:''}</div>
   ${po.awards&&po.awards.length?`<div class="pcc" style="margin:0 0 8px">${po.awards.map(a=>`<span>${esc(a)}</span>`).join('')}</div>`:''}<p>${po.rival?`${esc(po.rival)}<br>`:''}Your season: ${line(C.stats)}.</p>
   ${deal().left>0?`<button class="go sm" id="nxs">Start season ${C.season+1}</button><p class="note" style="margin:8px 0 0">Under contract for ${deal().left} more season${deal().left>1?'s':''} at ${money(deal().pay)}.</p>`
@@ -1502,9 +1538,9 @@
      first, the MVP last). Each card starts sealed with its nominees on it; the stadium announcer introduces the award,
      a drum roll, then the winner's name comes up to applause, louder and with a fanfare when it is you. "Reveal all"
      opens every card at once, and Continue works at any point. With the sound off the cards open on a timer. */
-  const AW_CLIP = a => (/^League MVP/.test(a) ? 'mvp' : /^Offensive/.test(a) ? 'opoy' : /^Rookie/.test(a) ? 'roy' : /^All-League/.test(a) ? 'all' : 'title');
+  const AW_CLIP = a => (/^League MVP/.test(a) ? 'mvp' : /^Championship/.test(a) ? 'fmvp' : /^Offensive/.test(a) ? 'opoy' : /^Rookie/.test(a) ? 'roy' : /^All-League/.test(a) ? 'all' : 'title');
   const AW_SAY = { mvp: 'And now, the league’s Most Valuable Player. The winner is...', opoy: 'The Offensive Player of the Year award goes to...', roy: 'This year’s Rookie of the Year is...',
-    all: 'Named to this year’s All-League team...', title: 'This season’s statistical champion at the position is...' };
+    all: 'Named to this year’s All-League team...', fmvp: 'The Championship Game MVP is...', title: 'This season’s statistical champion at the position is...' };
 
   function showAwards(then) {
     const po = C.po, list = (po.night || []).slice().reverse(), mine = list.filter(x => x.w.me);
@@ -1906,7 +1942,7 @@
     /* a rival game opens with the two of you face to face at midfield: his words, and yours if you called him out */
     const rivalry = C.rival && C.rival.team === opp ? { name: C.rival.name, quote: rivalSays(), mine: C.social && C.social.callout && C.social.callout.team === opp ? C.social.callout.quote : '' } : null;
     const pt = LG.prime(C), env = gameEnv();
-    PG.startGame({ ...gameMates(), a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[opp] - (oppInj(opp) ? oppInj(opp).pen : 0)], diff: PG.lvlOf(C), share: share(), callout: call, rivalry,
+    PG.startGame({ ...gameMates(), a: C.team, b: opp, ql: C.ql, mode: 'career', lock: POS[C.pos].role, hero: hero(), ovr: [C.ovrs[C.team], C.ovrs[opp] - (oppInj(opp) ? oppInj(opp).pen : 0)], diff: PG.lvlOf(C), share: share(), callout: call, rivalry, title: C.phase === 'final',
       away: !LG.home(C), kr: retNow(), prime: pt, around: LG.preWeek && LG.full(C) ? LG.preWeek(C) : null, highs: Object.assign({}, C.highs || {}), recs: recsLive(),
       mustWin: C.phase !== 'reg', env, line: chip, goals: m => goals().map(g => ({ d: g.d, ok: !!g.t(m) })), onEnd: r => gameEnd(r, opp), onQuit: () => showHub('up') });
   }
@@ -1949,6 +1985,15 @@
     const base = xpFor(m, won), lv = PG.lvlOf(C), hard = lv >= 3 ? [[`${PG.LEVELS[lv]} bonus`, Math.round(base.reduce((t, [, v]) => t + v, 0) * (lv > 3 ? 0.3 : 0.2))]] : [];
     const items = base.concat(hard, star ? [['Player of the game', 300]] : [], beatRival ? [['Beat your rival', 300]] : []), met = gl.filter(g => g.ok).length, [pts, grade] = gradeOf(m, won, met);
     const prime = LG.prime(C), playoff0 = C.phase !== 'reg', away = !LG.home(C);
+    /* The championship game's MVP: the winning side's best man that day (the game names him). Yours: an award, XP,
+       and a place in the record book and the Hall of Fame. */
+    const titleGame = C.phase === 'final';
+    let fmvp = null;
+    if (titleGame && us !== them) {
+      const side = won ? 0 : 1, w = r.wmvp && r.wmvp.team === side ? r.wmvp : r.potg && r.potg.team === side ? r.potg : null;
+      if (w) fmvp = { name: w.name, num: w.num, line: w.line, ab: team(won ? C.team : opp).ab, me: won && w.role === POS[C.pos].role };
+    }
+    if (fmvp && fmvp.me) items.push(['Championship Game MVP', 1000]);
     /* chemistry after this game: every ball between you and your partner counts */
     const pt = partner(), L = r.mateLog || {}, chem0 = pt ? pt.chem : 0;
     if (pt) {
@@ -2023,6 +2068,14 @@
         if (PG.milestones) PG.milestones.earn('title');
       }
       closeSeason(fin);
+      C.po.fmvp = fmvp;  // shown on the season card and at awards night
+      if (fmvp && C.po.night) C.po.night.splice(1, 0, { a: 'Championship Game MVP', w: fmvp.me ? { name: C.name, ab: TEAMS[C.team].ab, pos: C.pos, me: true } : { name: fmvp.name, ab: fmvp.ab, pos: '' }, n: [], xp: fmvp.me ? 1000 : 0, stat: fmvp.line || '' });  // read out just before the MVP
+      if (fmvp && fmvp.me) {
+        C.awards.push({ season: C.season, name: 'Championship Game MVP' });
+        C.po.awards = (C.po.awards || []).concat('Championship Game MVP');
+        const h = C.hist[C.hist.length - 1];
+        if (h && h.season === C.season) h.awards = (h.awards || []).concat('Championship Game MVP');
+      }
     } else pickGoals();
     C.coach = coachSays(m, grade, pts, won, met, role0, role1);
     /* the media: how loud the reaction is, what it does to your following, and what the reporters will ask */
@@ -2030,7 +2083,7 @@
     if (C.pos === 'QB') weak = m.pint > 1 ? `${m.pint} interceptions` : m.pint === 1 ? 'an interception' : m.att >= 6 && m.comp / m.att < 0.5 ? `${m.comp} of ${m.att} passing` : '';
     if (C.pos === 'WR') weak = m.tgt >= 3 && m.rec / m.tgt < 0.5 ? `${m.rec} catches on ${m.tgt} targets` : m.tgt === 0 ? 'not one target all day' : m.tgt === 1 ? 'one target all day' : '';
     // coachLine: his first sentence, or the first two when the first is only a word or two ("Solid.")
-    const ctx = { name: C.name, num: C.num, pos: C.pos, team: C.team, opp, won, us, them, ot: !!r.ot, m, pts, star, rival: C.rival, rivalGame: !!C.rival && C.rival.team === opp, playoff, callRes, coachName: so.coachName, away, prime, inj: inj0, season: C.season, left: deal().left, seen: C.pressSeen || [],
+    const ctx = { name: C.name, num: C.num, pos: C.pos, team: C.team, opp, won, us, them, ot: !!r.ot, title: titleGame, champ: titleGame && won, fmvp, rings: C.rings, m, pts, star, rival: C.rival, rivalGame: !!C.rival && C.rival.team === opp, playoff, callRes, coachName: so.coachName, away, prime, inj: inj0, season: C.season, left: deal().left, seen: C.pressSeen || [],
       streakW: won ? streak('W') : 0, streakL: !won && us !== them ? streak('L') : 0,
       coachLine: (C.coach.match(/^[^.!?]{12,}[.!?]|^[^.!?]+[.!?][^.!?]+[.!?]/) || [C.coach])[0].trim(), next: C.phase === 'done' ? null : nextOpp(), week: C.log.length, wk, head: `${wk} \u00b7 ${res} ${us}\u2013${them} vs ${TEAMS[opp].name}`, weak, role0, role1, mates: so.mates,
       roleUp: ROLES.findIndex(r => r[1] === role1) < ROLES.findIndex(r => r[1] === role0),
@@ -2055,7 +2108,10 @@
     persist();
     const show = () => {
       // drawn again after watching the play of the game
-      scr.innerHTML = `<div class="sheet" style="max-height:80%"><div class="shd"><b>${won?'Victory':res==='T'?'Tie game':'Final'}</b><span>${wk} · ${us}–${them} vs ${team(opp).ab}</span></div>
+      const champ = titleGame && won;
+      scr.innerHTML = `<div class="sheet" style="max-height:80%"><div class="shd"><b>${champ?'Champions':won?'Victory':res==='T'?'Tie game':'Final'}</b><span>${wk} · ${us}–${them} vs ${team(opp).ab}</span></div>
+  ${champ?`<div class="chc" style="--c:${team(C.team).c1};color:${PG.inkOn(team(C.team).c1)}">${TROPHY_ICON}<div><small>Season ${C.season} · league champions</small><b>${esc(full(C.team))}</b><span>${C.rings>1?`Title number ${C.rings}`:'Your first title'}</span></div></div>`:''}
+  ${titleGame&&fmvp?`<div class="fmv${fmvp.me?' me':''}"><small>Championship Game MVP</small><b>${fmvp.me?esc(C.name):`#${fmvp.num} ${esc(fmvp.name)}`} <em>${esc(fmvp.ab)}</em></b><span>${esc(fmvp.line||'')}</span>${fmvp.me?'<i>+1,000 XP</i>':''}</div>`:''}
   <div class="rs"><i class="${won?'w':res==='T'?'t':'l'}"><small>Grade</small>${grade}</i><div><b>${us}–${them} <em>${won?'Win':res==='T'?'Tie':'Loss'}</em></b><span>${line(m)}</span></div></div>
   <div class="trk" style="margin-top:6px"><span><b>+${fmt(xp)}</b> XP earned</span><span><b>${C.trust}</b> coach trust (${dTrust>=0?'+':''}${dTrust})</span></div>
   ${snapG||pt?`<div class="trk" style="margin-top:6px">${snapG?`<span><b>${snapAvg(snapG)}</b> snap grade · ${snapG.n} snaps</span>`:''}${pt?`<span><b>${Math.round(pt.chem)}</b> chemistry with ${esc(pt.last)} (${dChem>=0?'+':''}${dChem})</span>`:''}</div>`:''}
@@ -2095,6 +2151,8 @@
   PG.media.onChange = () => C && C.social && persist();
 
   PG.career = {
+    /* test hook: the MVP or Offensive Player of the Year vote as it stands, best first */
+    vote: (name = 'League MVP', avg = 6) => vote(name, avg).slice(0, 5).map(c => ({ me: c.me, pos: c.pos, ab: TEAMS[c.i].ab, name: c.me ? C.name : c.m.name, sc: +c.sc.toFixed(2), line: lineAt(c.m, c.pos) })),
     hall() {
       PG.toMenu();
       showHall(null);

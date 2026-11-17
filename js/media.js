@@ -297,7 +297,12 @@
     if (lost && c.streakL >= 2) P(fan(c.team), F2(['{n} losses in a row. Something has to change.', 'Losing streak at {n}. I need a win before I need a therapist.', 'Not panicking. Ok, a little panicking.']), 1);
     if (c.won && c.away) P(fan(c.team), F2(['Love a road win. Quiet the whole building.', 'Went into {OC} and took it. That’s a real team.', 'Road dub. The flight home hits different.']), 0.9);
     if (c.prime) P(neutral(), F2(t === 'great' || t === 'good' ? ['Primetime and {L} showed up. Noted.', 'Whole league watching and {L} delivered.'] : ['Big stage, quiet night for {L}.', 'Primetime wasn’t kind to {L}.']), 1.1);
-    if (c.playoff) P(fan(c.team), F2(c.won ? ['SURVIVE AND ADVANCE 🗣️', 'Playoff {L} is a different person.', 'Still dancing. Still believing.'] : ['Season’s over. Proud of this group anyway.', 'Hurts. {L} gave us everything.', 'We’ll be back. That’s a promise.']), 1.3);
+    if (c.playoff && !c.title) P(fan(c.team), F2(c.won ? ['SURVIVE AND ADVANCE 🗣️', 'Playoff {L} is a different person.', 'Still dancing. Still believing.'] : ['Season’s over. Proud of this group anyway.', 'Hurts. {L} gave us everything.', 'We’ll be back. That’s a promise.']), 1.3);
+    if (c.title && !c.won) {
+      // one game from a ring
+      P(fan(c.team), F2(['One game from a ring. This one is going to hurt for a long time.', 'So close. Proud of every one of them anyway.', 'We’ll be back here. Next time we finish it.']), 1.4);
+      P(fan(c.opp), F2(['CHAMPIONS!!! 🏆🏆🏆', 'Good season, {C}. But the ring is ours.']), 1.2);
+    }
     if (c.wx === 'rain' || c.wx === 'snow') P(neutral(), F2(c.wx === 'snow' ? (t === 'bad' ? ['Snow game and {L} couldn’t find his footing.'] : ['{L} in the snow. Football the way it should be. ❄️', 'Snow globe football and {L} played like it was a dome.']) : (t === 'bad' ? ['Wet ball, rough day for {L}.'] : ['Rain game, wet ball, and {L} held on anyway.', 'Played in a monsoon and {L} still produced. Respect.'])), 1);
     if (c.inj) P(fan(c.team), F2(['Played through {INJ}. That’s a tough man.', 'Questionable all week and {L} suited up anyway. Respect.']), 1.1);
     if (c.season === 1 && (c.week || 0) <= 4) P(legend(), F2(t === 'bad' ? ['Rookie year is hard. {L} will learn more from this one than from the good ones.'] : ['Remember, {L} is a rookie. That’s scary for the rest of the league.', 'Rookie doing that? I didn’t do that until year three.']), 1.3);
@@ -318,6 +323,28 @@
     return out;
   }
 
+  /* ---------- the title ----------
+     A championship won: the league, the team, the fans, the man who was named the game's MVP, your rival, an old
+     player. These lead the feed, under the final. */
+  function titlePosts(c, x) {
+    const out = [], F = s => fill(s, x), add = (by, s, k, card) => {
+      if (!by) return;  // that kind of account has already posted this week
+      const p = post(by, F(s), c, k);
+      if (card) p.card = card;
+      out.push(p);
+    };
+    const league = { who: 'The League', at: 'theleague', bio: 'Official account', kind: 'press', col: '#334155', ver: true };
+    add(league, any(['The {C} {T} are league champions.', 'Your league champions: the {C} {T}.']), 4);
+    add(teamAcct(c), any(['CHAMPIONS. 🏆', 'Champions. Every one of you. 🏆', 'We did it, {C}. 🏆']), 4.5, c.num != null && c.fmvp && c.fmvp.me ? { t: 'pog', pic: [c.team, c.num, c.away ? 0 : 1, 'me'], cells: statCells(c).slice(0, 3) } : null);
+    if (c.fmvp) add(league, c.fmvp.me ? `${x.N} is the Championship Game MVP. ${c.fmvp.line ? c.fmvp.line + '.' : ''}` : `#${c.fmvp.num} ${c.fmvp.name} is the Championship Game MVP. ${c.fmvp.line ? c.fmvp.line + '.' : ''}`, 3);
+    for (const s of ['WE ARE THE CHAMPIONS OF THE WHOLE LEAGUE 🏆🏆🏆', 'I have waited my whole life for this. I’m crying in a parking lot.', 'Parade route when? I’ll be there at 5am.', '{L} brought a title to {C}. Build the statue.', 'Champions. Say it again. CHAMPIONS.', 'Tell my boss I won’t be in Monday. Or Tuesday.'].sort(() => Math.random() - 0.5).slice(0, 3)) add(fan(c.team), s, 2.2);
+    if (c.fmvp && c.fmvp.me) add(analyst(), any(['The biggest game of the year, and {L} owned it. That’s a legacy game.', 'Championship Game MVP. Whatever {L} does from here, this one is on the résumé forever.']), 2.4);
+    if (c.rival) add(rivalBy(c, x), any(['Congrats on the ring. Enjoy it. I’m coming for the next one.', 'Respect. You earned that one.']), 2.6);
+    add(legend(), any([`Rings are forever. ${x.L} has ${c.rings > 1 ? c.rings : 'one'} now.`, 'You never forget your first one. Congratulations, {C}.']), 2);
+    add(fan(c.opp), any(['Congrats {C}. Earned it.', 'Hurts. Good season though.']), 1);
+    return out;
+  }
+
   /* ---------- the reaction to a game ---------- */
   function reaction(c) {
     dealt = new Set();
@@ -334,19 +361,22 @@
     const myFan = k => post(fan(c.team), D(myLines), c, k), theirFan = k => post(fan(c.opp), D(theirs), c, k);
     // the reporter's final always leads, the score drawn as a card, with the thread under it
     const fin = post(reporter(), c.away ? `Final from ${x.OC}.` : `Final in ${x.C}.`, c, 2.2);
-    fin.card = { t: 'final', a: [c.team, c.us], b: [c.opp, c.them], tag: c.playoff ? 'Final · playoffs' : 'Final' };
+    fin.card = { t: 'final', a: [c.team, c.us], b: [c.opp, c.them], tag: c.title ? 'Final · championship' : c.playoff ? 'Final · playoffs' : 'Final' };
     fin.replies = [];
     [myFan(0.4), theirFan(0.3), post(neutral(), D(lost && t !== 'bad' ? ['Tough loss. On to next week.', 'Shame to waste a line like that.', 'Long trip home for the {T}.'] : THREAD[t]), c, 0.2)].forEach(p => keep(fin.replies, p));
     for (let i = 0; i < Math.floor(b / 2.5); i++) keep(fin.replies, Math.random() < 0.65 ? myFan(0.3) : theirFan(0.3));  // the bigger the day, the longer the thread
     fin.rep = Math.max(fin.rep, fin.replies.length);
     out.push(fin);
     // the team's own account names its player of the game, with his picture
-    if (c.star && c.num != null) {
+    if (c.star && c.num != null && !c.champ) {  // (on a title day the team's post is the championship one)
       const pg = post(teamAcct(c), fill(any(['What a day.', '{L} did that. 🔥', 'Takeover.', 'Ours.']), x), c, 2);
       pg.card = { t: 'pog', pic: [c.team, c.num, c.away ? 0 : 1, 'me'], cells: statCells(c).slice(0, 3) };
       out.push(pg);
     }
-    if (c.trending) out.push({ kind: 'trend', text: F(any(['#{LU}SZN', '#{T}Rising', '#{L}Effect', '#{AB}vs{OAB}'])), sub: `Trending in football · ${short(Math.round(c.fol * (0.6 + b / 6)))} posts` });
+    if (c.champ) {
+      out.push({ kind: 'trend', text: `#${x.T.replace(/\s/g, '')}Champions`, sub: `Trending everywhere · ${short(Math.round(c.fol * 3 + 50000))} posts` });
+      titlePosts(c, x).forEach(p => out.push(p));
+    } else if (c.trending) out.push({ kind: 'trend', text: F(any(['#{LU}SZN', '#{T}Rising', '#{L}Effect', '#{AB}vs{OAB}'])), sub: `Trending in football · ${short(Math.round(c.fol * (0.6 + b / 6)))} posts` });
     // how many voices: a quiet day draws a handful, a great one floods the mentions
     const n = Math.round(4 + b * 1.4), pool = [];
     for (let i = 0; i < n; i++) {
@@ -493,8 +523,13 @@
         A('I trusted my feet. When my feet are right, it goes where I want.', 'humble', 1, 2),
         A('That’s what I do. This wasn’t a surprise to me.', 'confident', 0, 5)]] },
     ]);
-    // 2. the rival or your role when either is the story, else something about the game itself
-    if (c.rivalGame && c.rival) ask(c.won ? any(['{R} had a lot to say before this one. Anything for him now?', 'You and {R} met at midfield afterward. What was said?']) : any(['{R} got the better of you today. Your thoughts on him?', '{R} is going to enjoy this one. How long does it stay with you?']), c.won ? [
+    // 2. the title, when it was won; else the rival or your role when either is the story, else something about the game itself
+    if (c.champ) ask(any(['You’re a champion. What goes through your head right now?', 'What does this title mean to {C}?', 'Champions. When did you know this team could do it?']), [
+      A('This is for the city and for everybody in that locker room. I just played my part.', 'team', 2, 2),
+      A('I’ve been dreaming about this since I was a kid. I don’t have words.', 'humble', 1, 3),
+      A('I told everybody. Nobody believed us. Now they have to.', 'confident', 0, 7),
+      A('One ring. I want more of them.', 'confident', 0, 5)], c.team, 'on winning the title');
+    else if (c.rivalGame && c.rival) ask(c.won ? any(['{R} had a lot to say before this one. Anything for him now?', 'You and {R} met at midfield afterward. What was said?']) : any(['{R} got the better of you today. Your thoughts on him?', '{R} is going to enjoy this one. How long does it stay with you?']), c.won ? [
       A('Tell him I said good game. He’ll need the practice.', 'trash', -1, 8),
       A('He’s a great player. Today was just our day.', 'respect', 1, 1),
       A('The scoreboard says everything I need to say.', 'confident', 0, 5)] : [
