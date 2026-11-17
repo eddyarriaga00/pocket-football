@@ -1,4 +1,4 @@
-/* Interface audit for Pocket Gridiron. Load tools/harness.js first, then:
+/* Interface audit for PocketFootball. Load tools/harness.js first, then:
    await fetch('tools/audit.js?'+Date.now()).then(r=>r.text()).then(t=>(0,eval)(t))
    A.check('label')    inspect what is on screen now; findings are added to the log
    await A.menus()     walk the menu screens and inspect each (it starts a new test season and a new test career)

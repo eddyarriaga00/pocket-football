@@ -1,4 +1,4 @@
-/* A rougher test player for Pocket Gridiron, for the rare endings. Load after tools/harness.js:
+/* A rougher test player for PocketFootball, for the rare endings. Load after tools/harness.js:
    await fetch('tools/chaos.js?'+Date.now()).then(r=>r.text()).then(t=>(0,eval)(t))
    X.exh(n)            n exhibition games on random teams, time and weather
    X.career('QB', n)   a new career on a random team, n games

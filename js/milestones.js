@@ -1,4 +1,4 @@
-/* Pocket Gridiron: milestones. A short list of things worth doing once, earned in any mode and kept on this device.
+/* PocketFootball: milestones. A short list of things worth doing once, earned in any mode and kept on this device.
    game.js reports every finished game here; Season, Career and the training camp report their own. */
 (() => {
   'use strict';

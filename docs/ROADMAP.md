@@ -1,3 +1,5 @@
+# PocketFootball (called Pocket Gridiron until 2026-11-16)
+
 # Pocket Gridiron roadmap
 
 Working plan for the overnight build session that started 2026-11-12 around 02:45 EST. The owner asked for
@@ -16,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `a523399`, before the rename to PocketFootball (2026-11-16 night).
   - `9f56170`, before the new crowd and stands, the uniform finishes and turf wear (2026-11-16 night).
   - `d41c07d`, before the service worker always asking for fresh game files (2026-11-16 night).
   - `8ec7bd0`, before the one-time re-count of last season's MVP vote (2026-11-16 night).
@@ -3035,6 +3038,15 @@ six were done as the pro game has them; the choices where there was one are mine
   ring of lights and the sky, darker below, stronger at the edges; Phong metal facemasks; satin pants. The menu and
   test models use the same. Turf: wear down the middle between the hashes. Fingerprint unchanged; the rough player,
   careers and the audit clean. Not measured: the frame rate on a phone (the test pane was hidden).
+
+- 2026-11-16 (night, "we need to change the game name entirely to PocketFootball"). Renamed wherever a player sees it:
+  the title screen (POCKET / FOOTBALL, one word that may break in two on a narrow phone), the turn-your-phone
+  message, the page and home-screen titles, the manifest, the stadium video board and the sideline pads
+  (POCKETFOOTBALL), the shield painted on the field (PF), the one-file build's title, the README and every file's
+  header. Kept: the saved-data keys (pg.*, so every career, season and setting carries over), the internal PG
+  namespace, the service worker's cache name, and the repository and web address (pocket-gridiron), until the owner
+  says whether to move them. The fictional outlets in the feed ("The Gridiron Ledger") are left as they are.
+  Audit empty at 320x568; the title fits.
 
 ## Morning hand-off
 

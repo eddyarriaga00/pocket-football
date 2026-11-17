@@ -1,4 +1,4 @@
-/* Pocket Gridiron: the data tables. Teams, formations, routes and both playbooks.
+/* PocketFootball: the data tables. Teams, formations, routes and both playbooks.
    Loaded before game.js, which reads everything from PG.data. Nothing in here has behaviour. */
 (() => {
   'use strict';

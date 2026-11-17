@@ -1,4 +1,4 @@
-/* Pocket Gridiron: engine, rendering, exhibition UI. Classic script, exposes window.PG.
+/* PocketFootball: engine, rendering, exhibition UI. Classic script, exposes window.PG.
    Coordinates are yards: x 0..53.33 across, y 0..100 between goal lines. Team 0 (the user) attacks +y. */
 (() => {
   'use strict';
@@ -26,7 +26,7 @@
 <div id="screen"></div><div id="ov" hidden></div>`;
 
   /* a phone on its side: the stylesheet shows this instead of a sliver of a game (small touch screens in landscape only) */
-  document.body.insertAdjacentHTML('beforeend', '<div id="turn" role="status"><i></i><b>Turn your phone upright</b><span>Pocket Gridiron is played in portrait.</span></div>');
+  document.body.insertAdjacentHTML('beforeend', '<div id="turn" role="status"><i></i><b>Turn your phone upright</b><span>PocketFootball is played in portrait.</span></div>');
   const cv = $('#c'), ctx = cv.getContext('2d'), pad = $('#pad'), scr = $('#screen');
   const FW = 53.33, PITCH = 48 * Math.PI / 180, CS = Math.cos(PITCH), SN = Math.sin(PITCH), PS = 1.6, CAMH = 19.3;
   let W = 1, H = 1, F = 1, CY = 1, DPR = 1, AUTO = false, QUIET = false, FDT = 0.016, SDT = 0.016, shake = 0;  // FDT: last frame time, SDT: current simulation step
@@ -6374,7 +6374,7 @@
     // the hero: your career player if there is one, else your season's team, else your team in the settings
     const cd = cs && PG.career.data, hi = cd ? cd.team : st != null ? st : SET.me || 0;
     const hero = heroHtml(TEAMS[hi], true, cd ? cd.num : 12, cd ? cd.look : null, cd ? `<b>${esc(cd.name)}</b> #${cd.num} · ${cd.pos}` : `<b>${esc(TEAMS[hi].city)}</b> ${esc(TEAMS[hi].name)}`);
-    scr.innerHTML = `<div class="menu home fill"><h1>Pocket<br><em>Gridiron</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p>${hero}
+    scr.innerHTML = `<div class="menu home fill"><h1>Pocket<wbr><em>Football</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p>${hero}
   ${offer?'<div class="offer"><b>First time here?</b><span>Training camp teaches passing, running and tackling in three short drills.</span><div class="row2"><button class="go sm" id="oY">Start camp</button><button class="btn2" id="oN">Not now</button></div></div>':''}
   <button class="mode main" id="mC">${menuBadge(ct, 'career')}<b>Career</b><span>${cs||'Create a player, lock in at your position, and build a legacy one season at a time.'}</span><i>›</i></button>
   <button class="mode" id="mSe">${menuBadge(st, 'season')}<b>Season</b><span>${ss||'Take one team through ten games and the playoffs.'}</span><i>›</i></button>

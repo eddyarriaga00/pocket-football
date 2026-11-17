@@ -1,4 +1,4 @@
-/* Pocket Gridiron: GLSL shaders for the 3D renderer.
+/* PocketFootball: GLSL shaders for the 3D renderer.
    render3d.js asks this file for four things: the turf, the sky dome, the crowd in the stands and a rim light
    that is patched into the players' materials. Everything is procedural, so there are still no image files.
    

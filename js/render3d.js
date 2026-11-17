@@ -1,4 +1,4 @@
-/* Pocket Gridiron: 3D renderer (three.js).
+/* PocketFootball: 3D renderer (three.js).
    Draws the field, stadium, players and ball. game.js keeps its 2D canvas on top as a transparent overlay
    for letters, tags and the joystick, and asks this module to project field points onto the screen.
    
@@ -3378,7 +3378,7 @@
       c.fillRect(sx - w * 0.84, sy - h * 0.84, w * 1.68, h * 0.3);
       c.fillStyle = '#f2f5f8';
       c.font = `800 ${1.25 * S}px Archivo, Arial, sans-serif`;
-      c.fillText('PG', sx, sy + h * 0.22);
+      c.fillText('PF', sx, sy + h * 0.22);
       c.globalAlpha = 1;
     }
     c.strokeStyle = 'rgba(255,255,255,0.85)';
@@ -3419,7 +3419,7 @@
     });
     ribbonTex.needsUpdate = true;
     /* the padded wall: sixteen panels, mostly the home team's color with a seam between each, every fourth one a board */
-    const w = padsCanvas.getContext('2d'), pw = padsCanvas.width / 16, ph = padsCanvas.height, says = [t0.name.toUpperCase(), 'POCKET GRIDIRON', t0.ab, 'GAME DAY'];
+    const w = padsCanvas.getContext('2d'), pw = padsCanvas.width / 16, ph = padsCanvas.height, says = [t0.name.toUpperCase(), 'POCKETFOOTBALL', t0.ab, 'GAME DAY'];
     w.textAlign = 'center';
     w.textBaseline = 'middle';
     for (let i = 0; i < 16; i++) {
@@ -3452,7 +3452,7 @@
     if (!G.ros) {
       c.fillStyle = '#ffffff';
       c.font = '800 54px Archivo, Arial, sans-serif';
-      c.fillText('POCKET GRIDIRON', w / 2, h / 2 + 2, w - 40);
+      c.fillText('POCKETFOOTBALL', w / 2, h / 2 + 2, w - 40);
     } else {
       c.fillStyle = t0.c1;
       c.fillRect(0, 0, 150, 104);

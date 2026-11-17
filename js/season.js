@@ -1,4 +1,4 @@
-/* Pocket Gridiron: Season mode.
+/* PocketFootball: Season mode.
    Take one team through the league and call every snap on both sides of the ball. The league itself
    (schedule, standings, simulated scores, playoffs) is in league.js; this file is the save and the screens. */
 (() => {

@@ -1,4 +1,4 @@
-/* Pocket Gridiron: online. The owner's choices (2026-11-16), all on free plans:
+/* PocketFootball: online. The owner's choices (2026-11-16), all on free plans:
    - a global chat on Firebase's Realtime Database (the free Spark plan: no card, 100 phones connected at once);
    - head to head phone to phone through PeerJS, one phone showing a code the other types in;
    - a name only: what a player types, and a hidden id Firebase gives this device (anonymous sign-in), so a mute,

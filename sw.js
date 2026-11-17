@@ -1,4 +1,4 @@
-/* Pocket Gridiron: service worker.
+/* PocketFootball: service worker.
    Network first, cache as a fallback: when there is a connection you always get the newest build, and when there
    is none the last one you loaded still plays. Nothing is ever served from the cache while the network answers,
    so a new push to the site can never be hidden by an old copy. */

@@ -1,4 +1,6 @@
-# Pocket Gridiron
+# PocketFootball
+
+(Called PocketFootball until 2026-11-16; the repository and the web address keep the old name.)
 
 <img src="icons/icon-512.png" width="112" align="right" alt="">
 

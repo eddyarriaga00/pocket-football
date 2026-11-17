@@ -1,4 +1,4 @@
-/* Pass check for Pocket Gridiron: how throws land, yours and the computer's. Needs tools/harness.js loaded first.
+/* Pass check for PocketFootball: how throws land, yours and the computer's. Needs tools/harness.js loaded first.
    await fetch('tools/passcheck.js?'+Date.now()).then(r=>r.text()).then(t=>(0,eval)(t))
    PC.run(4)       four exhibitions played by the harness's test player (who throws to his most open man)
    PC.run(4, 0)    the same on the easiest difficulty (the slider's stop, 0 to 4)

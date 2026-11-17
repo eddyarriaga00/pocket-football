@@ -1,4 +1,4 @@
-/* Test harness for Pocket Gridiron. Load it in the browser console or the preview pane:
+/* Test harness for PocketFootball. Load it in the browser console or the preview pane:
    await fetch('tools/harness.js?'+Date.now()).then(r=>r.text()).then(t=>(0,eval)(t))
    Then:  H.sim(12,180)   computer vs computer balance numbers
    H.exh(2,120)    exhibition with a scripted "user" (exercises kickoffs, play calling, passing)

@@ -8,7 +8,7 @@ rd = lambda p: open(os.path.join(root, p), encoding='utf-8').read()
 import json
 vo = rd('js/vo.js')
 PACKS = [(n, v[0]) for n, v in json.loads(vo[vo.index('{'):vo.rindex('}') + 1])['packs'].items()]  # the common pack and one for each team
-out = ('<title>Pocket Gridiron</title>\n'
+out = ('<title>PocketFootball</title>\n'
        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap">\n'
        '<style>\n' + rd('css/game.css') + '</style>\n<div id="app"></div>\n'
        '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.159.0/three.min.js"></script>\n' +

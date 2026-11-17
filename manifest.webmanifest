@@ -1,6 +1,6 @@
 {
-  "name": "Pocket Gridiron",
-  "short_name": "Gridiron",
+  "name": "PocketFootball",
+  "short_name": "PocketFootball",
   "description": "11-on-11 football for portrait phones.",
   "start_url": "./",
   "scope": "./",

@@ -1,4 +1,4 @@
-/* Pocket Gridiron: career mode. Create one player, play only their snaps, earn XP, upgrade, and move
+/* PocketFootball: career mode. Create one player, play only their snaps, earn XP, upgrade, and move
    through seasons. The engine (game.js) handles the locked-player controls and simulates the drives
    the player's unit is not on the field for; this file owns the save, the league and the screens. */
 (() => {

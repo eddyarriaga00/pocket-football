@@ -1,4 +1,4 @@
-/* Pocket Gridiron: the league that Career and Season modes share.
+/* PocketFootball: the league that Career and Season modes share.
    32 teams in two conferences of four divisions (data.js). A ten-week season: the three division rivals twice (weeks
    1-3 and 8-10) and the four teams of another division of the same conference (weeks 4-7, a different one each
    season). The four division winners of each conference make the playoffs, seeded by record: 1 v 4 and 2 v 3 in the

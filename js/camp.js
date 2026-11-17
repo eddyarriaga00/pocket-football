@@ -1,4 +1,4 @@
-/* Pocket Gridiron: training camp. Three short guided drills (passing, running, tackling), five plays each, scored
+/* PocketFootball: training camp. Three short guided drills (passing, running, tackling), five plays each, scored
    with one to three stars. The engine runs them as scripted practice reps (PG.startGame with drill, side, script):
    this file holds the scripts, the scoring and the screens. */
 (() => {

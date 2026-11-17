@@ -1,4 +1,4 @@
-/* Pocket Gridiron: sound engine (second version, 2026-11-12).
+/* PocketFootball: sound engine (second version, 2026-11-12).
    Every sound is made in code with the Web Audio API except the voices: the broadcast booth, the referee, the stadium
    announcer and the players on the field are recorded clips (audio/vo.pack), which tools/voice.py makes from the
    script in tools/commentary.json. No voice is synthesized any more; where a clip is missing, nobody speaks.

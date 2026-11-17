@@ -1,4 +1,4 @@
-/* Pocket Gridiron: the media around a career. Classic script, exposes PG.media.
+/* PocketFootball: the media around a career. Classic script, exposes PG.media.
    After every career game the internet reacts (fans of both teams, analysts, reporters, teammates, your rival, a quote
    from your coach), louder the better you played, and then you face three questions at the podium. What you say
    moves the coach's trust in you, your hype and your following, and a callout of the next opponent follows you into
