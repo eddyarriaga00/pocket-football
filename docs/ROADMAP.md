@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `81c16db`, before three-minute quarters by default (2026-11-17).
   - `ff5d7d8`, before the NFL calendar (17 games, byes, seven-team playoffs) (2026-11-17).
   - `3d54435`, before more awards, trophies and milestones, and the comment-free one-file build (2026-11-17).
   - `e14de31`, before landscape and computer layouts and the controller and keyboard upgrades (2026-11-17).
@@ -3188,6 +3189,12 @@ six were done as the pro game has them; the choices where there was one are mine
   12 seasons of schedules checked game by game, 600 seasons through every playoff path, careers and a Season through
   the audit at 390, 320 wide, the rough player; play unchanged (the fingerprint differs only in the schedule, re-pinned
   as pg.fingerprint, the old one kept as pg.fingerprint.before-nfl).
+
+- **2026-11-17: three-minute quarters by default.** Asked for: "by default quarter length should be 3 minutes like
+  before". The code's default was already three minutes, but a pick was remembered: an exhibition opened at the last
+  length chosen, and a career or season kept its own. Now an exhibition opens at 3 minutes every time, and each saved
+  career and season goes back to 3 minutes once (C.qlV / S.qlV); a length picked after that sticks. Tested: saved 5-minute
+  settings and career come back at 3; fingerprint unchanged.
 
 ## Morning hand-off
 

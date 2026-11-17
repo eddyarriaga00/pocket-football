@@ -69,6 +69,7 @@
     SET.accV = 2;
     save('pg.settings', SET);
   }
+  SET.ql = 180;  // an exhibition opens at three-minute quarters every time (2026-11-17); the last pick is not carried over
 
   /* ---------- difficulty: one slider, five steps ----------
      0 Rookie to 4 Legend, with Pro (2) in the middle. A game's `diff` is the step. Saves from before the slider hold

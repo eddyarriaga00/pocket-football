@@ -15,6 +15,10 @@
   let S = load(KEY, null);
   if (S && S.v !== 1) S = null;
   if (S && PG.league) PG.league.fix(S);  // a season from the eight-team league: ratings for the new teams too
+  if (S && S.qlV !== 1) {
+    S.ql = 180;  // three-minute quarters are the default (2026-11-17): a length saved before then goes back to it once
+    S.qlV = 1;
+  }
   const persist = () => save(KEY, S);
 
   function ensureRoster() {

@@ -42,6 +42,15 @@
   if (C && C.trust === undefined) C.trust = 70;  // careers from before coach trust existed stay starters
   if (C && PG.league) PG.league.fix(C);  // a career from the eight-team league: ratings for the new teams too
   if (C && !C.pre && !C.rival) setRival();  // and get a rival
+  /* three-minute quarters are the default (the owner's word, 2026-11-17): a length saved before then goes back to it
+     once, and one picked after that sticks */
+  const qlReset = d => {
+    if (d && d.qlV !== 1) {
+      d.ql = 180;
+      d.qlV = 1;
+    }
+  };
+  qlReset(C);
 
   /* Coach trust (0 to 100) decides how much you play: [trust needed, role, share of your unit's drives] */
   const ROLES = [[60, 'Starter', 1], [35, 'Rotation', 0.6], [0, 'Backup', 0.36]];
@@ -85,6 +94,7 @@
       return false;
     }
     C = d;
+    qlReset(C);
     persist();
     return true;
   }
