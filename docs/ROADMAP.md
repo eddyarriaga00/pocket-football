@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `9f56170`, before the new crowd and stands, the uniform finishes and turf wear (2026-11-16 night).
   - `d41c07d`, before the service worker always asking for fresh game files (2026-11-16 night).
   - `8ec7bd0`, before the one-time re-count of last season's MVP vote (2026-11-16 night).
   - `f74c71a`, before the MVP vote, the Championship Game MVP and the championship experience (2026-11-16 night).
@@ -3019,6 +3020,21 @@ six were done as the pro game has them; the choices where there was one are mine
   next open. Fix for every push from now: the service worker asks for the game's own files fresh each time
   (`cache: 'no-cache'`: the server answers "not changed" in a few bytes); libraries and fonts, versioned in their
   addresses, may still come from the cache, and with no connection the saved copy still plays.
+
+- 2026-11-16 (night, "work on the crowds and stands, but also work on the textures and such"). Stands: each deck's
+  four slopes now carry a seat grid measured in the world (`aSeat`, built by crowdRing in render3d.js): a seat 0.55
+  yards wide everywhere (the end stands' seats had been half again as wide as the sides') and a row about a yard deep
+  (rows had been twice that, so fans were tall and thin). The crowd shader: twenty-seat sections between concrete
+  stairways with a handrail, tunnels into the lower bowl, a rail along the front, each row lit on its step and dark on
+  its riser; fans dressed mostly in home colors with plain clothes among them and a pocket of visitors in one corner,
+  shoulders, a head with hair or a cap, a little sway, and on a big play most stand, hop and raise their arms. Every
+  edge is softened by the size of a pixel in seat units (hard edges sparkled as static; flat per-seat blocks, tried,
+  looked like a mosaic), far off it settles to the crowd's average with a slow mottle, and a stand seen edge-on keeps
+  its rows. Players: a finish per part (`partMat`, SH.rim(material, kind)): jersey cloth (an athletic mesh that fades
+  where it would be under a pixel, and folds) on the torso, pads and sleeve caps; a helmet clear coat reflecting the
+  ring of lights and the sky, darker below, stronger at the edges; Phong metal facemasks; satin pants. The menu and
+  test models use the same. Turf: wear down the middle between the hashes. Fingerprint unchanged; the rough player,
+  careers and the audit clean. Not measured: the frame rate on a phone (the test pane was hidden).
 
 ## Morning hand-off
 

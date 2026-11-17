@@ -385,6 +385,18 @@
     foot: new T.BoxGeometry(0.12, 0.08, 0.26).translate(0, -0.465 + ANKLE, -0.07),
   };
 
+  /* What each part is made of (see SH.rim): jersey cloth, a helmet's clear coat, the metal of a facemask, the satin of
+     the pants; the rest (skin, socks, gloves, shoes) a plain matte. One material per part, shared by every figure. */
+  const FINISH = { torso: 'cloth', pads: 'cloth', sleeveCap: 'cloth', helmet: 'gloss', stripe: 'gloss', mask: 'metal', hips: 'satin', thigh: 'satin' };
+  function partMat(name, rimmed = true) {
+    const k = FINISH[name], m = k === 'gloss' ? new T.MeshPhongMaterial({ color: 0xffffff, shininess: 120, specular: 0x9aa0aa, vertexColors: true })
+      : k === 'metal' ? new T.MeshPhongMaterial({ color: 0xffffff, shininess: 70, specular: 0xb8bec8, vertexColors: true })
+      : k === 'satin' ? new T.MeshPhongMaterial({ color: 0xffffff, shininess: 22, specular: 0x262a30, vertexColors: true })
+      : new T.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
+    if (k === 'cloth') m.extensions = { derivatives: true };  // the mesh fades by pixel size (fwidth); WebGL 1 needs asking
+    return rimmed ? SH.rim(m, k) : m;
+  }
+
   /* [name, joints it follows, color key, what body type scales it ('body', 'limb' or nothing), casts a shadow] */
   const PART_DEFS = [
     ['torso', ['chest'], 'jersey', 'body', 1], ['pads', ['chest'], 'jersey', 'body', 1], ['neck', ['chest'], 'skin'],
@@ -3393,6 +3405,7 @@
     u.uA1.value.set(t0.c1);
     u.uA2.value.set(t0.c2);
     u.uB1.value.set(t1.c1);
+    u.uB2.value.set(t1.c2);
     /* ribbon board between the decks: team blocks */
     const r = ribbonCanvas.getContext('2d'), rw = ribbonCanvas.width, rh = ribbonCanvas.height;
     r.textAlign = 'center';
@@ -3543,10 +3556,27 @@
       quadMesh([x0, h0, -yb], [x1, h0, -yb], [X1, h1, -YB], [X0, h1, -YB], mat, end, v);  // far end
       quadMesh([x1, h0, -ya], [x0, h0, -ya], [X0, h1, -YA], [X1, h1, -YA], mat, end, v);  // near end
     };
+    /* a deck of seats: the same four trapezoids, each carrying its seat grid in world measure (aSeat, see the crowd
+       shader): seat along the row (0.55 yards wide), row up the slope (about a yard deep), which stand, how high */
+    const crowdRing = (x0, x1, ya, yb, h0, grow, rise, deck) => {
+      const X0 = x0 - grow, X1 = x1 + grow, YA = ya - grow, YB = yb + grow, h1 = h0 + rise, rows = Math.round(Math.hypot(grow, rise) / 0.95);
+      const quad = (pts, along, id) => {
+        const pos = [pts[0], pts[1], pts[2], pts[0], pts[2], pts[3]], seat = [];
+        for (const p of pos) seat.push(along(p) / 0.55, (p[1] - h0) / rise * rows, deck * 4 + id, (p[1] - h0) / rise);
+        const g = new T.BufferGeometry();
+        g.setAttribute('position', new T.Float32BufferAttribute(pos.flat(), 3));
+        g.setAttribute('aSeat', new T.Float32BufferAttribute(seat, 4));
+        scene.add(new T.Mesh(g, crowdMat));
+      };
+      quad([[x0, h0, -ya], [x0, h0, -yb], [X0, h1, -YB], [X0, h1, -YA]], p => -p[2], 0);  // left
+      quad([[x1, h0, -yb], [x1, h0, -ya], [X1, h1, -YA], [X1, h1, -YB]], p => p[2] + 500, 1);  // right
+      quad([[x0, h0, -yb], [x1, h0, -yb], [X1, h1, -YB], [X0, h1, -YB]], p => p[0], 2);  // far end
+      quad([[x1, h0, -ya], [x0, h0, -ya], [X0, h1, -YA], [X1, h1, -YA]], p => -p[0] + 300, 3);  // near end
+    };
     wallMat = new T.MeshBasicMaterial({ color: 0x0e1628, side: T.DoubleSide });
-    ring4(-14, FW + 14, -24, 124, 1.6, 40, 22, crowdMat);
+    crowdRing(-14, FW + 14, -24, 124, 1.6, 40, 22, 0);
     ring4(-54, FW + 54, -64, 164, 23.6, 0.01, 5, ribbonMat, 3, 1);  // ribbon board between the decks
-    ring4(-55, FW + 55, -65, 165, 28.6, 34, 24, crowdMat);
+    crowdRing(-55, FW + 55, -65, 165, 28.6, 34, 24, 1);
     /* the rim of the bowl: a fascia over the top row with a strip of lights along it (the stands stopped in a bare edge
        against the sky) */
     const rimC = document.createElement('canvas');
@@ -3806,7 +3836,7 @@
     scene.add(contact);
     /* body parts */
     parts = PART_DEFS.map(([name, joints, color, fit, shadow, opt]) => {
-      const mat = SH.rim(name === 'helmet' ? new T.MeshPhongMaterial({ color: 0xffffff, shininess: 120, specular: 0x9aa0aa, vertexColors: true }) : new T.MeshLambertMaterial({ color: 0xffffff, vertexColors: true }));
+      const mat = partMat(name);
       const mesh = new T.InstancedMesh(GEO[name], mat, CAP * joints.length);
       mesh.instanceMatrix.setUsage(T.DynamicDrawUsage);
       mesh.frustumCulled = false;
@@ -4603,7 +4633,7 @@
       const meshes = {};
       for (const [name, joints, color,,, opt] of PART_DEFS) {
         meshes[name] = joints.map(j => {
-          const m = new T.Mesh(GEO_HI[name] || GEO[name], name === 'helmet' ? new T.MeshPhongMaterial({ shininess: 120, specular: 0x9aa0aa, vertexColors: true }) : new T.MeshLambertMaterial({ vertexColors: true }));
+          const m = new T.Mesh(GEO_HI[name] || GEO[name], partMat(name));
           m.userData.color = color;
           if (opt) m.visible = false;  // the studio figure keeps his helmet on
           f[j].add(m);
@@ -4939,7 +4969,7 @@
     sc.add(f.root);
     for (const [name, joints, color] of PART_DEFS) {
       meshes[name] = joints.map(j => {
-        const m = new T.Mesh(GEO_HI[name] || GEO[name], name === 'helmet' ? new T.MeshPhongMaterial({ shininess: 120, specular: 0x9aa0aa, vertexColors: true }) : new T.MeshLambertMaterial({ vertexColors: true }));
+        const m = new T.Mesh(GEO_HI[name] || GEO[name], partMat(name));
         m.userData.color = color;
         f[j].add(m);
         return m;
