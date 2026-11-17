@@ -21,6 +21,7 @@
   let renderer, scene, camera, post = null, glowAmount = 0.8, W = 1, H = 1;
   let fieldTex, fieldCanvas, crowdMat, skyMat, skyDome, ribbonTex, ribbonCanvas, boardTex, boardCanvas, boardKey = '';
   let tee = null, rimMat = null, padsMat = null, padsCanvas = null, padsTex = null;  // the padded wall round the field, and what is painted on it
+  const postPads = [];  // the goal post pads' materials (painted the home color in paintField)
   let parts = [], figs = [], contact, ball, ballShadow, ring, targetRing, losLine, fdLine, sticks, sticks2, chain, downBox;
   const crew = [], downMats = [];
   let hemiLight, sunLight, fillLight, fieldMat, groundMat, wallMat, rainPts, snowPts, envKey = '', envSnow = false, crowdBase = 1, celebT = 0;
@@ -3311,6 +3312,17 @@
       c.ellipse(X(x), Y(y), (0.5 + Math.random() * 1.7) * S, (0.3 + Math.random() * 1.1) * S, Math.random() * 3, 0, 7);
       c.fill();
     }
+    /* the lanes the ball lives in: down the middle and along each hash mark the turf is trodden flatter and paler,
+       most between the 20s (added 2026-11-17) */
+    for (let i = 0; i < 520; i++) {
+      const lane = i % 3, y = 8 + Math.random() * 84, mid = 1 - Math.abs(y - 50) / 50;
+      if (Math.random() > 0.35 + mid * 0.65) continue;
+      const x = lane === 0 ? FW / 2 + (Math.random() - 0.5) * 3.2 : FW / 2 + (lane === 1 ? -3.1 : 3.1) + (Math.random() - 0.5) * 1.6;
+      c.fillStyle = Math.random() < 0.6 ? `rgba(198,214,160,${0.018 + Math.random() * 0.03})` : `rgba(12,36,20,${0.025 + Math.random() * 0.035})`;
+      c.beginPath();
+      c.ellipse(X(x), Y(y), (0.25 + Math.random() * 0.7) * S, (0.4 + Math.random() * 1.3) * S, (Math.random() - 0.5) * 0.6, 0, 7);
+      c.fill();
+    }
     if (envSnow) {
       // a dusting of snow, thicker in patches
       c.fillStyle = 'rgba(236,243,252,0.46)';
@@ -3337,9 +3349,14 @@
     c.textBaseline = 'middle';
     c.font = `800 ${3.3 * S}px Archivo, Arial, sans-serif`;
     c.fillStyle = 'rgba(255,255,255,0.9)';
+    c.lineJoin = 'round';
     for (let y = 10; y <= 90; y += 10) {
       const n = String(y <= 50 ? y : 100 - y);
       for (const nx of [9, FW - 9]) {
+        // a thin dark edge under the paint, so the numbers stay crisp from far away (the stylized look's ink)
+        c.strokeStyle = 'rgba(6,14,10,0.32)';
+        c.lineWidth = 0.2 * S;
+        c.strokeText(n, X(nx), Y(y));
         c.fillText(n, X(nx), Y(y));
         if (y !== 50) {
           // the small arrow beside each number, pointing at the nearer goal line
@@ -3352,15 +3369,25 @@
         }
       }
     }
-    /* the names in the end zones: white letters with a dark edge, so they read on any team color */
+    /* the end zones: a band of the team's second color a yard inside the lines, and the name in white letters edged in
+       that color over a dark edge, so they read on any team color (the band added 2026-11-17) */
     c.font = `800 ${5 * S}px Archivo, Arial, sans-serif`;
     c.lineJoin = 'round';
-    c.lineWidth = 0.34 * S;
     for (const [t, y] of [[t0, -5], [t1, 105]]) {
-      c.strokeStyle = 'rgba(6,10,18,0.45)';
-      c.strokeText(t.name.toUpperCase(), X(FW / 2), Y(y), (FW - 4) * S);
-      c.fillStyle = 'rgba(255,255,255,0.93)';
-      c.fillText(t.name.toUpperCase(), X(FW / 2), Y(y), (FW - 4) * S);
+      const c2 = t.c2 || '#ffffff';
+      c.strokeStyle = c2;
+      c.globalAlpha = 0.8;
+      c.lineWidth = 0.42 * S;
+      c.strokeRect(X(1.2), Y(y + 3.8), (FW - 2.4) * S, 7.6 * S);
+      c.globalAlpha = 1;
+      c.strokeStyle = 'rgba(6,10,18,0.5)';
+      c.lineWidth = 0.6 * S;
+      c.strokeText(t.name.toUpperCase(), X(FW / 2), Y(y), (FW - 8) * S);
+      c.strokeStyle = c2;
+      c.lineWidth = 0.3 * S;
+      c.strokeText(t.name.toUpperCase(), X(FW / 2), Y(y), (FW - 8) * S);
+      c.fillStyle = 'rgba(255,255,255,0.95)';
+      c.fillText(t.name.toUpperCase(), X(FW / 2), Y(y), (FW - 8) * S);
     }
     /* midfield: the home team's disc inside a second-color ring and a white one, the letters edged like the names */
     const mx = X(FW / 2), my = Y(50);
@@ -3432,6 +3459,7 @@
     c.lineWidth = 0.14 * S;  // team areas
     c.strokeRect(X(-5.2), Y(70), 2.6 * S, 40 * S);
     c.strokeRect(X(FW + 2.6), Y(70), 2.6 * S, 40 * S);
+    for (const m of postPads) m.color.set(home.c1);  // the goal post pads wear the home team's color
     fieldTex.needsUpdate = true;
   }
 
@@ -3749,6 +3777,10 @@
       const back = y < 50 ? -1.9 : 1.9, neck = new T.CatmullRomCurve3([[0, 0], [0, 1.5], [0.12, 2.5], [0.75, 3.12], [1.5, 3.3], [1.9, 3.33]].map(([d, h]) => new T.Vector3(FW / 2, h, -(y + back - Math.sign(back) * d))));
       const pad = new T.Mesh(new T.CylinderGeometry(0.36, 0.36, 2, 12), new T.MeshLambertMaterial({ color: 0x1f2a44 }));
       pad.position.set(FW / 2, 1, -(y + back));
+      postPads.push(pad.material);
+      const band = new T.Mesh(new T.CylinderGeometry(0.37, 0.37, 0.16, 12), postMat);  // a white band near the top of the pad
+      band.position.set(0, 0.62, 0);
+      pad.add(band);
       const flags = [-3.1, 3.1].map(dx => {
         const fl = new T.Mesh(new T.PlaneGeometry(0.62, 0.13).translate(0.33, 0, 0), new T.MeshBasicMaterial({ color: 0xe8552a, side: T.DoubleSide }));  // hinged on the upright
         fl.position.set(FW / 2 + dx, 14.72, -y);
@@ -3798,6 +3830,57 @@
       const ny = sd < 0 ? 25 : 75;  // the net a kicker warms up into: an upright frame, the net itself hung in it below
       side.push([bx(0.09, 3.4, 0.09, X(9.6), 1.7, -(ny - 1.3)), STEEL], [bx(0.09, 3.4, 0.09, X(9.6), 1.7, -(ny + 1.3)), STEEL], [bx(0.09, 0.09, 2.69, X(9.6), 3.4, -ny), STEEL], [bx(1.5, 0.08, 0.08, X(9.6), 0.04, -(ny - 1.3)), STEEL], [bx(1.5, 0.08, 0.08, X(9.6), 0.04, -(ny + 1.3)), STEEL]);
       sideNets.push([X(9.6), ny]);
+    }
+    /* The yardage markers: a small box every ten yards just off the far sideline, its number facing the field (G at the
+       goal lines, orange there and white elsewhere). The bodies go in the sideline mesh; the faces are one mesh on a
+       small atlas of the six numbers. (Added 2026-11-17.) */
+    const MK_X = FW + 2.35, mkFaces = [], mkC = document.createElement('canvas');
+    mkC.width = 384;
+    mkC.height = 64;
+    const mk = mkC.getContext('2d'), LBL = ['G', '10', '20', '30', '40', '50'];
+    mk.textAlign = 'center';
+    mk.textBaseline = 'middle';
+    LBL.forEach((l, k) => {
+      mk.fillStyle = k ? '#f4f6f9' : ORANGE;
+      mk.fillRect(k * 64, 0, 64, 64);
+      mk.fillStyle = '#111827';
+      mk.font = `800 ${l.length > 1 ? 36 : 42}px Archivo, Arial, sans-serif`;
+      mk.fillText(l, k * 64 + 32, 35);
+    });
+    for (let y = 0; y <= 100; y += 10) {
+      const k = Math.min(y, 100 - y) / 10;
+      side.push([bx(0.26, 0.58, 0.82, MK_X, 0.29, -y), k ? '#e9edf3' : ORANGE], [bx(0.3, 0.06, 0.86, MK_X, 0.6, -y), '#1c2434']);
+      mkFaces.push([y, k]);
+    }
+    {
+      const pos = [], uv = [], nor = [], idx = [];
+      mkFaces.forEach(([y, k], i) => {
+        const x = MK_X - 0.135, z0 = -y - 0.36, z1 = -y + 0.36, u0 = k / 6 + 0.004, u1 = (k + 1) / 6 - 0.004;
+        pos.push(x, 0.06, z0, x, 0.06, z1, x, 0.54, z1, x, 0.54, z0);  // facing the field (-x): seen from there, z runs left to right
+        uv.push(u0, 0, u1, 0, u1, 1, u0, 1);
+        for (let j = 0; j < 4; j++) nor.push(-1, 0, 0);
+        const b = i * 4;
+        idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
+      });
+      const g = new T.BufferGeometry();
+      g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+      g.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+      g.setAttribute('normal', new T.Float32BufferAttribute(nor, 3));
+      g.setIndex(idx);
+      const tex = new T.CanvasTexture(mkC);
+      tex.colorSpace = T.SRGBColorSpace;
+      tex.anisotropy = 4;
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => {
+        LBL.forEach((l, k) => {
+          mk.fillStyle = k ? '#f4f6f9' : ORANGE;
+          mk.fillRect(k * 64, 0, 64, 64);
+          mk.fillStyle = '#111827';
+          mk.font = `800 ${l.length > 1 ? 36 : 42}px Archivo, Arial, sans-serif`;
+          mk.fillText(l, k * 64 + 32, 35);
+        });
+        tex.needsUpdate = true;
+      });
+      scene.add(new T.Mesh(g, new T.MeshLambertMaterial({ map: tex, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
     }
     scene.add(new T.Mesh(mergeC(side), new T.MeshLambertMaterial({ vertexColors: true })));
     for (const [x, y] of sideNets) {

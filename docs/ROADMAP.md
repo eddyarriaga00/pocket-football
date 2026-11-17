@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `5813a2d`, before more field detail (end zone bands, worn lanes, post pads, sideline yardage markers) (2026-11-17).
   - `81c16db`, before three-minute quarters by default (2026-11-17).
   - `ff5d7d8`, before the NFL calendar (17 games, byes, seven-team playoffs) (2026-11-17).
   - `3d54435`, before more awards, trophies and milestones, and the comment-free one-file build (2026-11-17).
@@ -3195,6 +3196,14 @@ six were done as the pro game has them; the choices where there was one are mine
   length chosen, and a career or season kept its own. Now an exhibition opens at 3 minutes every time, and each saved
   career and season goes back to 3 minutes once (C.qlV / S.qlV); a length picked after that sticks. Tested: saved 5-minute
   settings and career come back at 3; fingerprint unchanged.
+
+- **2026-11-17: more field detail.** Asked for: "keep improving the field, add more details". Painted: a band of the
+  team's second color a yard inside each end zone, the end zone names edged in that color over a dark edge; a thin
+  dark edge under the yard numbers so they stay crisp far off; the lanes the ball lives in (down the middle and along
+  each hash) trodden paler and flatter, most between the 20s. Built: goal post pads in the home team's color with a
+  white band; yardage markers every ten yards just off the far sideline (white boxes with the number facing the field,
+  orange G boxes at the goal lines; one mesh of faces on a six-number atlas, the bodies in the merged sideline mesh).
+  Checked up close with the debug camera and at play distance upright and sideways; no new errors.
 
 ## Morning hand-off
 
