@@ -1780,7 +1780,63 @@
   const canTrade = () => roleOf()[1] !== 'Starter' && C.phase === 'reg' && C.tradeSeason !== C.season;
   const tradeTo = () => TEAMS.map((_, i) => i).filter(i => i !== C.team).sort((a, b) => C.ovrs[a] - C.ovrs[b])[0];
 
+  /* The re-count. Careers that finished a season under the old voting (your grades against their numbers) have that
+     season's MVP and Offensive Player of the Year voted again under the new rules, once, when the hub opens: exactly
+     when the season is still on its closing screen, or from the record book's line and record when the next one has
+     begun. An award you win is added with its XP, to your honors, the record book and the awards night card. */
+  function recount() {
+    if (!C || C.pre || !C.hist) return;
+    const exact = C.phase === 'done' && !!C.po, h = C.hist.find(x => x.season === (exact ? C.season : C.season - 1));
+    if (!h || (C.recounted || []).includes(h.season)) return;
+    C.recounted = (C.recounted || []).concat(h.season);
+    const have = n => (C.awards || []).some(a => a.season === h.season && a.name === n), keep = { stats: C.stats, season: C.season, tab: C.tab }, won = [];
+    try {
+      if (!exact) {
+        // the season as the record book has it: the line, the games, the team's record (the others' records are not kept)
+        const n = (re, k = 1) => {
+          const x = h.line.match(re);
+          return x ? +x[k] : 0;
+        };
+        const m = C.pos === 'QB' ? { comp: n(/(\d+)\/(\d+)/), att: n(/(\d+)\/(\d+)/, 2), pyd: n(/, (\d+) yds/), ptd: n(/(\d+) TD/), pint: n(/(\d+) INT/), car: n(/(\d+) car/), ryd: n(/car, (-?\d+) yds/) }
+          : { rec: n(/(\d+) rec/), recyd: n(/rec, (\d+) yds/), rectd: n(/(\d+) TD/), tgt: n(/(\d+) targets/), car: n(/(\d+) car/), ryd: n(/car, (-?\d+) yds/) };
+        const [w, l, t] = String(h.rec || '').split('-').map(Number);
+        C.stats = { ...ZERO(), ...m, g: h.g || 10 };
+        C.season = h.season;
+        C.tab = TEAMS.map((_, i) => i === C.team ? { w: w || 0, l: l || 0, t: t || 0 } : { w: 5, l: 5, t: 0 });
+      }
+      const avg = Math.max(0, GRADES.indexOf(h.grade));
+      for (const [name, xp] of [['League MVP', 1200], ['Offensive Player of the Year', 800]]) if (!have(name) && vote(name, avg)[0].me) won.push([name, xp, lineAt(C.stats, C.pos)]);
+    } finally {
+      Object.assign(C, keep);
+    }
+    if (!won.length) return persist();
+    let xp = 0;
+    for (const [name, gain, stat] of won) {
+      xp += gain;
+      C.awards = (C.awards || []).concat({ season: h.season, name });
+      h.awards = (h.awards || []).concat(name);
+      if (exact) {
+        C.po.awards = (C.po.awards || []).concat(name);
+        const card = (C.po.night || []).find(x => x.a === name);
+        if (card) Object.assign(card, { w: { name: C.name, ab: TEAMS[C.team].ab, pos: C.pos, me: true }, xp: gain, stat, n: card.n.filter(x => !x.me).slice(0, 2) });
+      }
+    }
+    C.xp += xp;
+    C.xpTotal += xp;
+    C.recountNote = `The league re-counted the votes for season ${h.season}: ${won.map(w => w[0]).join(' and ')} ${won.length > 1 ? 'are' : 'is'} yours. +${fmt(xp)} XP.`;
+    checkTrophies();
+    persist();
+  }
+
   function showHub(tab) {
+    recount();
+    const note = C.recountNote;  // said once: on this visit to the hub, with a fanfare
+    if (note) {
+      delete C.recountNote;
+      persist();
+      PG.banner(note.match(/: (.*?) (is|are) yours/)[1], `Season ${note.match(/season (\d+)/)[1]} · re-counted`, 3600);
+      PG.snd('fanfare');
+    }
     tab = tab || 'up';
     const t = team(C.team);
     let sure = false;  // the trade button has been tapped once
@@ -1791,6 +1847,7 @@
   <div class="pc${kit()?' k':''}" style="--c:${t.c1}">${kit()}<div><h3>${esc(C.name)}</h3><p>#${C.num} · ${C.pos} · age ${age()}<br>${full(C.team)} · Season ${C.season}</p><div class="pcc"><span>${esc(C.arch)}</span><span>${rank()}</span>${C.rings?`<span>${C.rings} title${C.rings>1?'s':''}</span>`:''}${C.awards&&C.awards.length?`<span>${C.awards.length} honor${C.awards.length>1?'s':''}</span>`:''}</div></div><div class="ovr">${ovr()}<small>OVR</small></div></div>
   <div class="xp2"><div><span>To spend</span><b>${fmt(C.xp)} XP</b></div><div><span>Contract</span><b class="dl">${deal().left>0?`${money(deal().pay)} · ${deal().left} of ${deal().years} left`:'Up for renewal'}</b></div></div>
   ${trustHtml()}${chemHtml()}
+  ${note ? `<p class="note hi">${esc(note)}</p>` : ''}
   ${C.ageNote && C.week === 0 && C.phase === 'reg' ? `<p class="note">${esc(C.ageNote)}</p>` : ''}
   ${nextCard()}
   <div class="tabs itabs" style="margin-top:16px">${[['up','Upgrade'],['season','Season'],['stats','Stats'],['social','Social']].map(([k,l])=>`<button data-t="${k}" class="${k===tab?'on':''}">${TAB_ICON[k]}<span>${l}</span></button>`).join('')}</div>

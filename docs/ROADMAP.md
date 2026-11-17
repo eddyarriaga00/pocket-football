@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `8ec7bd0`, before the one-time re-count of last season's MVP vote (2026-11-16 night).
   - `f74c71a`, before the MVP vote, the Championship Game MVP and the championship experience (2026-11-16 night).
   - `83eb868`, before the single ring again, the reshaped power bar and fewer off-target misses on your throws (2026-11-16 night).
   - `d6ec7b5`, before receivers winning at the break, shifting zones and the two ring strengths (2026-11-16 night).
@@ -2999,6 +3000,16 @@ six were done as the pro game has them; the choices where there was one are mine
   first podium question is about the title. Tested: a forced title season (Championship Game MVP to the
   quarterback), a forced one where you are the MVP (award, XP, trophy, record, awards night), 90 title feeds with no
   holes; fingerprint unchanged; careers, a season and the audit clean. Test hook: PG.career.vote().
+
+- 2026-11-16 (night, "idc how u have to give me mvp on my game copy on my phone, idc how u do it"). His save is on
+  his phone, which nothing here can reach, so the fix goes in the game: a one-time re-count (`recount` in career.js,
+  run when the hub opens). The last finished season's MVP and Offensive Player of the Year are voted again under the
+  new rules: exactly when the season is still on its closing screen, otherwise from the record book's line, games and
+  team record (the other teams' records are not kept, so they count as .500). An award won is added with its XP
+  (1,200 and 800), to the honors, the record book and the awards night card, with a banner, a fanfare and a note on
+  the hub, once; `C.recounted` keeps it from running twice. Tested on a dominant season with the awards stripped as
+  an old save would have them (both paths grant both awards, +2,000 XP, nothing on a second visit) and on an
+  ordinary season (nothing granted). Fingerprint unchanged; careers and the audit clean.
 
 ## Morning hand-off
 
