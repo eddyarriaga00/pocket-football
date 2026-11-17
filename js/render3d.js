@@ -44,6 +44,28 @@
   const PELY = 0, PELRX = 1, PELRZ = 2, CHRX = 3, CHRY = 4, HEADRX = 5, SLX = 6, SLZ = 7, EL = 8, SRX = 9, SRZ = 10, ER = 11, HL = 12, KL = 13, HR = 14, KR = 15, AL = 16, AR = 17, HLZ = 18, HRZ = 19, ALZ = 20, ARZ = 21, ALY = 22, ARY = 23, HEADRY = 24, NPOSE = 25;
   const TG = new Float32Array(NPOSE);
 
+  /* A real overhand throw, from motion capture (Carnegie Mellon University's motion capture database, subject 79,
+     trial 91: mocap.cs.cmu.edu; free to use in a game, the data itself not resold), converted to this figure's joints
+     with tools kept outside the repo (2026-11-17): the arms fitted so the elbow and the hand are where the thrower's
+     were (the figure's arm has no twist of its own), the chest's turn and lean measured against the line of the throw.
+     A row every 0.05 s from 0.4 s before the release to 0.3 s after; columns SRX, SRZ, ER, SLX, SLZ, EL, CHRX, CHRY.
+     Row 5 is fully cocked (shoulders closed, the ball behind the ear), row 7 the whip, row 8 the release, then the
+     follow-through across the body. */
+  const THROW = [[0.49, 1.07, 1.27, 1.24, -0.33, 0.51, 0.42, -1.24], [0.81, 1.39, 1.12, 1.02, -0.61, 0.52, 0.51, -1.32], [1.23, 1.57, 1.28, 0.69, -0.87, 0.56, 0.55, -1.38], [1.45, 1.66, 1.54, 0.19, -1.08, 0.56, 0.56, -1.42],
+    [1.54, 1.74, 1.78, -0.36, -1.10, 0.49, 0.55, -1.42], [1.63, 1.83, 1.96, -0.79, -0.94, 0.56, 0.50, -1.34], [1.83, 1.81, 2.11, -0.99, -0.69, 0.87, 0.38, -1.09], [2.10, 1.75, 2.22, -0.81, -0.58, 1.14, 0.22, -0.59],
+    [1.96, 1.43, 1.87, -0.32, -0.77, 1.35, 0.10, 0.03], [1.61, 1.16, 0.84, -0.42, -0.71, 1.58, 0.15, 0.41], [1.19, 1.06, 0.75, -0.70, -0.59, 1.56, 0.16, 0.71], [0.99, 1.15, 0.60, -0.82, -0.56, 1.48, 0.16, 1.03],
+    [0.90, 1.18, 0.55, -0.88, -0.51, 1.41, 0.11, 1.19], [0.89, 1.17, 0.55, -0.85, -0.46, 1.31, 0.07, 1.26], [0.92, 1.13, 0.56, -0.79, -0.39, 1.21, 0.04, 1.28]], TH_CH = [SRX, SRZ, ER, SLX, SLZ, EL, CHRX, CHRY];
+  /* the throw at row x (fractional), blended over the pose so far by k; the head turns back against the chest, so his
+     eyes stay on the man he is throwing to */
+  function throwPose(tg, x, k) {
+    const i = clamp(Math.floor(x), 0, THROW.length - 2), a = clamp(x - i, 0, 1);
+    for (let c = 0; c < TH_CH.length; c++) {
+      const v = lerp(THROW[i][c], THROW[i + 1][c], a) * (c === 7 ? 0.8 : 1);  // the chest turns a little less than the thrower's: the figure's hips stay square to the target
+      tg[TH_CH[c]] = lerp(tg[TH_CH[c]], v, k);
+    }
+    tg[HEADRY] = lerp(tg[HEADRY], clamp(-tg[CHRY] * 0.9, -1.2, 1.2), k);
+  }
+
   /* two poses a fallen player passes through on his way up: one knee down with the other foot planted, then standing */
   const KNEEL = new Float32Array(NPOSE), STAND = new Float32Array(NPOSE);
 
@@ -2654,25 +2676,17 @@
          weight over the front foot, a lob is pushed up and out and finishes high. */
       const u = 1 - p.thrT / 0.32, pw = p.thrP === undefined ? 0.5 : p.thrP, cock = 0.45 * (1 - (f.wind || 0));
       eyes = false;  // on the man he is throwing to, and he faces him
-      if (u < cock) {
-        const a = u / cock;
-        tg[SRX] = lerp(1.3, 3.5, a);
-        tg[ER] = 1.5;
-        tg[CHRY] = 0.5;
-      } else {
-        const a = smooth((u - cock) / (1 - cock));
-        tg[SRX] = lerp(3.5, lerp(1.9, 0.7, pw), a);
-        tg[ER] = lerp(1.5, lerp(0.5, 0.1, pw), a);
-        tg[CHRY] = lerp(0.5, lerp(-0.2, -0.55, pw), a);
-        tg[CHRX] = lerp(-0.05, lerp(0.05, -0.28, pw), a);
-      }
-      tg[SLX] = 0.8;
-      tg[EL] = 1.0;
+      /* the real throw (THROW): from wherever the wind-up left him through the cock to the whip, then the release and
+         the follow-through, which take 0.35 s in the capture against the game's 0.32. A lob finishes higher, a
+         bullet lower with the weight over the front foot. */
+      const x = u < cock ? lerp(lerp(1, 5, f.wind || 0), 7, u / cock) : lerp(7, 14, smooth((u - cock) / (1 - cock))), fin = smooth(clamp((x - 8) / 6, 0, 1));
+      throwPose(tg, x, 1);
+      tg[SRX] += (0.5 - pw) * 0.6 * fin;
+      tg[CHRX] -= pw * 0.25 * fin;
       tg[HL] = 0.4;
       tg[KL] = -0.3;
       tg[HR] = -0.3;
       tg[KR] = -0.2;
-      if (u < cock) tg[CHRX] = -0.05;
       plant(tg);
       snap = true;
     } else if (ps.mode === 'kick' && p === ps.qb && ps.air && ps.air.t < 0.45) {
@@ -2799,10 +2813,12 @@
       const lat = gait ? gait.base / 0.22 : 0;  // how much of this is a sideways shuffle
       /* arms: opposite the legs, elbows held near a right angle, hands driving from hip to chin; quieter in a shuffle */
       const arm = (0.2 + 0.8 * run) * moving * (1 - 0.6 * lat);
-      tg[SLX] = (-sn * 0.95 + 0.12) * arm * dirn;
-      tg[SRX] = (sn * 0.95 + 0.12) * arm * dirn;
-      tg[EL] = 0.3 + (1.25 - sn * 0.3) * run;
-      tg[ER] = 0.3 + (1.25 + sn * 0.3) * run;
+      /* measured against a real runner (CMU capture 09_01, 2026-11-17): the hands go about as far back as forward, and
+         the elbows stay bent past a right angle */
+      tg[SLX] = (-sn * 0.88 - 0.04) * arm * dirn;
+      tg[SRX] = (sn * 0.88 - 0.04) * arm * dirn;
+      tg[EL] = 0.3 + (1.4 - sn * 0.3) * run;
+      tg[ER] = 0.3 + (1.4 + sn * 0.3) * run;
       if (lat > 0.05) {
         /* shuffling: elbows bent and a little out, hands ready in front of him */
         tg[SLX] = lerp(tg[SLX], 0.4, lat);
@@ -2911,14 +2927,7 @@
            points, the shoulders open, and he turns to the man he is throwing to */
         const e = smooth(s.charge), r = s.G.chg && ps.recs ? ps.recs[s.G.chg.i] : null;
         eyes = false;  // on the man he has picked
-        tg[SRX] = lerp(0.9, 3.3, e);
-        tg[ER] = lerp(1.75, 1.45, e);
-        tg[SRZ] = lerp(-0.25, 0.15, e);
-        tg[SLX] = lerp(0.8, 1.35, e);
-        tg[EL] = lerp(1.75, 0.5, e);
-        tg[SLZ] = lerp(0.25, -0.1, e);
-        tg[CHRY] = 0.6 * e;
-        tg[CHRX] = lerp(-0.06, 0.03, e);
+        throwPose(tg, lerp(1, 5, e), Math.min(1, e * 1.6));  // into the real thrower's cock as the bar fills (THROW)
         f.wind = s.charge;
         if (r) {
           hx = r.x - p.x;
@@ -2999,14 +3008,14 @@
         const u = clamp(1 - p.juke / f.jk0, 0, 1), sd = f.jkSide, free = f.ballL ? [SRX, SRZ, ER, 1] : [SLX, SLZ, EL, -1];
         if (u < 0.35) {
           const e = Math.sin(u / 0.35 * Math.PI / 2);
-          tg[PELY] -= 0.13 * e;
+          tg[PELY] -= 0.19 * e;  // a real hard cut takes the hips down to about four fifths of standing height (CMU capture 78_28)
           tg[PELRZ] = sd * 0.22 * e;
           tg[CHRY] = sd * 0.32 * e;
           tg[HEADRY] = sd * 0.25 * e;
           tg[CHRX] = Math.min(tg[CHRX], -0.25 * e);
         } else {
           const e = Math.sin((u - 0.35) / 0.65 * Math.PI);
-          tg[PELY] -= 0.08 * e;
+          tg[PELY] -= 0.1 * e;
           tg[PELRZ] = -sd * 0.42 * e;
           tg[CHRY] = -sd * 0.18 * e;
           tg[CHRX] = Math.min(tg[CHRX], -0.2 * e);
@@ -5001,6 +5010,33 @@
     return cv.toDataURL('image/png');
   }
 
+  /* test hook: the quarterback through the throw (THROW), one view a row of the table from x0 to x1, seen from angle a
+     (0: from in front, pi/2: from his left) */
+  function throwStrip(x0, x1, n, a, cell) {
+    if (!renderer) return null;
+    const st = studioOf(), w = cell || 220, cv = document.createElement('canvas'), x = cv.getContext('2d'), keep = st.f.root.rotation.y;
+    dress(st, PG.TEAMS[0], true, 12, null);
+    cv.width = w * n;
+    cv.height = Math.round(w * PH / PW);
+    x.fillStyle = '#0d1524';
+    x.fillRect(0, 0, cv.width, cv.height);
+    st.f.root.rotation.y = a || 0;
+    for (let k = 0; k < n; k++) {
+      const c = st.f.cur;
+      c.fill(0);
+      c[PELY] = HIP;
+      c[HL] = 0.4;
+      c[KL] = -0.3;
+      c[HR] = -0.3;
+      c[KR] = -0.2;
+      throwPose(c, x0 + (x1 - x0) * k / Math.max(1, n - 1), 1);
+      applyPose(st.f);
+      shoot(st, x, k * w, 0, w);
+    }
+    st.f.root.rotation.y = keep;
+    return cv.toDataURL('image/png');
+  }
+
   /* ---------- test hooks for the stride ----------
      Nobody can watch the game move from a test, so the run is checked two ways: gait() measures the feet of a figure
      running at a steady speed, and strip() draws that run as a row of side views, one stride from left to right. */
@@ -5576,7 +5612,7 @@
   }
 
   PG.r3d = {
-    init, resize, render, project, portrait, celebStrip, headStrip, modelStrip,
+    init, resize, render, project, portrait, celebStrip, headStrip, modelStrip, throwStrip,
     get ends() {
       return ends;
     },

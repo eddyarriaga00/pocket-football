@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `14525cf`, before the motion-capture throw and the tuned juke and running arms (2026-11-17).
   - `56c0c15`, before the new juke, spin and broken-tackle animations (2026-11-17).
   - `5813a2d`, before more field detail (end zone bands, worn lanes, post pads, sideline yardage markers) (2026-11-17).
   - `81c16db`, before three-minute quarters by default (2026-11-17).
@@ -3213,6 +3214,25 @@ six were done as the pro game has them; the choices where there was one are mine
   ball locked in both arms against the chest; and a runner who breaks a tackle stumbles through it (chest pitched
   forward, free arm flung out, a wobble at the hips) for under half a second (game.js counts it on p.shrugN, which play
   never reads). Checked frame by frame with the debug camera; fingerprint unchanged, the rough player clean.
+
+- **2026-11-17: real motion capture for the throw.** Asked for: "research to help u here ... search for free things
+  online, github repos may help, libraries and anything to help u", then "you have the okay for any file, check
+  everthing and choose the best ones for my game". Researched: the CMU Graphics Lab motion capture database (free to
+  use in a product, not to resell; football throws and catches, runs, cuts), Quaternius' Universal Animation
+  Libraries (CC0, on a different rig and mostly not football), Bandai Namco's and Ubisoft's sets (non-commercial, or
+  little sport), the three.js IK solvers (the figures already have their own). Downloaded ten CMU clips (BVH, the
+  sfd158/cmu-mocap mirror) into a scratch folder, surveyed them (throws found by the speed of a hand over the head),
+  drew them as stick figures, and chose 79_91: a clean overhand throw. Converted it to the figure's joints
+  (tools/mocap: the arms fitted so the elbow and hand land where the thrower's did, since the figure's arm has no
+  twist; the chest's turn and lean measured against the line of the throw), as the THROW table in render3d.js: the
+  wind-up now eases into the real cock (shoulders closed, ball behind the ear, elbow high) as the power bar fills, and
+  the throw plays the real whip, release and follow-through across the body (0.35 s in the capture, 0.32 in the game),
+  the head turned back so the eyes stay on the receiver; lob and bullet still finish differently. Also from the
+  captures: the juke's plant goes lower (a real hard cut takes the hips to about four fifths of standing, 78_28) and
+  the running arms swing as far back as forward with the elbows bent past a right angle (09_01). A test strip,
+  PG.r3d.throwStrip, draws the quarterback through the table. Checked in strips from the side and from behind and the
+  stride measured; fingerprint unchanged, the rough player clean. Credit: the data used in this project was obtained
+  from mocap.cs.cmu.edu; the database was created with funding from NSF EIA-0196217.
 
 ## Morning hand-off
 
