@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `4c07eca`, before more commentary takes, new conversion and long-touchdown calls, and social posts about your events, milestones and deals (2026-11-16 late).
   - `8ce466d`, before the career hub reorganization, league news, contract extensions and incentives, weekly events (2026-11-16 night).
   - `d29ee21`, before white became the default accent (2026-11-16 night).
   - `60ed5d7`, before Stylized became the default look (2026-11-16 night).
@@ -3111,6 +3112,22 @@ six were done as the pro game has them; the choices where there was one are mine
   meeting. Social: eighteen posts a week (was 32), this week's top six first with Show all, one reply under each post
   and the rest folded. Tested: two full careers with free agency, forced extension and events, the news and offers
   screens at 440x956; fingerprint unchanged; the rough player and the audit clean.
+
+- **2026-11-16 late: more commentary, more social variety, posts about what you did.** Asked for: "keep improving the
+  comments on socials and commentary lines". Commentary: the calls that repeated most in four test games got more
+  takes (third and short, second down calls, first and goal, team time-outs, team touchdowns, back catches, first
+  downs, flags, kickoffs and returns, quarter ends, the two-minute warning, deep shots and more; 553 takes in all),
+  and three new calls: a third-down conversion, a fourth-down conversion, a touchdown from forty yards or more.
+  Social: the repeating pools grew (stat captions and their replies, the radio show, the former player, the rookie
+  posts, the other team's player, the losing threads). New posts that follow your choices: the weekly event you
+  accepted shows up the next game (your partner on the film session, the team account on the hospital visit, the
+  radio on the interview, a fan who saw you out at the party, the photographer, the rookie you mentored, the rival
+  answering, the autograph line, the reporter on the leak, the teammate after the meeting); season milestones
+  (passing, receiving and rushing yards and touchdowns, tackles, sacks, interceptions) from the stat accounts; and a
+  signing or extension from a reporter and fans (and your old team's fans when you leave). Hub labels at 10px, and the
+  hub's tiles go two by two below 360px wide. Tested: every event post and both deal kinds generated, two full QB
+  seasons and a WR season with milestones, the rough player, the audit clean at 320x568 and 440 wide; fingerprint
+  unchanged (the new calls do not touch play).
 
 ## Morning hand-off
 

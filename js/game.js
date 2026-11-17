@@ -5859,7 +5859,8 @@
     const off = ps.offTeam, t = c ? c.team : off, ko = ps.mode === 'ko', down = kind === 'tackle' || kind === 'oob';
     if (kind === 'td') {
       const back = ko || t !== off;  // a return, or the defense's score
-      vo(back && chance(0.6) ? 'td.return' : chance(0.45) ? 'td.team.' + tab(t) : 'td', { pri: 2 });
+      const far = !back && Math.abs((off === 0 ? 100 : 0) - ps.los) >= 40;  // a touchdown from forty yards or more out
+      vo(back && chance(0.6) ? 'td.return' : far && chance(0.7) ? 'td.long' : chance(0.45) ? 'td.team.' + tab(t) : 'td', { pri: 2 });
       if (!back) voDrive(off, 'a.td');
       if (G.callout && t === 0 && !G.voCallTd && G.score[0] > G.score[1] && chance(0.75)) {
         G.voCallTd = true;  // the first time your side scores to lead, in the game you talked about all week
@@ -5913,7 +5914,9 @@
       else if (catcher && chance(catcher === 'pass.rb' ? 0.4 : 0.55)) said = vo(catcher, short);  // backs catch a lot of short balls: not every one is worth naming
       else if (pass) said = gain >= 20 ? vo('pass.big', { pri: 2 }) : gain >= 8 ? chance(0.8) && vo('pass.good') : gain >= 0 && chance(0.35) && vo('pass.short', short);
       else said = gain >= 15 ? vo('run.big', { pri: 2 }) : gain >= 6 ? chance(0.8) && vo('run.good') : gain >= 1 ? chance(0.3) && vo('run.short', short) : chance(gain ? 0.75 : 0.6) && vo(gain ? 'run.loss' : 'run.none');
-      if (first && chance(said ? 0.7 : 0.55)) vo('first', { ttl: 5 });
+      // a third or fourth down converted gets its own call
+      if (first && ps.down0 >= 3 && chance(0.85)) vo(ps.down0 === 4 ? 'conv4' : 'conv3', { pri: 1, ttl: 5 });
+      else if (first && chance(said ? 0.7 : 0.55)) vo('first', { ttl: 5 });
       if (pass && ps.perf && ps.caught) analyst('a.perfect', 0.75, { big: true });
       else if (pass && gain >= 20) analyst('a.bigpass', 0.6, { big: true });
       else if (!pass && gain >= 15) analyst('a.bigrun', 0.6, { big: true });

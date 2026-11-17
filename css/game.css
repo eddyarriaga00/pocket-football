@@ -1108,7 +1108,7 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 /* the career hub: four tiles, the inbox, five tabs, the news, the contract (2026-11-16) */
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
 .tiles>div{background:var(--panel2);border-radius:10px;padding:7px 8px;min-width:0}
-.tiles small{display:block;font-family:var(--display);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.tiles small{display:block;font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 .tiles b{display:block;margin-top:1px;font-family:var(--display);font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tiles b.xpv{color:var(--acc)}
 .tiles span{display:block;font-size:10.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1124,19 +1124,20 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 .ibb{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .ibb .btn2{flex:1 1 0;min-width:0;height:auto;min-height:40px;padding:6px 8px;line-height:1.2}
 .ibb .btn2 span{display:block;margin-top:2px;font-family:var(--body);font-size:10px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--mute)}
-.tabs.five button span{font-size:9.5px}
+.tabs.five button span{font-size:10px}
 .nws{list-style:none;margin:0 0 8px;padding:0}
 .nw{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
 .nw:first-child{border-top:0}
 .nw .tb{flex:none;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:var(--c);font-style:normal;font-family:var(--display);font-weight:800;font-size:10.5px}
-.nw small{display:block;font-family:var(--display);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.nw small{display:block;font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 .nw p{margin:1px 0 0;font-size:13px;line-height:1.4}
 .nw.k-you small,.nw.k-award small,.nw.k-deal small{color:var(--acc)}
 .ctr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
 .ctr>div{background:var(--panel2);border-radius:10px;padding:7px 8px;min-width:0}
-.ctr small{display:block;font-family:var(--display);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.ctr small{display:block;font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
 .ctr b{display:block;font-family:var(--display);font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ctr span{display:block;font-size:10.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:360px){.tiles,.ctr{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .ofr{position:relative;display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--c);margin-bottom:8px}
 .ofr.on{border-color:var(--acc);border-left-color:var(--c)}
 .ofr b{display:block;font-size:13.5px}

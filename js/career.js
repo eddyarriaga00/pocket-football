@@ -1011,6 +1011,7 @@
       C.xp += x.xp;
       C.xpTotal += x.xp;
       C.ext = null;
+      addToFeed(PG.media.dealPosts({ ext: true, name: C.name, num: C.num, pos: C.pos, team: C.team, years: x.years, money: money(x.pay), fol: social().fol }));
       addNews([{ s: C.season, w: LG.short(C), k: 'deal', t: C.team, x: `${C.name} signs a ${x.years}-year extension with the ${team(C.team).name}: ${money(x.pay)} a season.` }]);
       PG.snd('buy');
       PG.banner('Extension signed', `${x.years} more season${x.years > 1 ? 's' : ''} · +${fmt(x.xp)} XP`, 2400);
@@ -1031,18 +1032,18 @@
     C.evKey = key;
     const so = social(), p = partner(), mate = anyOf(so.mates), last = C.log[C.log.length - 1], rivalNext = C.rival && C.rival.team === nextOpp();
     const pool = [
-      p && { who: `${p.first} ${p.last}`, text: `Wants to stay late and watch film together before ${team(nextOpp()).name} week.`, ch: [['Stay for film', { chem: 4, xp: 80 }], ['Head home', {}]] },
-      { who: 'Team community office', text: 'A children’s hospital visit downtown, the day after practice.', ch: [['Go', { hype: 5, fol: 0.02 }], ['Rest instead', { trust: 1 }]] },
-      { who: `${team(C.team).city} Sports Radio`, text: 'Wants you on the morning show this week.', ch: [['Do the interview', { hype: 4, fol: 0.01 }], ['Pass', {}]] },
-      { who: `${mate.first} ${mate.last}`, text: 'Birthday party Saturday night. The whole offense is going.', ch: [['Go', { chem: 3, trust: -3 }], ['Early night', { trust: 1 }]] },
-      { who: 'Your agent', text: 'A brand photo shoot on your day off pays well.', ch: [['Do the shoot', { xp: 250, trust: -1 }], ['Rest', { trust: 1 }]] },
-      C.season > 1 && { who: 'A rookie on the team', text: 'Asks if you will help him learn the playbook.', ch: [['Mentor him', { trust: 2, xp: 60 }], ['Too busy', {}]] },
-      rivalNext && { who: C.rival.name, text: 'Posted a clip of your worst play from last season.', ch: [['Fire back', { hype: 6, trust: -2 }], ['Ignore it', { trust: 1 }]] },
+      p && { id: 'film', who: `${p.first} ${p.last}`, text: `Wants to stay late and watch film together before ${team(nextOpp()).name} week.`, ch: [['Stay for film', { chem: 4, xp: 80 }], ['Head home', {}]] },
+      { id: 'hospital', who: 'Team community office', text: 'A children’s hospital visit downtown, the day after practice.', ch: [['Go', { hype: 5, fol: 0.02 }], ['Rest instead', { trust: 1 }]] },
+      { id: 'radio', who: `${team(C.team).city} Sports Radio`, text: 'Wants you on the morning show this week.', ch: [['Do the interview', { hype: 4, fol: 0.01 }], ['Pass', {}]] },
+      { id: 'party', who: `${mate.first} ${mate.last}`, text: 'Birthday party Saturday night. The whole offense is going.', ch: [['Go', { chem: 3, trust: -3 }], ['Early night', { trust: 1 }]] },
+      { id: 'shoot', who: 'Your agent', text: 'A brand photo shoot on your day off pays well.', ch: [['Do the shoot', { xp: 250, trust: -1 }], ['Rest', { trust: 1 }]] },
+      C.season > 1 && { id: 'mentor', who: 'A rookie on the team', text: 'Asks if you will help him learn the playbook.', ch: [['Mentor him', { trust: 2, xp: 60 }], ['Too busy', {}]] },
+      rivalNext && { id: 'clip', who: C.rival.name, text: 'Posted a clip of your worst play from last season.', ch: [['Fire back', { hype: 6, trust: -2 }], ['Ignore it', { trust: 1 }]] },
       { who: 'Team trainer', text: C.inj ? `Thinks extra treatment could get your ${C.inj.what} right this week.` : 'Offers an extra conditioning session.', ch: [[C.inj ? 'Get treatment' : 'Train', C.inj ? { heal: 1 } : { xp: 150 }], ['Skip it', {}]] },
-      { who: 'Fan club', text: 'Five hundred fans want autographs after Thursday practice.', ch: [['Sign them all', { fol: 0.03, hype: 2 }], ['Wave and go', {}]] },
+      { id: 'autographs', who: 'Fan club', text: 'Five hundred fans want autographs after Thursday practice.', ch: [['Sign them all', { fol: 0.03, hype: 2 }], ['Wave and go', {}]] },
       C.trust >= 50 && { who: social().coachName, text: 'Asks for your read on a new play for this week.', ch: [['Give your idea', { trust: 3 }], ['Trust the staff', { trust: 1 }]] },
-      deal().left === 1 && { who: 'Your agent', text: 'Wants to let it leak that other teams are interested.', ch: [['Leak it', { hype: 4, trust: -3 }], ['Keep it quiet', { trust: 1 }]] },
-      last && last.us < last.them && { who: `${mate.first} ${mate.last}`, text: 'Calls a players-only meeting after the loss and wants you to speak.', ch: [['Speak up', { trust: 2, chem: 2 }], ['Let others talk', {}]] },
+      deal().left === 1 && { id: 'leak', who: 'Your agent', text: 'Wants to let it leak that other teams are interested.', ch: [['Leak it', { hype: 4, trust: -3 }], ['Keep it quiet', { trust: 1 }]] },
+      last && last.us < last.them && { id: 'meeting', who: `${mate.first} ${mate.last}`, text: 'Calls a players-only meeting after the loss and wants you to speak.', ch: [['Speak up', { trust: 2, chem: 2 }], ['Let others talk', {}]] },
     ].filter(Boolean);
     C.ev = Math.random() < 0.67 && pool.length ? anyOf(pool) : null;
     persist();
@@ -1062,6 +1063,7 @@
     if (e.fol) so.fol = Math.round(so.fol * (1 + e.fol));
     if (e.chem && p) p.chem = clamp(p.chem + e.chem, 0, 100);
     if (e.heal) C.inj = null;
+    C.evPost = i === 0 && ev.id ? ev.id : null;  // the first choice is the one the feed hears about (see media.js extras)
     C.ev = null;
     persist();
     PG.snd('tick');
@@ -1276,6 +1278,16 @@
   const anyOf = a => a[Math.floor(Math.random() * a.length)];
 
   /* follower counts worth a post of your own */
+  /* a season milestone crossed in this game: the biggest one, for the stat accounts (C.stats already has the game in it) */
+  const STAT_MILES = { QB: [['pyd', 'passing yards', [1000, 2000, 3000, 4000]], ['ptd', 'touchdown passes', [10, 20, 30, 40]]], WR: [['recyd', 'receiving yards', [500, 1000, 1500, 2000]], ['rectd', 'receiving touchdowns', [5, 10, 15]]],
+    RB: [['ryd', 'rushing yards', [500, 1000, 1500, 2000]], ['rtd', 'rushing touchdowns', [5, 10, 15, 20]]], LB: [['tkl', 'tackles', [50, 100, 150]], ['sack', 'sacks', [5, 10, 15]], ['int', 'interceptions', [3, 5, 8]]] };
+  function mileOf(m) {
+    for (const [k, label, at] of STAT_MILES[C.pos] || []) {
+      const now = C.stats[k] || 0, was = now - (m[k] || 0), v = at.filter(n => was < n && now >= n).pop();
+      if (v) return `${fmt(v)} ${label}`;
+    }
+    return null;
+  }
   const MILES = [10e3, 25e3, 50e3, 100e3, 250e3, 500e3, 1e6, 2.5e6, 5e6, 10e6];
   /* a post from your own account, your helmet for a face; k scales the attention it gets */
   function myPost(text, k, card) {
@@ -1956,7 +1968,7 @@
       showFreeAgency();
     });
     scr.querySelectorAll('[data-sign]').forEach(b => b.onclick = () => {
-      const i = +b.dataset.sign, o = offers[i], moved = i !== C.team;
+      const i = +b.dataset.sign, o = offers[i], moved = i !== C.team, old = C.team;
       faOffers = null;
       if (moved) C.trust = o.trust;
       C.team = i;
@@ -1967,6 +1979,7 @@
       initSeason();
       C.coach = moved ? `Welcome to ${TEAMS[i].city}. ${{ Starter: 'You are my starter. Play like it.', Rotation: 'You will play, and the starting job is there to be won.', Backup: 'You are behind good players here. Practice hard and take your chances.' }[o.role]}`
         : 'Glad you are staying. Same deal as ever: the job is earned every week.';
+      addToFeed(PG.media.dealPosts({ moved, old, name: C.name, num: C.num, pos: C.pos, team: i, years: o.years, money: money(o.pay), fol: social().fol }));
       addNews([{ s: C.season, w: 'Free agency', k: 'deal', t: i, x: moved ? `${C.name} signs with the ${team(i).name}: ${o.years} season${o.years > 1 ? 's' : ''}, ${money(o.pay)} a year.` : `${C.name} re-signs with the ${team(i).name}: ${o.years} season${o.years > 1 ? 's' : ''}, ${money(o.pay)} a year.` }]);
       persist();
       showHub('up');
@@ -2398,7 +2411,8 @@
       coachLine: (C.coach.match(/^[^.!?]{12,}[.!?]|^[^.!?]+[.!?][^.!?]+[.!?]/) || [C.coach])[0].trim(), next: C.phase === 'done' ? null : nextOpp(), week: C.log.length, wk, head: `${wk} \u00b7 ${res} ${us}\u2013${them} vs ${TEAMS[opp].name}`, weak, role0, role1, mates: so.mates,
       roleUp: ROLES.findIndex(r => r[1] === role1) < ROLES.findIndex(r => r[1] === role0),
       wx: r.env && r.env.weather, snap: snapG ? { g: snapAvg(snapG), v: snapG.sum / snapG.n, n: snapG.n, best: snapG.best ? snapG.best[1].toLowerCase() : '' } : null,
-      chem: pt ? { first: pt.first, last: pt.last, num: pt.num, role: pt.role, v: pt.chem, L } : null };
+      chem: pt ? { first: pt.first, last: pt.last, num: pt.num, role: pt.role, v: pt.chem, L } : null, evt: C.evPost || null, mile: mileOf(m) };
+    C.evPost = null;
     const bz = PG.media.buzzOf(ctx), fol0 = so.fol;
     so.hype = clamp(Math.round(so.hype * 0.8 + bz.b * 3 + (callRes ? (callRes.backed ? 12 : -20) : 0)), 0, 100);
     /* followers: a big day brings thousands (more when you are already hyped), a quiet one loses a few, and eating
