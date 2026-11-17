@@ -409,7 +409,7 @@
     /* Man of the Year: what you gave off the field (the hospital visits, the autographs, the rookie you helped: the
        week's events, C.comm) with a good season on it */
     {
-      const gave = C.comm || 0, mw = gave >= 2 && avg >= 5, o = [somebody(OTHER_POS[Math.floor(r() * OTHER_POS.length)]), somebody(OTHER_POS[Math.floor(r() * OTHER_POS.length)])];
+      const gave = C.comm || 0, mw = gave >= 3 && avg >= 5, o = [somebody(OTHER_POS[Math.floor(r() * OTHER_POS.length)]), somebody(OTHER_POS[Math.floor(r() * OTHER_POS.length)])];
       night.push({ a: 'Man of the Year', w: mw ? me : o[0], n: mw ? o : gave ? [me, o[1]] : o.slice(1), xp: mw ? 400 : 0, stat: gave ? `${gave} community event${gave > 1 ? 's' : ''} this season` : '' });
       if (mw) {
         won.push('Man of the Year');
@@ -432,7 +432,7 @@
 
   /* postseason bonus and honors, once the league says the season is over */
   function closeSeason(finish) {
-    let bonus = { Champion: 1500, 'Runner-up': 800, Semifinalist: 400, 'Lost in the conference final': 400, 'Lost in the divisional round': 200 }[finish] || 0;
+    let bonus = { Champion: 1500, 'Runner-up': 800, Semifinalist: 400, 'Lost in the conference final': 400, 'Lost in the divisional round': 200, 'Lost in the wild card round': 100 }[finish] || 0;
     const reg = C.log.filter(g => g.pts !== undefined && /^Wk/.test(g.wk)), avg = reg.length ? reg.reduce((t, g) => t + g.pts, 0) / reg.length : 0;
     const L = leaders(), mine = L.rows.find(r => r.me), his = L.rows.find(r => r.riv);  // the season-long race with your rival
     C.ext = null;  // an extension not answered by the end of the season is off the table
@@ -714,13 +714,13 @@
     ['potw', 'Player of the Week', 'Be named Player of the Week', () => (C.potw || 0) >= 1],
     ['potw5', 'Weekly regular', 'Be Player of the Week five times', () => (C.potw || 0) >= 5],
     ['star', 'All-Star', 'Play in the All-Star Game', () => (C.allstars || 0) >= 1],
-    ['yds', 'Big numbers', C => C.pos === 'QB' ? 'Throw for 2,000 yards in a season' : 'Catch for 1,000 yards in a season', () => (C.pos === 'QB' ? C.stats.pyd : C.stats.recyd) >= (C.pos === 'QB' ? 2000 : 1000)],
-    ['tds', 'End zone regular', C => C.pos === 'QB' ? 'Throw 20 touchdowns in a season' : 'Catch 10 touchdowns in a season', () => (C.pos === 'QB' ? C.stats.ptd : C.stats.rectd) >= (C.pos === 'QB' ? 20 : 10)],
+    ['yds', 'Big numbers', C => C.pos === 'QB' ? 'Throw for 4,000 yards in a season' : 'Catch for 1,000 yards in a season', () => (C.pos === 'QB' ? C.stats.pyd : C.stats.recyd) >= (C.pos === 'QB' ? 4000 : 1000)],
+    ['tds', 'End zone regular', C => C.pos === 'QB' ? 'Throw 30 touchdowns in a season' : 'Catch 10 touchdowns in a season', () => (C.pos === 'QB' ? C.stats.ptd : C.stats.rectd) >= (C.pos === 'QB' ? 30 : 10)],
     ['rec', 'Record breaker', 'Set a league record', () => !!C.setRec],
     ['ext', 'Locked up', 'Sign a contract extension', () => !!C.extDone],
     ['move', 'New city', 'Sign with a new team in free agency', () => !!C.movedTeam],
     ['loyal', 'Franchise player', 'Play five seasons for one team', () => (C.hist || []).filter(h => h.team === C.team).length >= 5],
-    ['g50', 'Iron man', 'Play 50 career games', () => C.career.g >= 50],
+    ['g50', 'Iron man', 'Play 100 career games', () => C.career.g >= 100],
     ['fol', 'Household name', 'Reach a million followers', () => social().fol >= 1e6]];
   const hasAward = n => (C.awards || []).some(a => a.name === n);
   const howOf = how => typeof how === 'function' ? how(C) : how;  // a few trophies are worded for your position
@@ -962,7 +962,7 @@
       return i;
     };
     if (C.news) add('you', C.team, C.news);
-    const games = (reg ? C.around || [] : []).map(([a, sa, b, sb]) => {  // the week's other scores (playoff weeks have none of their own)
+    const games = (reg ? (C.around || []).concat(C.bye ? C.bye.games : []) : []).map(([a, sa, b, sb]) => {  // the week's other scores (playoff weeks have none of their own)
       const w = sa > sb ? a : b, l = w === a ? b : a;
       return { w, l, ws: Math.max(sa, sb), ls: Math.min(sa, sb), gap: (C.ovrs[l] || 80) - (C.ovrs[w] || 80) };
     }).filter(g => g.ws !== g.ls);
@@ -991,7 +991,7 @@
         const i = other(), pos = anyOf(['quarterback', 'running back', 'receiver', 'left tackle', 'linebacker', 'cornerback', 'safety', 'pass rusher']), wks = 2 + Math.floor(Math.random() * 4);
         add('inj', i, `The ${nm(i)} lose their starting ${pos}, ${anyOf(PG.NAMES)}, for ${wks} weeks (${anyOf(['knee', 'ankle', 'hamstring', 'shoulder', 'concussion protocol'])}).`);
       }
-      if (C.week === 5 && C.tdl !== C.season) {
+      if (C.week >= (LG.nfl(C) ? 9 : 5) && C.tdl !== C.season) {  // the trade deadline: after week 9 on the NFL calendar
         C.tdl = C.season;
         for (let k = 0; k < 2; k++) {
           const i = other(), j = (i + 7 + k * 5) % TEAMS.length;
@@ -1193,7 +1193,7 @@
   /* this week's game: the home city's weather, the same every time it is asked (so the forecast on the hub is what you
      get), and a primetime game at night */
   function gameEnv() {
-    const env = PG.envFor(C.season, LG.weekNo(C), C.phase !== 'reg' || C.week >= C.sched.length - 4, LG.home(C) ? C.team : nextOpp());  // the home city's weather
+    const env = PG.envFor(C.season, LG.weekNo(C), LG.late(C), LG.home(C) ? C.team : nextOpp());  // the home city's weather
     if (LG.prime(C)) env.time = 'night';
     return env;
   }
@@ -1334,7 +1334,7 @@
 
   /* follower counts worth a post of your own */
   /* a season milestone crossed in this game: the biggest one, for the stat accounts (C.stats already has the game in it) */
-  const STAT_MILES = { QB: [['pyd', 'passing yards', [1000, 2000, 3000, 4000]], ['ptd', 'touchdown passes', [10, 20, 30, 40]]], WR: [['recyd', 'receiving yards', [500, 1000, 1500, 2000]], ['rectd', 'receiving touchdowns', [5, 10, 15]]],
+  const STAT_MILES = { QB: [['pyd', 'passing yards', [1000, 2000, 3000, 4000, 5000]], ['ptd', 'touchdown passes', [10, 20, 30, 40, 50]]], WR: [['recyd', 'receiving yards', [500, 1000, 1500, 2000]], ['rectd', 'receiving touchdowns', [5, 10, 15, 20]]],
     RB: [['ryd', 'rushing yards', [500, 1000, 1500, 2000]], ['rtd', 'rushing touchdowns', [5, 10, 15, 20]]], LB: [['tkl', 'tackles', [50, 100, 150]], ['sack', 'sacks', [5, 10, 15]], ['int', 'interceptions', [3, 5, 8]]] };
   function mileOf(m) {
     for (const [k, label, at] of STAT_MILES[C.pos] || []) {
@@ -1668,11 +1668,18 @@
   const RECS = [
     ['g.pyd', 'game', 'pyd', 'Passing yards', 554], ['g.ptd', 'game', 'ptd', 'Touchdown passes', 7], ['g.comp', 'game', 'comp', 'Completions', 45],
     ['g.recyd', 'game', 'recyd', 'Receiving yards', 336], ['g.rec', 'game', 'rec', 'Catches', 21], ['g.rectd', 'game', 'rectd', 'Touchdown catches', 5],
-    ['s.pyd', 'season', 'pyd', 'Passing yards', 3220], ['s.ptd', 'season', 'ptd', 'Touchdown passes', 32], ['s.comp', 'season', 'comp', 'Completions', 275],
-    ['s.recyd', 'season', 'recyd', 'Receiving yards', 1155], ['s.rec', 'season', 'rec', 'Catches', 88], ['s.rectd', 'season', 'rectd', 'Touchdown catches', 14]];
+    ['s.pyd', 'season', 'pyd', 'Passing yards', 5477], ['s.ptd', 'season', 'ptd', 'Touchdown passes', 55], ['s.comp', 'season', 'comp', 'Completions', 471],
+    ['s.recyd', 'season', 'recyd', 'Receiving yards', 1964], ['s.rec', 'season', 'rec', 'Catches', 149], ['s.rectd', 'season', 'rectd', 'Touchdown catches', 23]];
+  /* the season marks until 2026-11-17, made for a ten-week season: a book that still has them is brought up to the
+     seventeen-game ones (a mark of yours under the new one goes back to the old holder's) */
+  const OLD_SEASON = { 's.pyd': 3220, 's.ptd': 32, 's.comp': 275, 's.recyd': 1155, 's.rec': 88, 's.rectd': 14 };
   const REC_POS = { QB: ['pyd', 'ptd', 'comp'], WR: ['recyd', 'rec', 'rectd'] };
   function recordBook() {
     const book = load(RBK, {});
+    if (!book.v17) {
+      for (const id in OLD_SEASON) if (book[id] && book[id].v < RECS.find(r => r[0] === id)[4]) delete book[id];
+      book.v17 = 1;
+    }
     for (const [id, , , , v] of RECS) if (!book[id]) {
       const h = [...id].reduce((t, ch) => t * 31 + ch.charCodeAt(0), 7) >>> 0;  // the same invented man every time
       book[id] = { v, name: `${PG.media.FIRST[h % PG.media.FIRST.length]} ${PG.NAMES[(h >>> 5) % PG.NAMES.length]}`, team: (h >>> 9) % TEAMS.length, when: 'Before your time' };
@@ -2442,7 +2449,13 @@
     if (potw) C.news += `. Named the ${confName} Player of the Week`;
     if (C.rival && C.rival.team === opp && us !== them) C.news += won ? `. ${C.rival.name} left without talking to reporters.` : `. ${C.rival.name}, afterward: \u201cTold you.\u201d`;
     const fin = LG.advance(C, opp, us, them);
-    if (C.phase === 'qf' || C.phase === 'semi' || C.phase === 'final' || (fin && fin !== 'Missed the playoffs')) C.madePO = 1;
+    let byeNote = '';
+    if (C.bye) {
+      // your bye week went by without you: a week of rest heals what this game left
+      byeNote = ` Week ${C.bye.week + 1} is your bye week.${C.inj ? ' The week off heals ' + C.inj.what.replace(/^a /, 'the ') + '.' : ''}`;
+      C.inj = null;
+    }
+    if (C.phase === 'wc' || C.phase === 'qf' || C.phase === 'semi' || C.phase === 'final' || (fin && fin !== 'Missed the playoffs')) C.madePO = 1;
     if (fin) {
       if (fin === 'Champion') {
         C.rings++;
@@ -2510,7 +2523,7 @@
   <li class="tot"><span>XP earned</span><b>+${fmt(xp)}</b></li></ul>
   ${fell.length?`<p class="note hi rec">League record${fell.length>1?'s':''}: ${fell.map(f=>`${fmt(f.v)} ${f.label.toLowerCase()} in a ${f.kind}, past ${esc(f.was.name)}'s ${fmt(f.was.v)}`).join('; ')}.</p>`:''}
   ${newHighs.length?`<p class="note hi">New career high${newHighs.length>1?'s':''}: ${newHighs.join(', ')}.</p>`:''}
-  ${r.potgHtml || ''}${r.potdHtml || ''}${r.scoringHtml || ''}${moved||retNote?`<p class="note">${(moved+retNote).trim()}</p>`:''}${trophies.length?`<p class="note">Trophy earned: ${trophies.join(', ')}.</p>`:''}
+  ${r.potgHtml || ''}${r.potdHtml || ''}${r.scoringHtml || ''}${moved||retNote||byeNote?`<p class="note">${(moved+retNote+byeNote).trim()}</p>`:''}${trophies.length?`<p class="note">Trophy earned: ${trophies.join(', ')}.</p>`:''}
   <button class="go" id="rc">To the podium</button></div>`;
       $('#rc').onclick = () => {
         PG.toMenu();

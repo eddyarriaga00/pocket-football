@@ -1,17 +1,23 @@
 /* PocketFootball: the league that Career and Season modes share.
-   32 teams in two conferences of four divisions (data.js). A ten-week season: the three division rivals twice (weeks
-   1-3 and 8-10) and the four teams of another division of the same conference (weeks 4-7, a different one each
-   season). The four division winners of each conference make the playoffs, seeded by record: 1 v 4 and 2 v 3 in the
-   divisional round, then the conference finals, then the championship.
-   A save from before the league grew (eight teams, a seven-week round robin, a four-team playoff) has no L.fmt: it
-   finishes its season the old way, and its next season starts in the full league.
+   32 teams in two conferences of four divisions (data.js), on the NFL's calendar since 2026-11-17 (L.fmt 3): seventeen
+   games in eighteen weeks, one bye each (weeks 6 to 11). The opponents follow the NFL's formula: the three division
+   rivals twice, the four teams of a division of the same conference (a three-season rotation), the four of a division
+   of the other conference (a four-season one), the teams that finished in the same place last season in the other
+   two divisions of the conference, and one more from the other conference (the seventeenth game, at home for one
+   conference one year and the other the next). The last week is all division games. Seven teams of each conference
+   make the playoffs: the four division winners seeded 1 to 4, then three wild cards; the first seed has a bye, the
+   wild card round is 2 v 7, 3 v 6 and 4 v 5, the first seed then meets the lowest seed left, then the conference
+   championships and the championship game.
+   L.fmt 2 (a ten-week season, the four division winners in the playoffs) and an older save with no L.fmt (eight
+   teams, a round robin) finish their season the old way; the next season starts on the NFL calendar.
    Every function works on a plain save object L that has { team } and gets
-   { fmt, ovrs, week, phase, sched, tab, po, around, lg } filled in. phase is 'reg', 'qf', 'semi', 'final' or 'done'. */
+   { fmt, ovrs, week, phase, sched, tab, po, around, lg } filled in. phase is 'reg', 'wc', 'qf', 'semi', 'final' or 'done'. */
 (() => {
   'use strict';
   const { TEAMS, rnd, pick, clamp } = PG;
   const { CONF, DIV } = PG.data;
-  const full2 = L => L.fmt === 2;
+  const full2 = L => L.fmt >= 2;  // the 32-team league (ten weeks, or the NFL's eighteen)
+  const nfl = L => L.fmt === 3;
   const ids = L => [...Array(L.tab.length).keys()];  // the teams in this league (eight in a season saved before it grew)
   const divOf = i => TEAMS[i].conf * 4 + TEAMS[i].div;
   const divTeams = (conf, div) => TEAMS.map((_, i) => i).filter(i => TEAMS[i].conf === conf && TEAMS[i].div === div);
@@ -61,6 +67,53 @@
     return [...first, ...shuffle(cross), ...second];
   }
 
+  /* The NFL's season: seventeen rounds in which every team plays (the formula above), laid out over eighteen weeks.
+     place[i] is where team i finished in its division last season (0 first), for the same-place games. Each round is
+     a perfect matching of the 32 teams; a team's bye moves the rest of its season one week later, which only works if
+     the teams it meets after its bye are moved too: so byes come in the weeks of division games (a division sits out
+     together, and its teams only meet each other then). Returns the weeks, each a list of [home, visitor]. */
+  function schedule3(lg, place) {
+    const divs = [];
+    for (let c = 0; c < 2; c++) for (let d = 0; d < 4; d++) divs.push(divTeams(c, d).sort((a, b) => place[a] - place[b]));  // each in last season's order
+    const D = (c, d) => divs[c * 4 + d];
+    /* the division's six rounds: the three pairings, then the same the other way round */
+    const rr = [[[0, 1], [2, 3]], [[0, 2], [1, 3]], [[0, 3], [1, 2]]], ord = shuffle([0, 1, 2]);
+    const divRound = k => divs.flatMap(g => rr[ord[k % 3]].map(([a, b]) => ((k % 3) % 2 ? [g[b], g[a]] : [g[a], g[b]])).map(p => (k >= 3 ? [p[1], p[0]] : p)));
+    /* four rounds against a whole division: X[i] meets Y[(i + r) % 4], at home in two of the four */
+    const vsDiv = (X, Y) => [0, 1, 2, 3].map(r => [0, 1, 2, 3].map(i => (r % 2 ? [Y[(i + r) % 4], X[i]] : [X[i], Y[(i + r) % 4]])));
+    const pairs = [[[0, 1], [2, 3]], [[0, 2], [1, 3]], [[0, 3], [1, 2]]][lg % 3];  // the same-conference pairing this season
+    const intra = [0, 1, 2, 3].map(r => [0, 1].flatMap(c => pairs.flatMap(([x, y]) => vsDiv(D(c, x), D(c, y))[r])));
+    const inter = [0, 1, 2, 3].map(r => [0, 1, 2, 3].flatMap(d => vsDiv(D(0, d), D(1, (d + lg) % 4))[r]));
+    /* the three same-place rounds: within a conference each division meets the two it does not play in full (a ring
+       of four: two rounds), and across, the division two along from its full one (one round) */
+    const other = d => pairs.find(p => !p.includes(d)), host = lg % 2;  // which conference hosts the seventeenth game
+    const ring = [0, 1].map(c => {
+      const [a, b] = pairs.find(p => p.includes(0)), [x, y] = other(0);  // the ring a-x-b-y-a
+      return [[a, x], [x, b], [b, y], [y, a]].map(([u, v]) => [u, v]);
+    })[0];
+    const same = [0, 1].map(k => [0, 1].flatMap(c => [0, 1, 2, 3].flatMap(p => ring.filter((_, e) => e % 2 === k).map(([u, v]) => [D(c, u)[p], D(c, v)[p]]))));
+    same.push([0, 1, 2, 3].flatMap(d => [0, 1, 2, 3].map(p => {
+      const a = D(0, d)[p], b = D(1, (d + lg + 2) % 4)[p];
+      return host === 0 ? [a, b] : [b, a];
+    })));
+    /* the order: four same-conference rounds, a same-place one, five division rounds (the byes), the four against the
+       other conference, two more same-place rounds and the last division round */
+    const rounds = [...shuffle(intra), same[0], ...[0, 1, 2, 3, 4].map(divRound), ...shuffle(inter), same[1], same[2], divRound(5)];
+    /* the byes: the eight divisions over weeks 6 to 11 (two weeks carry two divisions) */
+    const byeW = shuffle([5, 6, 7, 8, 9, 10, 5 + Math.floor(rnd(6)), 5 + Math.floor(rnd(6))]), bye = {};
+    divs.forEach((g, k) => g.forEach(t => (bye[t] = byeW[k])));
+    const weeks = [...Array(18)].map(() => []);
+    rounds.forEach((rd, k) => rd.forEach(g => weeks[k < bye[g[0]] ? k : k + 1].push(g)));
+    return weeks;
+  }
+
+  /* where each team finished in its division, for next season's same-place games */
+  const places = L => {
+    const o = {};
+    for (let c = 0; c < 2; c++) for (let d = 0; d < 4; d++) divTeams(c, d).sort(L.tab ? better(L) : () => rnd() - 0.5).forEach((t, k) => (o[t] = k));
+    return o;
+  };
+
   /* a save's ratings cover every team, also one made before the league grew */
   function fix(L) {
     if (L.ovrs && L.ovrs.length < TEAMS.length) L.ovrs = L.ovrs.concat(TEAMS.slice(L.ovrs.length).map(t => t.ovr));
@@ -70,12 +123,15 @@
   function start(L) {
     fix(L);
     L.ovrs = L.ovrs ? L.ovrs.map(o => clamp(o + Math.round(rnd(-3, 3)), 76, 93)) : TEAMS.map(t => t.ovr);
-    L.fmt = 2;
+    const place = places(L.tab && L.tab.length === TEAMS.length ? L : {});  // last season's finish, before the table is cleared
+    L.fmt = 3;
     L.lg = (L.lg || 0) + 1;
     L.week = 0;
     L.phase = 'reg';
-    L.sched = schedule(L.lg);
-    L.prime = shuffle([...Array(L.sched.length - 1).keys()].map(i => i + 1)).slice(0, 3).sort((a, b) => a - b);  // three of your games under the lights, never the opener
+    L.sched = schedule3(L.lg, place);
+    L.bye = null;
+    // four of your games under the lights, never the opener or your bye week
+    L.prime = shuffle([...Array(L.sched.length - 1).keys()].map(i => i + 1).filter(w => L.sched[w].some(p => p.includes(L.team)))).slice(0, 4).sort((a, b) => a - b);
     L.pend = null;
     L.tab = TEAMS.map(() => ({ w: 0, l: 0, t: 0, pf: 0, pa: 0 }));
     L.h2h = {};  // who beat whom this season, for the tie-breaks
@@ -137,16 +193,23 @@
   const seeds = L => ids(L).sort(better(L));
   /* a conference's playoff seeds: its four division winners, best record first */
   const confSeeds = (L, c) => [0, 1, 2, 3].map(d => divTeams(c, d).sort(better(L))[0]).sort(better(L));
+  /* the NFL's seven: the division winners 1 to 4 by record, then the three best of the rest */
+  const confSeeds7 = (L, c) => {
+    const win = confSeeds(L, c);
+    return win.concat(TEAMS.map((_, i) => i).filter(i => TEAMS[i].conf === c && !win.includes(i)).sort(better(L)).slice(0, 3));
+  };
   const recTxt = (L, i) => {
     const r = L.tab[i];
     return `${r.w}-${r.l}${r.t ? '-' + r.t : ''}`;
   };
-  const label = L => L.phase === 'reg' ? `Week ${L.week + 1} of ${L.sched.length}` : L.phase === 'qf' ? 'Playoffs · Divisional round' : L.phase === 'semi' ? (full2(L) ? 'Playoffs · Conference final' : 'Playoffs · Semifinal') : 'Championship game';
-  const short = L => L.phase === 'reg' ? `Wk ${L.week + 1}` : L.phase === 'qf' ? 'Divisional' : L.phase === 'semi' ? (full2(L) ? 'Conf. final' : 'Semifinal') : 'Final';
+  const label = L => L.phase === 'reg' ? `Week ${L.week + 1} of ${L.sched.length}` : L.phase === 'wc' ? 'Playoffs · Wild Card round' : L.phase === 'qf' ? 'Playoffs · Divisional round' : L.phase === 'semi' ? (full2(L) ? 'Playoffs · Conference final' : 'Playoffs · Semifinal') : 'Championship game';
+  const short = L => L.phase === 'reg' ? `Wk ${L.week + 1}` : L.phase === 'wc' ? 'Wild Card' : L.phase === 'qf' ? 'Divisional' : L.phase === 'semi' ? (full2(L) ? 'Conf. final' : 'Semifinal') : 'Final';
   /* the week of the year, for the weather and the light: the playoffs come after the last regular week */
-  const weekNo = L => L.phase === 'reg' ? L.week : L.sched.length + ({ qf: 0, semi: 1, final: 2 }[L.phase] ?? 2) - (full2(L) ? 0 : 1);
+  const weekNo = L => L.phase === 'reg' ? L.week : nfl(L) ? L.sched.length + ({ wc: 0, qf: 1, semi: 2, final: 4 }[L.phase] ?? 4) : L.sched.length + ({ qf: 0, semi: 1, final: 2 }[L.phase] ?? 2) - (full2(L) ? 0 : 1);  // the NFL leaves a week before the final
+  /* the last third of the regular season and the playoffs: winter weather */
+  const late = L => L.phase !== 'reg' || L.week >= Math.round(L.sched.length * (nfl(L) ? 0.62 : 0.6));
   /* the words for each stage, for the hubs' "continue" lines */
-  const stage = L => L.phase === 'reg' ? `week ${L.week + 1}` : L.phase === 'qf' ? 'divisional round' : L.phase === 'semi' ? (full2(L) ? 'conference final' : 'semifinal') : L.phase === 'final' ? 'championship game' : 'offseason';
+  const stage = L => L.phase === 'reg' ? `week ${L.week + 1}` : L.phase === 'wc' ? 'wild card round' : L.phase === 'qf' ? 'divisional round' : L.phase === 'semi' ? (full2(L) ? 'conference final' : 'semifinal') : L.phase === 'final' ? 'championship game' : 'offseason';
 
   /* primetime: the week's showcase game at night, the whole league watching. Three of yours in a season, and the
      conference final and the championship always */
@@ -206,11 +269,74 @@
         L.around.push([a, sa, b, sb]);
       }
       L.week++;
+      L.bye = null;
+      /* your bye: that week is played without you, and you go on to the one after (L.bye says so, for the hubs) */
+      if (L.week < L.sched.length && !L.sched[L.week].some(p => p.includes(L.team))) {
+        const games = L.sched[L.week].map(([a, b]) => {
+          const [sa, sb] = simScore(L, a, b);
+          record(L, a, b, sa, sb);
+          return [a, sa, b, sb];
+        });
+        L.bye = { week: L.week, games };
+        L.week++;
+      }
       if (L.week < L.sched.length) return null;
       if (PG.milestones) PG.milestones.regEnd(L.tab[L.team]);  // the regular season is over: an achievement (unbeaten: another)
-      return full2(L) ? bracket2(L, end) : bracket1(L, end);
+      return nfl(L) ? bracket3(L, end) : full2(L) ? bracket2(L, end) : bracket1(L, end);
     }
+    if (L.phase === 'wc') return wildCard(L, won, opp, end);
     return full2(L) ? playoff2(L, won, opp, end) : playoff1(L, won, opp, end);
+  }
+
+  /* The NFL's playoffs. games: w, the six wild card games (the Union's three, then the Frontier's), then as in the ten-week
+     league: q, the four divisional games, c, the conference championships, f, the final. */
+  function bracket3(L, end) {
+    const S = [confSeeds7(L, 0), confSeeds7(L, 1)];
+    const gm = { w: S.flatMap(s => [[s[1], s[6], null], [s[2], s[5], null], [s[3], s[4], null]]), q: null, c: [[null, null, null], [null, null, null]], f: [null, null, null] };
+    L.po = { fmt: 3, seeds: S, games: gm };
+    const me = L.team, k = gm.w.findIndex(g => g.includes(me));
+    if (k >= 0) {
+      L.phase = 'wc';
+      L.po.opp = gm.w[k][0] === me ? gm.w[k][1] : gm.w[k][0];
+      return null;
+    }
+    gm.w.forEach(g => (g[2] = simWinner(L, g[0], g[1])));
+    divisional(L);
+    if (S[TEAMS[me].conf][0] !== me) {
+      simRest(L, 'q');
+      return end('Missed the playoffs');
+    }
+    // the first seed: a week off, then the divisional round
+    L.phase = 'qf';
+    L.po.byeWk = true;
+    const g = gm.q.find(x => x.includes(me));
+    L.po.opp = g[0] === me ? g[1] : g[0];
+    return null;
+  }
+  /* after the wild card round: the first seed meets the lowest seed left, the other two winners each other (the higher
+     seed at home: first in each pair) */
+  function divisional(L) {
+    const gm = L.po.games;
+    gm.q = [0, 1].flatMap(c => {
+      const s = L.po.seeds[c], left = [s[0], ...gm.w.slice(c * 3, c * 3 + 3).map(g => g[2])].sort((a, b) => s.indexOf(a) - s.indexOf(b));
+      return [[left[0], left[3], null], [left[1], left[2], null]];
+    });
+  }
+  function wildCard(L, won, opp, end) {
+    const gm = L.po.games, me = L.team;
+    gm.w.find(g => g.includes(me))[2] = won ? me : opp;
+    gm.w.forEach(g => {
+      if (g[2] == null) g[2] = simWinner(L, g[0], g[1]);
+    });
+    divisional(L);
+    if (!won) {
+      simRest(L, 'q');
+      return end('Lost in the wild card round');
+    }
+    L.phase = 'qf';
+    const g = gm.q.find(x => x.includes(me));
+    L.po.opp = g[0] === me ? g[1] : g[0];
+    return null;
   }
 
   /* the full league's playoffs. games: q, the four divisional games (the Union's two, then the Frontier's), c, the two
@@ -326,12 +452,17 @@
   function bracketHtml(L) {
     const gm = L.po && L.po.games;
     if (!gm) return '';
-    const seedOf = t => (L.po.fmt === 2 ? L.po.seeds[TEAMS[t].conf].indexOf(t) : L.po.seeds.indexOf(t)) + 1;
+    const seedOf = t => (L.po.fmt >= 2 ? L.po.seeds[TEAMS[t].conf].indexOf(t) : L.po.seeds.indexOf(t)) + 1;
     /* a slot: the team's color, its seed and its name (its abbreviation in the later rounds, where the column is narrow) */
     const slot = (t, w, ab) => t == null ? '<span class="tbd">TBD</span>'
       : `<span class="${w === t ? 'w' : w != null ? 'out' : ''}${t === L.team ? ' me' : ''}"><i style="--c:${TEAMS[t].c1}"></i><em>${seedOf(t)}</em>${ab ? TEAMS[t].ab : TEAMS[t].name}</span>`;
     const game = (g, ab) => `<div class="gm">${slot(g[0], g[2], ab)}${slot(g[1], g[2], ab)}</div>`;
     const champ = c => `<div class="gm">${c == null ? '<span class="tbd">TBD</span>' : slot(c, c, true)}</div>`;
+    if (L.po.fmt === 3) {
+      const q = c => gm.q ? gm.q.slice(c * 2, c * 2 + 2) : [[L.po.seeds[c][0], null, null], [null, null, null]];
+      return `<h2>Playoffs</h2>${[0, 1].map(c => `<h3 class="brh">${CONF[c]} Conference</h3><div class="brk b4"><div><small>Wild Card</small>${gm.w.slice(c * 3, c * 3 + 3).map(g => game(g, true)).join('')}<p class="byl${L.po.seeds[c][0] === L.team ? ' me' : ''}"><i style="--c:${TEAMS[L.po.seeds[c][0]].c1}"></i>Bye · 1 ${TEAMS[L.po.seeds[c][0]].ab}</p></div><div><small>Divisional</small>${q(c).map(g => game(g, true)).join('')}</div><div><small>Conf. final</small>${game(gm.c[c], true)}</div><div><small>To the final</small>${champ(gm.c[c][2])}</div></div>`).join('')}
+      <div class="brk brf"><div><small>Championship</small>${game(gm.f)}</div><div></div><div><small>Champion</small>${champ(gm.f[2])}</div></div>`;
+    }
     if (L.po.fmt === 2) return `<h2>Playoffs</h2>${[0, 1].map(c => `<h3 class="brh">${CONF[c]} Conference</h3><div class="brk"><div><small>Divisional</small>${game(gm.q[c * 2])}${game(gm.q[c * 2 + 1])}</div><div><small>Conference final</small>${game(gm.c[c], true)}</div><div><small>To the final</small>${champ(gm.c[c][2])}</div></div>`).join('')}
       <div class="brk brf"><div><small>Championship</small>${game(gm.f)}</div><div></div><div><small>Champion</small>${champ(gm.f[2])}</div></div>`;
     return `<h2>Playoffs</h2><div class="brk"><div><small>Semifinals</small>${game(gm.s1)}${game(gm.s2)}</div><div><small>Final</small>${game(gm.f, true)}</div>
@@ -362,8 +493,8 @@
     }, conf = (label, ds) => `<h3 class="dvh">${label}</h3><div class="dvg">${ds.map(card).join('')}</div>`;
     return `${bracketHtml(L)}<h2>${L.po && L.po.games ? 'Final standings' : 'Standings'}</h2>${table(mine)}
       ${conf(`Rest of the ${CONF[mc]}`, order.filter(d => d !== mine && d >> 2 === mc))}${conf(`${CONF[1 - mc]} Conference`, order.filter(d => d >> 2 !== mc))}
-      <p class="note">Record, then head-to-head, division record and point difference. The four division winners of each conference make the playoffs; a division's leader is marked.</p>${around}`;
+      <p class="note">Record, then head-to-head, division record and point difference. ${nfl(L) ? 'Seven teams of each conference make the playoffs: the four division winners, then three wild cards. The first seed has a bye.' : 'The four division winners of each conference make the playoffs.'} A division's leader is marked.</p>${around}`;
   }
 
-  PG.league = { home, prime, preWeek, start, fix, record, simScore, simWinner, seeds, confSeeds, recTxt, label, short, weekNo, stage, nextOpp, advance, standingsHtml, bracketHtml, divTeams, divName, divOf, full: full2, schedule };
+  PG.league = { schedule3, late, nfl, home, prime, preWeek, start, fix, record, simScore, simWinner, seeds, confSeeds, recTxt, label, short, weekNo, stage, nextOpp, advance, standingsHtml, bracketHtml, divTeams, divName, divOf, full: full2, schedule };
 })();

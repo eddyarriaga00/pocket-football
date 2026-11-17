@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `ff5d7d8`, before the NFL calendar (17 games, byes, seven-team playoffs) (2026-11-17).
   - `3d54435`, before more awards, trophies and milestones, and the comment-free one-file build (2026-11-17).
   - `e14de31`, before landscape and computer layouts and the controller and keyboard upgrades (2026-11-17).
   - `4c07eca`, before more commentary takes, new conversion and long-touchdown calls, and social posts about your events, milestones and deals (2026-11-16 late).
@@ -3167,6 +3168,26 @@ six were done as the pro game has them; the choices where there was one are mine
   (tools/strip.js, checked by the parser to be the same program), which frees about 230 KB under its 16 MB limit;
   two more hub tile labels shortened. Tested: careers with the new awards forced and won, trophies and milestones
   earned, the audit clean at 390x844, the rough player, fingerprint unchanged in the game and in the one-file build.
+
+- **2026-11-17: the NFL calendar.** Asked for: "make sure now that the schedule is similar to that of the nfl i want
+  same amounts of games played and more all that to be the same, rules and more". Season and Career now play the NFL
+  season (league.js, L.fmt 3): 17 games in 18 weeks with one bye (weeks 6 to 11), opponents by the NFL formula (the
+  division twice, a same-conference division on a three-season rotation, an other-conference division on a four-season
+  one, two same-place games in the conference from last season's standings, one same-place game across, the 17th
+  hosted by each conference in turn), eight or nine home games, week 18 all division games, four primetime games.
+  Playoffs: seven a conference (four division winners seeded by record, three wild cards), the first seed's bye, wild
+  card 2 v 7, 3 v 6, 4 v 5, the first seed against the lowest seed left, conference championships, the final two weeks
+  later on the calendar. A new bracket (four columns, seeds, the bye), a "Lost in the wild card round" finish (+100
+  XP), the trade deadline after week 9, winter weather from week 12, a bye week note (and it heals a knock in Career),
+  bye rows in Season's schedule. Scaled to 17 games: the league's season records (now the real game's marks; a
+  ten-week mark under them goes back to the old holder), the season milestone posts, two trophies (4,000 yards / 30
+  TD passes for a quarterback, 100 games for Iron man), Man of the Year at three community events. Saves mid-season on
+  the ten-week calendar finish it, then move over. Rules checked: overtime (both sides get the ball, ten minutes in
+  the regular season, fifteen in the playoffs), the kickoff touchback at the 35 and the two-point chart were already
+  current. Quarter length stays a choice (the clock between plays is accelerated, as in console football). Tested:
+  12 seasons of schedules checked game by game, 600 seasons through every playoff path, careers and a Season through
+  the audit at 390, 320 wide, the rough player; play unchanged (the fingerprint differs only in the schedule, re-pinned
+  as pg.fingerprint, the old one kept as pg.fingerprint.before-nfl).
 
 ## Morning hand-off
 

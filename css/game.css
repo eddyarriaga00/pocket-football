@@ -379,6 +379,10 @@ tr.me td{color:var(--acc);font-weight:700}
 .nx ul.aw b{white-space:normal;text-align:right}
 .brk{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center}  /* minmax(0,…): a long team name wraps instead of pushing the page wider */
 .brk>div{display:flex;flex-direction:column;gap:6px}
+.brk.b4{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}   /* the NFL's playoffs: wild card, divisional, conference final, through */
+.brk .byl{margin:2px 0 0;display:flex;align-items:center;gap:5px;color:var(--mute);font-family:var(--display);font-weight:700;font-size:10.5px;letter-spacing:.04em}
+.brk .byl i{width:7px;height:7px;border-radius:50%;background:var(--c)}
+.brk .byl.me{color:var(--acc)}
 .brk small{font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
 .gm{background:var(--panel2);border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .gm span{display:block;padding:6px 8px;font-size:11.5px;line-height:1.25;color:var(--mute);overflow-wrap:anywhere}

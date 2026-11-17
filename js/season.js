@@ -68,7 +68,7 @@
     const st = { team: PG.SET.me || 0, dl: PG.lvlOf(PG.SET), ql: 180 };
     const draw = () => {
       scr.innerHTML = `<div class="menu solid"><button class="back" id="bk">‹ Menu</button><h1 class="sm">New <em>season</em></h1>
-        <p class="tag">Ten games: your division twice, and four against another division of your conference. The division winners make an eight-team playoff. You call and play every snap.</p>
+        <p class="tag">The NFL calendar: 17 games in 18 weeks with a bye. Seven teams of each conference make the playoffs. You call and play every snap.</p>
         ${PG.kitsHtml([[st.team, true, 'Home'], [st.team, false, 'Away']]).replace('<em>vs</em>', '')}
         <h2>Your team</h2><div class="teams" id="st">${PG.teamGrid(st.team)}</div>
         <h2>Difficulty</h2>${PG.diffSlider('sd', st.dl)}
@@ -134,7 +134,12 @@
        the ones to come */
     const rows = S.log.map(g => `<div><i class="gb ${g.us > g.them ? 'w' : g.us < g.them ? 'l' : 't'}">${g.us > g.them ? 'W' : g.us < g.them ? 'L' : 'T'}</i><div><b>${g.wk} · ${g.us}–${g.them} vs ${full(g.opp)}</b></div></div>`);
     if (S.phase === 'reg') for (let w = S.week; w < S.sched.length; w++) {
-      const m = S.sched[w].find(p => p.includes(S.team)), o = m[0] === S.team ? m[1] : m[0];
+      const m = S.sched[w].find(p => p.includes(S.team));
+      if (!m) {
+        rows.push(`<div class="tc"><i class="gb">${w + 1}</i><div><b>Bye week</b><small>No game: the rest of the league plays</small></div></div>`);
+        continue;
+      }
+      const o = m[0] === S.team ? m[1] : m[0];
       rows.push(`<div class="tc"><i class="gb">${w + 1}</i><div><b>${m[0] === S.team ? 'vs' : 'at'} ${full(o)}</b><small>${S.ovrs[o]} OVR · ${LG.recTxt(S, o)}</small></div></div>`);
     }
     return `<div class="glog">${rows.join('')}</div>`;
@@ -206,7 +211,7 @@
     const opp = LG.nextOpp(S);
     PG.snd('whistle');
     ensureRoster();
-    const pt = LG.prime(S), env = PG.envFor(S.year + 50, LG.weekNo(S), S.phase !== 'reg' || S.week >= S.sched.length - 4, LG.home(S) ? S.team : opp);  // the home city's weather
+    const pt = LG.prime(S), env = PG.envFor(S.year + 50, LG.weekNo(S), LG.late(S), LG.home(S) ? S.team : opp);  // the home city's weather
     if (pt) env.time = 'night';  // primetime is a night game
     PG.startGame({ a: S.team, b: opp, ql: S.ql, diff: PG.lvlOf(S), mode: 'season', ros0: S.roster, ovr: [S.ovrs[S.team], S.ovrs[opp]], mustWin: S.phase !== 'reg', title: S.phase === 'final',
       away: !LG.home(S), prime: pt, around: LG.full(S) ? LG.preWeek(S) : null, env,
@@ -247,7 +252,7 @@
       // drawn again after watching the play of the game
       scr.innerHTML = `<div class="sheet fin"><div class="shd"><b>${won ? 'Victory' : res === 'T' ? 'Tie game' : 'Final'}</b><span>${wk} vs ${TEAMS[opp].ab}</span></div>
         ${table}${r.potgHtml || ''}${r.potdHtml || ''}${r.scoringHtml || ''}
-        ${fin ? `<p class="note">${fin === 'Champion' ? 'Champions. The title is yours.' : 'Season over: ' + fin.toLowerCase() + '.'}</p>` : ''}
+        ${fin ? `<p class="note">${fin === 'Champion' ? 'Champions. The title is yours.' : 'Season over: ' + fin.toLowerCase() + '.'}</p>` : ''}${S.bye ? `<p class="note">Week ${S.bye.week + 1} is your bye week: the league plays on without you.</p>` : ''}
         <button class="go" id="rc">Continue</button></div>`;
       $('#rc').onclick = () => {
         PG.toMenu();
