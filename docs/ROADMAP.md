@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `60ed5d7`, before Stylized became the default look (2026-11-16 night).
   - `bcca249`, before the Stylized look option (2026-11-16 night).
   - `8e282ac`, before grounded player lighting, sideline turf and team areas, and the leather ball (2026-11-16 night).
   - `c6a445d`, before the move to the pocket-football address and the PocketFB home-screen name (2026-11-16 night).
@@ -3081,6 +3082,9 @@ six were done as the pro game has them; the choices where there was one are mine
   mowing stripes); the crowd and the whole picture more saturated (the finishing pass 1.28 instead of 1.1). Classic
   stays the default until the owner picks. Fingerprint unchanged; the rough player, careers and the audit clean in
   the stylized look; no shader errors.
+
+- 2026-11-16 (night, "default to new style so i can test"). Stylized is now the default: everyone who has not chosen
+  gets it (`look !== 'classic'`); Settings → Style still switches to Classic.
 
 ## Morning hand-off
 

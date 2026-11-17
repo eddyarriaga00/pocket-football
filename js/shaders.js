@@ -277,7 +277,7 @@
   /* toon: the stylized look (PG.SET.look === 'toon'). Players are cel-shaded (MeshToonMaterial, three bands) with
      shadows tinted cool instead of only darker, a crisp painted highlight on helmets, and no cloth noise: a clean,
      bold, not-realistic finish. render3d.js decides which material; this patch adds the rest. */
-  const toonOn = () => !!(window.PG && PG.SET && PG.SET.look === 'toon');
+  const toonOn = () => !!(window.PG && PG.SET && PG.SET.look !== 'classic');  // the default since 2026-11-16, for the owner to try
 
   function rim(material, kind) {
     const toon = toonOn();
