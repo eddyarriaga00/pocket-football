@@ -266,7 +266,7 @@ window.H = (() => {
               else {
                 // the contract is up: take the current team's offer
                 q('#fa').click();
-                q('.tm.on').click();
+                (q('.ofr.on [data-sign]') || q('.tm.on')).click();
               }
             }
           } else this.playCareerGame();

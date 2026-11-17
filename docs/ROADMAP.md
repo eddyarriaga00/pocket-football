@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `8ce466d`, before the career hub reorganization, league news, contract extensions and incentives, weekly events (2026-11-16 night).
   - `d29ee21`, before white became the default accent (2026-11-16 night).
   - `60ed5d7`, before Stylized became the default look (2026-11-16 night).
   - `bcca249`, before the Stylized look option (2026-11-16 night).
@@ -3089,6 +3090,27 @@ six were done as the pro game has them; the choices where there was one are mine
 
 - 2026-11-16 (night, "make default accent color white"). White is the default accent; settings saved with the old
   default (blue) switch to white once (`accV: 2`), and an accent picked after that sticks. Audit empty at 440x956.
+
+- 2026-11-16 (night, "improve the contracts and more things improve time and events, add news to the league and more
+  for socials, organize it better to not clutter with many messages to scroll up and down"). The career hub: the coach
+  paragraph, the trust block and the chemistry card (each with its own note) became four tiles (XP, contract, trust
+  with the role and drive share, chemistry) and one Inbox card holding whatever waits on you: the week's event, a
+  contract extension, an endorsement offer, the coach's last word. Tabs: Upgrade, Season, News (new), Social, Stats.
+  The next game's card carries its date (seasons open the Sunday after Labor Day, a year per season). News
+  (C.lnews, newsAfter): your headline, an upset, a rout and a shootout from the week's other scores (regular season),
+  the last unbeaten and the winless, a coach fired after 0-5, a stat leader (a different category each week), an
+  injury around the league, two deals at the deadline (week 6), the champion and the big awards; filters All, your
+  team, Around the league; a week's biggest story also goes into your feed from the League Wire. Contracts: a Season
+  tab card (pay, years left, market value, career earnings, the incentive); an extension offered once in the last
+  year of a deal when you are playing well (a B-plus over three games, trust 60), never below current pay, gone at
+  season's end, with Ask for more once (likelier with trust and form); free-agency offers carry an incentive (make
+  the playoffs +1,000, All-League +1,500, top three in your main stat +1,200, paid at season's end) and you can ask
+  each team for 10% more once (it may raise, hold or walk away). Weekly events (about two weeks in three), one choice
+  each with its effects shown: film with your partner, a hospital visit, radio, a party, a photo shoot, mentoring a
+  rookie, the rival's clip, the trainer, autographs, the coach asking your idea, an agent leak, a players-only
+  meeting. Social: eighteen posts a week (was 32), this week's top six first with Show all, one reply under each post
+  and the rest folded. Tested: two full careers with free agency, forced extension and events, the news and offers
+  screens at 440x956; fingerprint unchanged; the rough player and the audit clean.
 
 ## Morning hand-off
 

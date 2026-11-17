@@ -403,8 +403,16 @@
     let bonus = { Champion: 1500, 'Runner-up': 800, Semifinalist: 400, 'Lost in the conference final': 400, 'Lost in the divisional round': 200 }[finish] || 0;
     const reg = C.log.filter(g => g.pts !== undefined && /^Wk/.test(g.wk)), avg = reg.length ? reg.reduce((t, g) => t + g.pts, 0) / reg.length : 0;
     const L = leaders(), mine = L.rows.find(r => r.me), his = L.rows.find(r => r.riv);  // the season-long race with your rival
+    C.ext = null;  // an extension not answered by the end of the season is off the table
     const night = awardsNight(finish, avg, L), aw = night.won;
     bonus += night.xp;
+    /* the contract's incentive, if it has one and it was met this season */
+    const dl = deal(), inc = dl.inc && INCENT[dl.inc];
+    C.po = C.po || {};
+    if (inc && (dl.inc !== 'pro' ? inc[2]() : aw.includes('All-League'))) {
+      bonus += inc[1];
+      C.po.incent = `${inc[0]}: +${fmt(inc[1])} XP`;
+    }
     C.po.night = night.night;
     C.po.nightSeen = false;
     /* the all-star game: an honor, or a season averaging better than a B, gets you the invitation (more men make the
@@ -876,6 +884,211 @@
 
   const TROPHY_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10v5a5 5 0 01-4 4.9V16h3v3H8v-3h3v-3.1A5 5 0 017 8zM3 4.5h3V9a3.5 3.5 0 01-3-3.4zm18 0v1.1A3.5 3.5 0 0118 9V4.5z"/></svg>';
 
+  /* ---------- the calendar ----------
+     A season opens the first Sunday after Labor Day and plays a week apart, playoffs included: the date of the next
+     game is on its card. Each career season is the next calendar year. */
+  function gameDate(n) {
+    const y = 2026 + (C.season || 1) - 1, sep1 = new Date(y, 8, 1), lab = 1 + ((8 - sep1.getDay()) % 7), d = new Date(y, 8, lab + 6 + 7 * Math.max(0, n));
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  /* ---------- league news ----------
+     After each of your games the league has its own stories: upsets, routs and shootouts from the week's other scores,
+     the last unbeaten and the still winless, a coach fired, a stat leader (a different category each week), injuries
+     and deadline deals around the league, your own headline, and when the season ends the champion and the big awards.
+     Kept in C.lnews, newest first, the last 60; the News tab shows them by week. The flavor items (injuries, trades,
+     who is fired) use Math.random, so seeded test runs are untouched. */
+  const NEWS_KIND = { you: 'You', score: 'Final', upset: 'Upset', streak: 'Streak', lead: 'Leader', inj: 'Injury', coach: 'Coaching', trade: 'Trade', award: 'Award', po: 'Playoffs', deal: 'Contract' };
+  function addNews(items) {
+    C.lnews = items.concat(C.lnews || []).slice(0, 60);
+  }
+  function newsAfter(wk, fin, reg) {
+    const out = [], add = (k, t, x) => out.push({ s: C.season, w: wk, k, t, x }), nm = i => TEAMS[i].name, other = () => {
+      let i = Math.floor(Math.random() * TEAMS.length);
+      if (i === C.team) i = (i + 1) % TEAMS.length;
+      return i;
+    };
+    if (C.news) add('you', C.team, C.news);
+    const games = (reg ? C.around || [] : []).map(([a, sa, b, sb]) => {  // the week's other scores (playoff weeks have none of their own)
+      const w = sa > sb ? a : b, l = w === a ? b : a;
+      return { w, l, ws: Math.max(sa, sb), ls: Math.min(sa, sb), gap: (C.ovrs[l] || 80) - (C.ovrs[w] || 80) };
+    }).filter(g => g.ws !== g.ls);
+    const ups = games.filter(g => g.gap >= 5).sort((a, b) => b.gap - a.gap)[0];
+    if (ups) add('upset', ups.w, `The ${nm(ups.w)} (${recTxt(ups.w)}) stun the ${nm(ups.l)}, ${ups.ws}–${ups.ls}.`);
+    const rout = games.filter(g => g !== ups && g.ws - g.ls >= 24).sort((a, b) => (b.ws - b.ls) - (a.ws - a.ls))[0];
+    if (rout) add('score', rout.w, `The ${nm(rout.w)} roll past the ${nm(rout.l)}, ${rout.ws}–${rout.ls}.`);
+    const shoot = games.find(g => g !== ups && g !== rout && g.ws + g.ls >= 66);
+    if (shoot) add('score', shoot.w, `A shootout goes to the ${nm(shoot.w)}: ${shoot.ws}–${shoot.ls} over the ${nm(shoot.l)}.`);
+    const T = (C.tab || []).map((r, i) => [r, i]);
+    if (C.phase === 'reg' && !fin) {
+      const unb = T.filter(([r]) => r.l === 0 && r.t === 0 && r.w >= 3);
+      if (unb.length === 1) add('streak', unb[0][1], unb[0][1] === C.team ? `You are ${unb[0][0].w}–0: the league's last unbeaten team.` : `The ${nm(unb[0][1])} are ${unb[0][0].w}–0, the league's last unbeaten team.`);
+      else if (unb.length > 1 && unb.length <= 4) add('streak', unb[0][1], `Still unbeaten: ${unb.map(([, i]) => nm(i)).join(', ')}.`);
+      const win0 = T.filter(([r, i]) => r.w === 0 && r.t === 0 && r.l >= 4 && i !== C.team);
+      if (win0.length) {
+        const [r, i] = win0[Math.floor(Math.random() * win0.length)];
+        C.fired = C.firedS === C.season ? C.fired || [] : [];
+        C.firedS = C.season;
+        if (r.l >= 5 && !C.fired.includes(i) && Math.random() < 0.5) {
+          C.fired.push(i);
+          add('coach', i, `The ${nm(i)} fire their head coach after an 0–${r.l} start.`);
+        } else add('streak', i, `Still no win for the ${nm(i)} (0–${r.l}).`);
+      }
+      if (Math.random() < 0.4) {
+        const i = other(), pos = anyOf(['quarterback', 'running back', 'receiver', 'left tackle', 'linebacker', 'cornerback', 'safety', 'pass rusher']), wks = 2 + Math.floor(Math.random() * 4);
+        add('inj', i, `The ${nm(i)} lose their starting ${pos}, ${anyOf(PG.NAMES)}, for ${wks} weeks (${anyOf(['knee', 'ankle', 'hamstring', 'shoulder', 'concussion protocol'])}).`);
+      }
+      if (C.week === 5 && C.tdl !== C.season) {
+        C.tdl = C.season;
+        for (let k = 0; k < 2; k++) {
+          const i = other(), j = (i + 7 + k * 5) % TEAMS.length;
+          if (j !== C.team) add('trade', i, `Deadline deal: the ${nm(i)} send a ${anyOf(['third', 'fourth', 'fifth'])}-round pick to the ${nm(j)} for a veteran ${anyOf(['receiver', 'edge rusher', 'cornerback', 'running back', 'guard'])}.`);
+        }
+      }
+      // one stat leader a week, the category turning over
+      const cats = [CATS[C.pos][0][0], ...AROUND.map(a => a[0])], label = cats[C.log.length % cats.length], b = board(label), top = b.rows[0];
+      if (top) add('lead', top.me ? C.team : Math.max(0, TEAMS.findIndex(t => t.ab === top.ab)), top.me ? `You lead the league in ${label.toLowerCase()}: ${b.show(top.v)}.` : `${top.name} (${top.ab}) leads the league in ${label.toLowerCase()}: ${b.show(top.v)}.`);
+    }
+    if (fin && C.po) {
+      if (C.po.champ != null && C.po.champ !== C.team) add('po', C.po.champ, `The ${nm(C.po.champ)} are league champions.`);
+      for (const x of C.po.night || []) if (/^(League MVP|Offensive Player)/.test(x.a)) add('award', x.w.me ? C.team : Math.max(0, TEAMS.findIndex(t => t.ab === x.w.ab)), x.w.me ? `You are the ${x.a}.` : `${x.w.name} (${x.w.ab}) is the ${x.a}.`);
+    }
+    addNews(out);
+  }
+  let newsTab = 'all';
+  function tabNews() {
+    const all = (C.lnews || []).filter(n => n.s === C.season), list = newsTab === 'mine' ? all.filter(n => n.t === C.team) : newsTab === 'league' ? all.filter(n => n.t !== C.team) : all;
+    const weeks = [];
+    for (const n of list) {
+      if (!weeks.length || weeks[weeks.length - 1].w !== n.w) weeks.push({ w: n.w, items: [] });
+      weeks[weeks.length - 1].items.push(n);
+    }
+    const row = n => {
+      const tm = TEAMS[n.t] || TEAMS[C.team];
+      return `<li class="nw k-${n.k}"><i class="tb" style="--c:${tm.c1};color:${PG.inkOn(tm.c1)}">${tm.ab}</i><div><small>${NEWS_KIND[n.k] || ''}</small><p>${esc(n.x)}</p></div></li>`;
+    };
+    const st = (k, l) => `<button data-nt="${k}" class="${newsTab === k ? 'on' : ''}">${l}</button>`;
+    return `<div class="seg stab">${st('all', 'All')}${st('mine', team(C.team).name)}${st('league', 'Around the league')}</div>`
+      + (weeks.length ? weeks.map((w, i) => i === 0 ? `<h2 class="fwk">${esc(w.w)}</h2><ul class="nws">${w.items.map(row).join('')}</ul>`
+        : `<details class="fwkd"><summary><span>${esc(w.w)}</span><small>${w.items.length} stor${w.items.length === 1 ? 'y' : 'ies'}</small></summary><ul class="nws">${w.items.map(row).join('')}</ul></details>`).join('')
+        : '<p class="note">The league’s stories start with your first game.</p>');
+  }
+
+  /* ---------- contracts: extensions, incentives, asking for more ----------
+     In the last season of a deal, playing well (a B-plus average over the last three games, coach trust 60 or more)
+     from week four on, the team offers an extension once: years, pay and a signing bonus in XP. Accept it, turn it
+     down, or ask for more once: the better you are playing and the more the coach trusts you, the likelier they move
+     (pay +10%, bonus +20%); if they will not, the offer stands as it was. Offers at free agency carry an incentive,
+     paid in XP when the season ends if it is met. */
+  const INCENT = {
+    po: ['Make the playoffs', 1000, () => !!C.madePO],
+    pro: ['Earn All-League', 1500, () => (C.po && C.po.awards || []).some(a => /^All-League/.test(a))],
+    lead: ['Top three in your main stat', 1200, () => { const L = leaders(); return L.rows.findIndex(r => r.me) < 3 && L.rows.some(r => r.me); }],
+  };
+  const incOf = i => ['po', 'pro', 'lead'][(i + C.season) % 3];
+  function extensionCheck() {
+    const d = deal();
+    if (C.phase !== 'reg' || d.left !== 1 || C.extS === C.season || C.week < 4 || C.trust < 60) return;
+    const last = C.log.slice(-3);
+    if (last.length < 3 || last.reduce((t, g) => t + (g.pts || 0), 0) / 3 < 6) return;
+    C.extS = C.season;
+    const years = clamp((ovr() >= 85 ? 3 : 2) + (C.season % 2), 2, 4), pay = Math.round(Math.max(worth() * 1.06, d.pay * 1.05) * 10) / 10;  // never less than you are paid now
+    C.ext = { years, pay, xp: Math.round(pay * years * 70) * 10, asked: false };
+  }
+  function answerExt(how) {
+    const x = C.ext;
+    if (!x) return;
+    if (how === 'ask' && !x.asked) {
+      x.asked = true;
+      const last = C.log.slice(-3), form = last.reduce((t, g) => t + (g.pts || 0), 0) / Math.max(1, last.length);
+      if (Math.random() < clamp(0.25 + (C.trust - 60) * 0.012 + (form - 6) * 0.08, 0.1, 0.85)) {
+        x.pay = Math.round(x.pay * 1.1 * 10) / 10;
+        x.xp = Math.round(x.xp * 1.2 / 10) * 10;
+        PG.toast('They moved: a better offer');
+      } else PG.toast('They held firm');
+    } else if (how === 'yes') {
+      C.deal = { years: x.years + 1, left: x.years + 1, pay: x.pay, inc: incOf(C.team) };
+      C.xp += x.xp;
+      C.xpTotal += x.xp;
+      C.ext = null;
+      addNews([{ s: C.season, w: LG.short(C), k: 'deal', t: C.team, x: `${C.name} signs a ${x.years}-year extension with the ${team(C.team).name}: ${money(x.pay)} a season.` }]);
+      PG.snd('buy');
+      PG.banner('Extension signed', `${x.years} more season${x.years > 1 ? 's' : ''} · +${fmt(x.xp)} XP`, 2400);
+    } else if (how === 'no') {
+      C.ext = null;
+      PG.toast('Extension turned down: you will test free agency');
+    }
+    persist();
+  }
+
+  /* ---------- the week's event ----------
+     Most weeks (about two in three) bring one thing to decide before the game: a few quick choices, each with small
+     effects on XP, coach trust, hype, followers or chemistry, shown before you pick. Once a week. */
+  function weekEvent() {
+    if (C.phase === 'done' || C.pre) return null;
+    const key = pracKey();
+    if (C.evKey === key) return C.ev || null;
+    C.evKey = key;
+    const so = social(), p = partner(), mate = anyOf(so.mates), last = C.log[C.log.length - 1], rivalNext = C.rival && C.rival.team === nextOpp();
+    const pool = [
+      p && { who: `${p.first} ${p.last}`, text: `Wants to stay late and watch film together before ${team(nextOpp()).name} week.`, ch: [['Stay for film', { chem: 4, xp: 80 }], ['Head home', {}]] },
+      { who: 'Team community office', text: 'A children’s hospital visit downtown, the day after practice.', ch: [['Go', { hype: 5, fol: 0.02 }], ['Rest instead', { trust: 1 }]] },
+      { who: `${team(C.team).city} Sports Radio`, text: 'Wants you on the morning show this week.', ch: [['Do the interview', { hype: 4, fol: 0.01 }], ['Pass', {}]] },
+      { who: `${mate.first} ${mate.last}`, text: 'Birthday party Saturday night. The whole offense is going.', ch: [['Go', { chem: 3, trust: -3 }], ['Early night', { trust: 1 }]] },
+      { who: 'Your agent', text: 'A brand photo shoot on your day off pays well.', ch: [['Do the shoot', { xp: 250, trust: -1 }], ['Rest', { trust: 1 }]] },
+      C.season > 1 && { who: 'A rookie on the team', text: 'Asks if you will help him learn the playbook.', ch: [['Mentor him', { trust: 2, xp: 60 }], ['Too busy', {}]] },
+      rivalNext && { who: C.rival.name, text: 'Posted a clip of your worst play from last season.', ch: [['Fire back', { hype: 6, trust: -2 }], ['Ignore it', { trust: 1 }]] },
+      { who: 'Team trainer', text: C.inj ? `Thinks extra treatment could get your ${C.inj.what} right this week.` : 'Offers an extra conditioning session.', ch: [[C.inj ? 'Get treatment' : 'Train', C.inj ? { heal: 1 } : { xp: 150 }], ['Skip it', {}]] },
+      { who: 'Fan club', text: 'Five hundred fans want autographs after Thursday practice.', ch: [['Sign them all', { fol: 0.03, hype: 2 }], ['Wave and go', {}]] },
+      C.trust >= 50 && { who: social().coachName, text: 'Asks for your read on a new play for this week.', ch: [['Give your idea', { trust: 3 }], ['Trust the staff', { trust: 1 }]] },
+      deal().left === 1 && { who: 'Your agent', text: 'Wants to let it leak that other teams are interested.', ch: [['Leak it', { hype: 4, trust: -3 }], ['Keep it quiet', { trust: 1 }]] },
+      last && last.us < last.them && { who: `${mate.first} ${mate.last}`, text: 'Calls a players-only meeting after the loss and wants you to speak.', ch: [['Speak up', { trust: 2, chem: 2 }], ['Let others talk', {}]] },
+    ].filter(Boolean);
+    C.ev = Math.random() < 0.67 && pool.length ? anyOf(pool) : null;
+    persist();
+    return C.ev;
+  }
+  const effTxt = e => [e.xp && `+${fmt(e.xp)} XP`, e.trust && `${e.trust > 0 ? '+' : '−'}${Math.abs(e.trust)} trust`, e.hype && `+${e.hype} hype`, e.fol && `+${Math.round(e.fol * 100)}% followers`, e.chem && `+${e.chem} chemistry`, e.heal && 'heals the injury'].filter(Boolean).join(' · ') || 'nothing changes';
+  function answerEvent(i) {
+    const ev = C.ev;
+    if (!ev || !ev.ch[i]) return;
+    const e = ev.ch[i][1], so = social(), p = partner();
+    if (e.xp) {
+      C.xp += e.xp;
+      C.xpTotal += e.xp;
+    }
+    if (e.trust) C.trust = clamp(C.trust + e.trust, 5, 100);
+    if (e.hype) so.hype = clamp(so.hype + e.hype, 0, 100);
+    if (e.fol) so.fol = Math.round(so.fol * (1 + e.fol));
+    if (e.chem && p) p.chem = clamp(p.chem + e.chem, 0, 100);
+    if (e.heal) C.inj = null;
+    C.ev = null;
+    persist();
+    PG.snd('tick');
+    PG.toast(effTxt(e));
+  }
+
+  /* everything waiting on you, in one card at the top of the hub: the week's event, an extension offer, an
+     endorsement offer, and the coach's last word (one line) */
+  function inboxHtml() {
+    const ev = weekEvent(), x = C.ext, o = C.social && C.social.offer, items = [];
+    if (x) items.push(`<div class="ib deal"><small>Contract extension · ${team(C.team).name}</small><b>${x.years} more season${x.years > 1 ? 's' : ''} at ${money(x.pay)} · +${fmt(x.xp)} XP</b>
+  <div class="ibb"><button class="btn2 on" data-ex="yes">Sign</button>${x.asked ? '' : '<button class="btn2" data-ex="ask">Ask for more</button>'}<button class="btn2" data-ex="no">Not now</button></div></div>`);
+    if (ev) items.push(`<div class="ib ev"><small>${esc(ev.who)}</small><p>${esc(ev.text)}</p><div class="ibb">${ev.ch.map(([l, e], i) => `<button class="btn2" data-ev="${i}">${esc(l)}<span>${effTxt(e)}</span></button>`).join('')}</div></div>`);
+    if (o) items.push(`<div class="ib"><small>Endorsement offer</small><b>${esc(o.name)} · +${fmt(o.bonus)} XP</b><div class="ibb"><button class="btn2" data-of="y">Sign</button><button class="btn2" data-of="n">Pass</button></div></div>`);
+    if (C.coach) items.push(`<div class="ib coachl"><small>Coach</small><p>${esc(C.coach)}</p></div>`);
+    return items.length ? `<div class="inbox">${items.join('')}</div>` : '';
+  }
+
+  /* the numbers that matter, as four tiles: XP to spend, the contract, the coach's trust (and the role it buys), chemistry */
+  function tilesHtml() {
+    const [, role, sh] = roleOf(), d = deal(), p = partner();
+    return `<div class="tiles"><div><small>XP</small><b class="xpv">${fmt(C.xp)}</b><span>to spend</span></div>
+  <div><small>Contract</small><b>${d.left > 0 ? money(d.pay) : 'Ending'}</b><span>${d.left > 0 ? `${d.left} season${d.left > 1 ? 's' : ''} left` : 'up for renewal'}</span></div>
+  <div><small>Trust</small><b>${C.trust}</b><span>${role} · ${Math.round(sh * 10)}/10</span><div class="bar"><i style="width:${C.trust}%"></i></div></div>
+  ${p ? `<div><small>Chemistry</small><b>${Math.round(p.chem)}</b><span>${esc(p.last)} · ${chemTier(p.chem)}</span><div class="bar"><i style="width:${Math.round(p.chem)}%"></i></div></div>` : `<div><small>Earned</small><b>${money(C.cash || 0)}</b><span>career</span></div>`}</div>`;
+  }
+
   /* ---------- hub ---------- */
   function nextCard() {
     const t = C.team;
@@ -885,18 +1098,17 @@
       return `<div class="nx${ch?' champ':''}"${ch?` style="--c:${team(t).c1}"`:''}><small>Season ${C.season} complete</small><h4>${ch?`${TROPHY_ICON}League champions`:po.finish}</h4>
   ${ch?`<p class="chn">${C.rings>1?`Title number ${C.rings}`:'Your first title'}${po.fmvp?` · Championship Game MVP: ${po.fmvp.me?'you':`#${po.fmvp.num} ${esc(po.fmvp.name)}`}`:''}</p>`:po.fmvp?`<p class="chn">Championship Game MVP: #${po.fmvp.num} ${esc(po.fmvp.name)} (${esc(po.fmvp.ab)})</p>`:''}
   ${po.night ? '<button class="btn2" id="an" style="margin:0 0 8px">Awards night</button>' : ''}${po.star && !po.star.done ? '<button class="go" id="asg" style="margin:0 0 8px">All-Star Game \u00b7 you are invited</button>' : ''}<div class="sdn"><span><b>${recTxt(t)}</b>${team(t).ab} record</span><span><b>${team(po.champ).ab}</b>${po.champ===t?'Champions':'Champion'}</span>${po.bonus?`<span><b>+${fmt(po.bonus)}</b>Bonus XP</span>`:''}</div>
-  ${po.awards&&po.awards.length?`<div class="pcc" style="margin:0 0 8px">${po.awards.map(a=>`<span>${esc(a)}</span>`).join('')}</div>`:''}<p>${po.rival?`${esc(po.rival)}<br>`:''}Your season: ${line(C.stats)}.</p>
+  ${po.awards&&po.awards.length?`<div class="pcc" style="margin:0 0 8px">${po.awards.map(a=>`<span>${esc(a)}</span>`).join('')}</div>`:''}${po.incent?`<p class="chn">Contract incentive met · ${esc(po.incent)}</p>`:''}<p>${po.rival?`${esc(po.rival)}<br>`:''}Your season: ${line(C.stats)}.</p>
   ${deal().left>0?`<button class="go sm" id="nxs">Start season ${C.season+1}</button><p class="note" style="margin:8px 0 0">Under contract for ${deal().left} more season${deal().left>1?'s':''} at ${money(deal().pay)}.</p>`
     :`<p class="note" style="margin:0 0 8px">Your contract is up.</p><button class="go sm" id="fa">See the offers</button>`}</div>`;
     }
     const o = nextOpp(), lab = LG.label(C), pt = LG.prime(C);
-    return `<div class="nx${pt?' prime':''}"><small>${lab}${pt?' · Primetime':''}${C.rival&&C.rival.team===o?' · rival game':''}</small>${matchupHtml(o)}<h4>${LG.home(C)?'vs':'at'} ${full(o)}</h4><p>${pt?'Under the lights, the whole league watching: XP +25%.<br>':''}${forecast()}${oppInj(o)?`<br>${esc(oppInj(o).txt)}.`:''}${C.inj?`<br>You are questionable with ${C.inj.what}: ${attrName(C.inj.key)} −${C.inj.n} this week.`:''}${C.rival&&C.rival.team===o?`<br>${esc(C.rival.name)} is their ${POS[C.pos].label.toLowerCase()}. Beat them for +300 XP.<br><span class="riv">\u201c${esc(rivalSays())}\u201d</span>`:''}</p>
+    return `<div class="nx${pt?' prime':''}"><small>${lab} · ${gameDate(LG.weekNo(C))}${pt?' · Primetime':''}${C.rival&&C.rival.team===o?' · rival game':''}</small>${matchupHtml(o)}<h4>${LG.home(C)?'vs':'at'} ${full(o)}</h4><p>${pt?'Under the lights, the whole league watching: XP +25%.<br>':''}${forecast()}${oppInj(o)?`<br>${esc(oppInj(o).txt)}.`:''}${C.inj?`<br>You are questionable with ${C.inj.what}: ${attrName(C.inj.key)} −${C.inj.n} this week.`:''}${C.rival&&C.rival.team===o?`<br>${esc(C.rival.name)} is their ${POS[C.pos].label.toLowerCase()}. Beat them for +300 XP.<br><span class="riv">\u201c${esc(rivalSays())}\u201d</span>`:''}</p>
   ${C.social&&C.social.callout&&C.social.callout.team===o?calloutHtml():''}
   ${C.rival&&C.rival.team===o&&C.phase!=='done'&&!(C.social&&C.social.mday===pracKey())?`<button class="btn2" id="mday" style="margin:0 0 8px">Media day \u00b7 one question about ${esc(C.rival.name)}</button>`:''}
-  ${C.social&&C.social.offer?'<p class="note" style="margin:0 0 8px">An endorsement offer is waiting in the Social tab.</p>':''}
   <ul>${goals().map(g=>`<li>${g.d} <b>+${GOAL_XP} XP</b></li>`).join('')}</ul>
   ${C.prac!==pracKey()?'<div class="row2 pg2"><button class="btn2" id="prac">Practice · bonus XP</button><button class="go sm" id="play">Play game</button></div>':'<button class="go sm" id="play">Play game</button><p class="note" style="margin:8px 0 0">Practice is done for this week.</p>'}</div>
-  ${C.news?`<p class="news">${esc(C.news)}</p>`:''}`;
+`;
   }
 
   const pracKey = () => C.season + '-' + C.week + '-' + C.phase;
@@ -983,13 +1195,6 @@
     const so = social(), p = partner();
     return { mates: so.mates.map(m => ({ role: fieldRole(m.role), name: m.last, num: m.num })), mate: p ? { role: fieldRole(p.role), v: p.chem, name: p.last } : null };
   }
-  function chemHtml() {
-    const p = partner();
-    if (!p) return '';
-    const v = Math.round(p.chem), what = C.pos === 'QB' ? 'Your passes to him are caught more often as it grows.' : 'He looks your way more, and his throws are easier to hold, as it grows.';
-    return `<div class="chem"><i style="--c:${team(C.team).c1};color:${PG.inkOn(team(C.team).c1)}">${p.num}</i><div><small>Chemistry · ${C.pos === 'QB' ? 'top receiver' : 'your quarterback'}</small><b>${esc(p.first)} ${esc(p.last)}</b><div class="bar"><i style="width:${v}%"></i></div></div><em>${v}<small>${chemTier(v)}</small></em></div><p class="note" style="margin:4px 0 0">${what}</p>`;
-  }
-
   const short = n => PG.media.short(n), signed = n => (n >= 0 ? '+' : '\u2212') + Math.abs(n);
 
   /* the week's posts go on top of the feed, under a heading for the week */
@@ -1000,7 +1205,7 @@
       if (p.kind === 'wk') weeks.push([p]);
       else if (weeks.length) weeks[weeks.length - 1].push(p);
     }
-    so.feed = [{ kind: 'wk', text: head }, ...posts.slice(0, 32)].concat(...weeks.slice(0, 2));  // this week and the two before it, whole
+    so.feed = [{ kind: 'wk', text: head }, ...posts.slice(0, 18)].concat(...weeks.slice(0, 2));  // this week (its eighteen loudest) and the two before it
   }
 
   function feedHtml(list) {
@@ -1022,7 +1227,7 @@
   /* The Social tab, laid out like a profile: who you are and your numbers at the top, anything waiting on you (a
      callout to back up, an offer to answer) under that, then three small tabs. Mentions shows this week open and the
      earlier weeks folded. */
-  let socTab = 'feed';
+  let socTab = 'feed', socAll = false;
 
   /* followers over the last weeks, as a line: drawn once there are two weeks to join */
   function folTrend(so) {
@@ -1038,6 +1243,7 @@
     season: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5h8v3.2a4 4 0 01-3.2 3.9V11H11v2H5v-2h2.2V9.6A4 4 0 014 5.7zM2 3.5h1.5v2.7A2.2 2.2 0 012 4.3zm12 0v.8a2.2 2.2 0 01-1.5 1.9V3.5z"/></svg>',
     stats: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5v-5h2.6v5zm4.2 0v-11h2.6v11zm4.2 0v-7.5h2.6v7.5z"/></svg>',
     social: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3h11v7.5H8.4L5 13.5v-3H2.5z"/></svg>',
+    news: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 3h9.5v9.5a1 1 0 001 1H3a1 1 0 01-1-1zm10.5 3H14v6.5a1 1 0 01-2 0zM3.6 4.8v2.6h3.3V4.8zm4.6 0v.9h2.1v-.9zm0 1.7v.9h2.1v-.9zM3.6 8.9v.9h6.7v-.9zm0 1.8v.9h6.7v-.9z"/></svg>',
   };
 
   /* ---------- your look ----------
@@ -1130,7 +1336,9 @@
     }
     const st = (k, l) => `<button data-st="${k}" class="${socTab === k ? 'on' : ''}">${l}</button>`;
     let body = '';
-    if (socTab === 'feed') body = weeks.length ? weeks.map((w, n) => n === 0 ? `<h2 class="fwk">${esc(w.head)}</h2>${feedHtml(w.posts)}`
+    /* this week: the six posts that drew the most, then the rest behind one button; earlier weeks folded */
+    const top = w => socAll || w.posts.length <= 7 ? w.posts : w.posts.slice().sort((a, b) => (b.kind === 'me') - (a.kind === 'me') || (b.likes || 0) - (a.likes || 0)).slice(0, 6);
+    if (socTab === 'feed') body = weeks.length ? weeks.map((w, n) => n === 0 ? `<h2 class="fwk">${esc(w.head)}</h2>${feedHtml(top(w))}${!socAll && w.posts.length > 7 ? `<button class="btn2 more" id="socall">Show all ${w.posts.length} posts</button>` : ''}`
       : `<details class="fwkd"><summary><span>${esc(w.head)}</span><small>${w.posts.length} posts</small></summary>${feedHtml(w.posts)}</details>`).join('')
       : `<p class="note">${C.log.length ? 'Your mentions start with your next game.' : 'Play a game and the internet will have something to say.'}</p>`;
     else if (socTab === 'rec') body = so.quotes.length ? `<ul class="quotes">${so.quotes.map(q => `<li><span class="tone t-${q.tone}">${PG.media.TONE[q.tone] || q.tone}</span>“${esc(q.q)}”<small>${esc(q.wk)}</small></li>`).join('')}</ul>`
@@ -1345,12 +1553,6 @@
     return a + ' ' + b;
   }
 
-  function trustHtml() {
-    const [, role, sh] = roleOf(), up = ROLES[ROLES.findIndex(r => r[1] === role) - 1];
-    return (C.coach || C.coachPress ? `<p class="coach">${C.coach ? `<small>Coach</small>${esc(C.coach)}` : ''}${C.coachPress ? `<small${C.coach ? ' class="c2"' : ''}>${C.coach ? 'On your press conference' : 'Coach, on your press conference'}</small>${esc(C.coachPress)}` : ''}</p>` : '') + `<div class="trust"><span>Coach trust · ${role}</span><b>${C.trust}</b><div class="bar"><i style="width:${C.trust}%"></i></div></div>`
-      + (up ? `<div class="trk"><span><b>${Math.round(sh*10)} of 10</b> drives are yours</span><span><b>${up[0]}</b> trust: ${up[1]==='Starter'?'you start':'the rotation'}</span></div><p class="note">Good games and practice raise the coach's trust.</p>` : '');
-  }
-
   function tabUp() {
     const P = POS[C.pos];
     return P.attrs.map(([k, l]) => {
@@ -1373,8 +1575,16 @@
       + `</div><p class="note">${nextAt?`Next slot opens at ${nextAt} overall.`:'All three slots are open.'}</p>`;
   }
 
+  const incTxt = k => k === 'lead' ? `Top three in ${CATS[C.pos][0][0].toLowerCase()}` : INCENT[k][0];
+  /* your deal at a glance: pay, years, its incentive, what you are worth on the market now, and what you have earned */
+  function contractHtml() {
+    const d = deal(), inc = d.inc && INCENT[d.inc];
+    return `<h2>Contract</h2><div class="ctr"><div><small>Pay</small><b>${money(d.pay)}</b><span>a season</span></div><div><small>Left</small><b>${d.left}</b><span>of ${d.years} season${d.years > 1 ? 's' : ''}</span></div><div><small>Market</small><b>${money(Math.round(worth() * 10) / 10)}</b><span>your value now</span></div><div><small>Earned</small><b>${money(C.cash || 0)}</b><span>career</span></div></div>
+  ${inc ? `<p class="note">Incentive: ${incTxt(d.inc)}, +${fmt(inc[1])} XP at the end of the season.</p>` : ''}`;
+  }
+
   function tabSeason() {
-    return LG.standingsHtml(C)
+    return contractHtml() + LG.standingsHtml(C)
       + schedHtml();
   }
 
@@ -1717,24 +1927,47 @@
   }
 
   /* free agency: when your contract has run out, every team makes an offer and you choose one */
+  /* the offers stay put while you look at them (asking for more changes one, a team that walks is gone) */
+  let faOffers = null;
   function showFreeAgency() {
-    const offers = TEAMS.map((_, i) => offerFrom(i)), show = [C.team, ...TEAMS.map((_, i) => i).filter(i => i !== C.team).sort((a, b) => offers[b].pay - offers[a].pay).slice(0, 7)];  // your team and the seven that want you most
+    if (!faOffers || faOffers.season !== C.season) {
+      const offers = TEAMS.map((_, i) => Object.assign(offerFrom(i), { inc: incOf(i), asked: false, gone: false }));
+      faOffers = { season: C.season, offers, show: [C.team, ...TEAMS.map((_, i) => i).filter(i => i !== C.team).sort((a, b) => offers[b].pay - offers[a].pay).slice(0, 7)] };  // your team and the seven that want you most
+    }
+    const { offers, show } = faOffers;
     scr.innerHTML = `<div class="menu solid"><button class="back" id="bk">‹ Back</button><h1 class="sm">Contract <em>offers</em></h1>
-  <p class="tag">Your contract is up: your team and the seven others that want you most have made offers. Weak teams pay more and will play you; strong teams pay less. Signing pays its bonus in XP at once.</p>
-  <h2>Offers</h2><div class="offers">${show.map(i=>{const t=TEAMS[i],o=offers[i];return`<button class="tm of ${i===C.team?'on':''}" data-i="${i}" style="--c:${t.c1}"><i></i><b>${t.city} ${t.name}${i===C.team?' · re-sign':''}</b><span>${o.years} season${o.years>1?'s':''} at ${money(o.pay)} · +${fmt(o.xp)} XP · ${o.role}</span><u>${C.ovrs[i]}</u></button>`}).join('')}</div>
-  <p class="note">The number on the right is the team's rating. Starter, Rotation or Backup is where their coach would put you on day one.</p></div>`;
+  <p class="tag">Your team and the seven others that want you most. Weak teams pay more and play you; strong teams pay less. Ask each for more once: they may raise it, or walk away.</p>
+  <h2>Offers</h2><div class="offers">${show.map(i=>{const t=TEAMS[i],o=offers[i],inc=INCENT[o.inc];return o.gone?`<div class="ofr gone" style="--c:${t.c1}"><b>${t.city} ${t.name}</b><span>Walked away</span></div>`:`<div class="ofr${i===C.team?' on':''}" style="--c:${t.c1}"><div><b>${t.city} ${t.name}${i===C.team?' · re-sign':''}</b><span>${o.years} season${o.years>1?'s':''} at ${money(o.pay)} · +${fmt(o.xp)} XP · ${o.role}</span><span class="inc">Incentive: ${incTxt(o.inc)}, +${fmt(inc[1])} XP</span></div><u>${C.ovrs[i]}</u><div class="ofb"><button class="btn2 on" data-sign="${i}">Sign</button>${o.asked?'':`<button class="btn2" data-ask="${i}">Ask for more</button>`}</div></div>`}).join('')}</div>
+  <p class="note">The number is the team's rating. Starter, Rotation or Backup is where their coach would put you on day one.</p></div>`;
     $('#bk').onclick = () => showHub('season');
-    scr.querySelectorAll('.tm').forEach(b => b.onclick = () => {
-      const i = +b.dataset.i, o = offers[i], moved = i !== C.team;
+    scr.querySelectorAll('[data-ask]').forEach(b => b.onclick = () => {
+      const i = +b.dataset.ask, o = offers[i], rank = show.indexOf(i);
+      o.asked = true;
+      // the teams that want you most (and your own, which knows you) are the likeliest to move
+      if (Math.random() < (i === C.team ? 0.55 + (C.trust - 60) * 0.01 : 0.65 - rank * 0.05)) {
+        o.pay = Math.round(o.pay * 1.1 * 10) / 10;
+        o.xp = Math.round(o.xp * 1.1 / 10) * 10;
+        PG.toast(`The ${TEAMS[i].name} raise their offer`);
+      } else if (Math.random() < 0.5) {
+        o.gone = true;
+        PG.toast(`The ${TEAMS[i].name} walk away`);
+      } else PG.toast(`The ${TEAMS[i].name} hold firm`);
+      PG.snd('tick');
+      showFreeAgency();
+    });
+    scr.querySelectorAll('[data-sign]').forEach(b => b.onclick = () => {
+      const i = +b.dataset.sign, o = offers[i], moved = i !== C.team;
+      faOffers = null;
       if (moved) C.trust = o.trust;
       C.team = i;
-      C.deal = { years: o.years, left: o.years, pay: o.pay };
+      C.deal = { years: o.years, left: o.years, pay: o.pay, inc: o.inc };
       C.xp += o.xp;
       C.xpTotal += o.xp;
       C.season++;
       initSeason();
       C.coach = moved ? `Welcome to ${TEAMS[i].city}. ${{ Starter: 'You are my starter. Play like it.', Rotation: 'You will play, and the starting job is there to be won.', Backup: 'You are behind good players here. Practice hard and take your chances.' }[o.role]}`
         : 'Glad you are staying. Same deal as ever: the job is earned every week.';
+      addNews([{ s: C.season, w: 'Free agency', k: 'deal', t: i, x: moved ? `${C.name} signs with the ${team(i).name}: ${o.years} season${o.years > 1 ? 's' : ''}, ${money(o.pay)} a year.` : `${C.name} re-signs with the ${team(i).name}: ${o.years} season${o.years > 1 ? 's' : ''}, ${money(o.pay)} a year.` }]);
       persist();
       showHub('up');
       PG.banner(moved ? 'Signed' : 'Re-signed', `${esc(C.name)}, ${o.years} season${o.years>1?'s':''} with the ${full(i)}`, 2600);
@@ -1845,13 +2078,13 @@
     const draw = () => {
       scr.innerHTML = `<div class="menu solid"><button class="back" id="bk">‹ Menu</button>
   <div class="pc${kit()?' k':''}" style="--c:${t.c1}">${kit()}<div><h3>${esc(C.name)}</h3><p>#${C.num} · ${C.pos} · age ${age()}<br>${full(C.team)} · Season ${C.season}</p><div class="pcc"><span>${esc(C.arch)}</span><span>${rank()}</span>${C.rings?`<span>${C.rings} title${C.rings>1?'s':''}</span>`:''}${C.awards&&C.awards.length?`<span>${C.awards.length} honor${C.awards.length>1?'s':''}</span>`:''}</div></div><div class="ovr">${ovr()}<small>OVR</small></div></div>
-  <div class="xp2"><div><span>To spend</span><b>${fmt(C.xp)} XP</b></div><div><span>Contract</span><b class="dl">${deal().left>0?`${money(deal().pay)} · ${deal().left} of ${deal().years} left`:'Up for renewal'}</b></div></div>
-  ${trustHtml()}${chemHtml()}
+  ${tilesHtml()}
   ${note ? `<p class="note hi">${esc(note)}</p>` : ''}
+  ${inboxHtml()}
   ${C.ageNote && C.week === 0 && C.phase === 'reg' ? `<p class="note">${esc(C.ageNote)}</p>` : ''}
   ${nextCard()}
-  <div class="tabs itabs" style="margin-top:16px">${[['up','Upgrade'],['season','Season'],['stats','Stats'],['social','Social']].map(([k,l])=>`<button data-t="${k}" class="${k===tab?'on':''}">${TAB_ICON[k]}<span>${l}</span></button>`).join('')}</div>
-  ${tab==='up'?tabUp():tab==='season'?tabSeason():tab==='social'?tabSocial():tabStats()}
+  <div class="tabs itabs five" style="margin-top:16px">${[['up','Upgrade'],['season','Season'],['news','News'],['social','Social'],['stats','Stats']].map(([k,l])=>`<button data-t="${k}" class="${k===tab?'on':''}">${TAB_ICON[k]}<span>${l}</span></button>`).join('')}</div>
+  ${tab==='up'?tabUp():tab==='season'?tabSeason():tab==='news'?tabNews():tab==='social'?tabSocial():tabStats()}
   <div class="hset${setOpen?' open':''}"><button class="hsum" id="hset" aria-expanded="${setOpen}"><b>Game settings</b><span>${PG.LEVELS[PG.lvlOf(C)]} · ${C.ql/60}-min quarters${C.pos==='WR'?` · ${C.kr===false?'offense only':'returns kicks'}`:''}</span></button>
   ${setOpen?`  <h2>Difficulty</h2>${PG.diffSlider('hd', PG.lvlOf(C))}
   <p class="note">All-Pro pays 20% more XP, Legend 30%.</p>
@@ -1916,6 +2149,18 @@
         keepScroll(draw);
       });
       scr.querySelectorAll('[data-of]').forEach(b => b.onclick = () => answerOffer(b.dataset.of === 'y', () => keepScroll(draw)));
+      scr.querySelectorAll('[data-ex]').forEach(b => b.onclick = () => {
+        answerExt(b.dataset.ex);
+        keepScroll(draw);
+      });
+      scr.querySelectorAll('[data-ev]').forEach(b => b.onclick = () => {
+        answerEvent(+b.dataset.ev);
+        keepScroll(draw);
+      });
+      scr.querySelectorAll('[data-nt]').forEach(b => b.onclick = () => {
+        newsTab = b.dataset.nt;
+        keepScroll(draw);
+      });
       scr.querySelectorAll('[data-ld]').forEach(b => b.onclick = () => {
         ldCat = b.dataset.ld;
         keepScroll(draw);
@@ -1943,8 +2188,14 @@
       });
       scr.querySelectorAll('[data-st]').forEach(b => b.onclick = () => {
         socTab = b.dataset.st;
+        socAll = false;
         keepScroll(draw);
       });
+      const sa = $('#socall');
+      if (sa) sa.onclick = () => {
+        socAll = true;
+        keepScroll(draw);
+      };
       scr.querySelectorAll('.fwkd summary').forEach(b => b.onclick = () => setTimeout(() => PG.snd('tick'), 0));
       const md = $('#mday');
       if (md) md.onclick = showMediaDay;
@@ -2134,6 +2385,8 @@
         if (h && h.season === C.season) h.awards = (h.awards || []).concat('Championship Game MVP');
       }
     } else pickGoals();
+    newsAfter(wk, fin, !playoff0);
+    extensionCheck();
     C.coach = coachSays(m, grade, pts, won, met, role0, role1);
     /* the media: how loud the reaction is, what it does to your following, and what the reporters will ask */
     let weak = '';
@@ -2156,6 +2409,9 @@
     ctx.trending = bz.b >= 7.5 || (!!callRes && callRes.backed);
     if (prime) so.hype = clamp(so.hype + 6, 0, 100);  // the nation saw it
     const posts = PG.media.reaction(ctx).concat(endorseWeek()), dFol = so.fol - fol0, mile = MILES.filter(v => fol0 < v && so.fol >= v).pop();
+    /* the week's biggest story from around the league, as the league wire tells it */
+    const wire = (C.lnews || []).find(n => n.s === C.season && n.w === wk && n.k !== 'you');
+    if (wire) posts.splice(Math.min(3, posts.length), 0, { who: 'League Wire', at: 'leaguewire', bio: 'Around the league', kind: 'press', col: '#334155', ver: true, text: wire.x, likes: 400 + Math.round(so.fol / 30), rt: 60 + Math.round(so.fol / 300), rep: 30 + Math.round(so.fol / 500) });
     if (mile) posts.splice(1, 0, myPost(anyOf(['Thank you. Every one of you.', 'Never thought I’d see this. Love y’all.', `${PG.media.short(mile)}. Let’s keep going.`]), 1.5, { t: 'mile', v: PG.media.short(mile) }));
     for (const f of fell) posts.unshift({ who: 'The League', at: 'theleague', bio: 'Official account', kind: 'press', col: '#334155', ver: true,
       text: `A new league record. ${C.name}: ${fmt(f.v)} ${f.label.toLowerCase()} in a ${f.kind}, past ${f.was.name}'s ${fmt(f.was.v)}.`,

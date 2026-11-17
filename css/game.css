@@ -1104,3 +1104,48 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 .csend{display:flex;gap:8px;margin-top:10px}
 .csend .go.sm{width:auto;flex:none;padding:0 16px;height:44px}
 .onl .av{text-shadow:none}
+
+/* the career hub: four tiles, the inbox, five tabs, the news, the contract (2026-11-16) */
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:8px}
+.tiles>div{background:var(--panel2);border-radius:10px;padding:7px 8px;min-width:0}
+.tiles small{display:block;font-family:var(--display);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.tiles b{display:block;margin-top:1px;font-family:var(--display);font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tiles b.xpv{color:var(--acc)}
+.tiles span{display:block;font-size:10.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tiles .bar{height:3px;margin-top:5px;border-radius:2px;background:var(--panel3);overflow:hidden}
+.tiles .bar i{display:block;height:100%;background:var(--acc)}
+.inbox{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ib{padding:10px 12px}
+.ib+.ib{border-top:1px solid var(--line)}
+.ib small{display:block;font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acc)}
+.ib b{display:block;margin-top:2px;font-size:13.5px}
+.ib p{margin:3px 0 0;font-size:13px;line-height:1.4}
+.ib.coachl p{color:var(--mute);font-size:12.5px}
+.ibb{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ibb .btn2{flex:1 1 0;min-width:0;height:auto;min-height:40px;padding:6px 8px;line-height:1.2}
+.ibb .btn2 span{display:block;margin-top:2px;font-family:var(--body);font-size:10px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--mute)}
+.tabs.five button span{font-size:9.5px}
+.nws{list-style:none;margin:0 0 8px;padding:0}
+.nw{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+.nw:first-child{border-top:0}
+.nw .tb{flex:none;width:34px;height:34px;border-radius:8px;display:grid;place-items:center;background:var(--c);font-style:normal;font-family:var(--display);font-weight:800;font-size:10.5px}
+.nw small{display:block;font-family:var(--display);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.nw p{margin:1px 0 0;font-size:13px;line-height:1.4}
+.nw.k-you small,.nw.k-award small,.nw.k-deal small{color:var(--acc)}
+.ctr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.ctr>div{background:var(--panel2);border-radius:10px;padding:7px 8px;min-width:0}
+.ctr small{display:block;font-family:var(--display);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.ctr b{display:block;font-family:var(--display);font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctr span{display:block;font-size:10.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ofr{position:relative;display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 12px;border-radius:12px;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--c);margin-bottom:8px}
+.ofr.on{border-color:var(--acc);border-left-color:var(--c)}
+.ofr b{display:block;font-size:13.5px}
+.ofr span{display:block;font-size:12px;color:var(--mute)}
+.ofr span.inc{color:var(--ink);font-size:11.5px;margin-top:2px}
+.ofr u{text-decoration:none;font-family:var(--display);font-weight:800;font-size:15px;align-self:start}
+.ofr .ofb{grid-column:1/3;display:flex;gap:6px}
+.ofr .ofb .btn2{flex:1}
+.ofr.gone{opacity:.5;grid-template-columns:1fr}
+.morer summary{cursor:pointer;font-size:12px;color:var(--mute);padding:4px 0 2px 2px;list-style:none}
+.morer summary::-webkit-details-marker{display:none}
+.btn2.more{width:100%;margin:4px 0 10px}

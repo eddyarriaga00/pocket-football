@@ -794,7 +794,7 @@
       + `<div class="phd"><b>${esc(p.who)}</b>${p.ver ? '<i class="ver" aria-label="verified"></i>' : ''}<span>@${esc(p.at)} · ${esc(p.ago || 'now')}</span></div>${p.bio ? `<div class="bio">${esc(p.bio)}</div>` : ''}`
       + `<p>${esc(p.text)}</p>${cardHtml(p)}<div class="pmeta"><span aria-label="${p.rep} replies">${ICON.rep}${short(p.rep)}</span><span aria-label="${p.rt} reposts">${ICON.rt}${short(p.rt)}</span>`
       + `<button class="lk${p.liked ? ' on' : ''}" data-like="${p.id}" aria-label="${p.liked ? 'Liked' : 'Like'}, ${likes} likes" aria-pressed="${!!p.liked}">${ICON.like}${short(likes)}</button>${p.hot ? '<em>viral</em>' : ''}</div>`
-      + (p.replies && !reply ? `<div class="reps">${p.replies.map(r => postHtml(r, true)).join('')}</div>` : '') + '</div></div>';
+      + (p.replies && p.replies.length && !reply ? `<div class="reps">${postHtml(p.replies[0], true)}${p.replies.length > 1 ? `<details class="morer"><summary>${p.replies.length - 1} more repl${p.replies.length > 2 ? 'ies' : 'y'}</summary>${p.replies.slice(1).map(r => postHtml(r, true)).join('')}</details>` : ''}</div>` : '') + '</div></div>';  // one reply shown, the rest folded
   }
 
   /* one listener for every feed on every screen: like (or unlike) a post, vote in a poll */
