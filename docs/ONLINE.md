@@ -25,7 +25,7 @@ The owner's choices (2026-11-16), all on free plans:
 ## Setting up Firebase (the owner, about five minutes)
 
 1. Open https://console.firebase.google.com and sign in with a Google account. **Create a project**, any name (for
-   example `pocket-gridiron`). Google Analytics is not needed: switch it off.
+   example `pocket-football`). Google Analytics is not needed: switch it off.
 2. **Build → Authentication → Get started → Sign-in method → Anonymous → Enable → Save.**
 3. **Build → Realtime Database → Create database.** Pick a location (United States is fine), then **Start in locked
    mode**.

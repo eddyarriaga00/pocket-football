@@ -1,6 +1,6 @@
 # PocketFootball
 
-(Called PocketFootball until 2026-11-16; the repository and the web address keep the old name.)
+(Called Pocket Gridiron until 2026-11-16. The old address, eddyarriaga00.github.io/pocket-gridiron/, now forwards here.)
 
 <img src="icons/icon-512.png" width="112" align="right" alt="">
 
@@ -8,7 +8,7 @@
 quarterback or a wide receiver from the combine to the Hall of Fame, call plays from a 49-play book in nine
 formations, and play every snap in 3D under the lights.
 
-**Play it now:** https://eddyarriaga00.github.io/pocket-gridiron/ (no install; add it to your home screen and it
+**Play it now:** https://eddyarriaga00.github.io/pocket-football/ (no install; add it to your home screen and it
 plays offline too)
 
 **Highlights**
@@ -468,4 +468,4 @@ of the in-game display that overlap. An empty report is the standard.
 `node tools/fmt.js <files>` is the house formatter. `node --expose-internals tools/astcheck.js before.js after.js`
 proves a reformat did not change the program.
 
-`python3 tools/bundle.py` writes `pocket-gridiron.html`, the whole game in one file.
+`python3 tools/bundle.py` writes `pocketfootball.html`, the whole game in one file.

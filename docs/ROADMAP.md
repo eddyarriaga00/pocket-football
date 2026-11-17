@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `c6a445d`, before the move to the pocket-football address and the PocketFB home-screen name (2026-11-16 night).
   - `a523399`, before the rename to PocketFootball (2026-11-16 night).
   - `9f56170`, before the new crowd and stands, the uniform finishes and turf wear (2026-11-16 night).
   - `d41c07d`, before the service worker always asking for fresh game files (2026-11-16 night).
@@ -3047,6 +3048,14 @@ six were done as the pro game has them; the choices where there was one are mine
   namespace, the service worker's cache name, and the repository and web address (pocket-gridiron), until the owner
   says whether to move them. The fictional outlets in the feed ("The Gridiron Ledger") are left as they are.
   Audit empty at 320x568; the title fits.
+
+- 2026-11-16 (night, "PocketFB for the home screen, change everything to the new name move to new address and such as
+  well"). Home-screen name PocketFB (manifest short_name, apple-mobile-web-app-title). The repository renamed to
+  pocket-football, so the game is at https://eddyarriaga00.github.io/pocket-football/; the old address keeps working
+  through a one-page repository named pocket-gridiron that forwards to the new one (keeping any ?query and #hash).
+  Saves carry over: they belong to the site (eddyarriaga00.github.io), not the path. The one-file build is now
+  pocketfootball.html (the same Claude artifact), the service worker's cache pocketfootball-v1. Kept on purpose:
+  the saved-data keys (pg.*) and the code's PG namespace, which no player sees.
 
 ## Morning hand-off
 

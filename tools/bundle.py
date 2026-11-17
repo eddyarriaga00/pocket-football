@@ -1,4 +1,4 @@
-"""Build pocket-gridiron.html: the whole game inlined into one file (no doctype), for hosts that want a single page.
+"""Build pocketfootball.html: the whole game inlined into one file (no doctype), for hosts that want a single page.
 The commentators' clips (audio/vo.pack and audio/vo/*.pack) go in too, as base64 text, since one file cannot fetch another.
 Run: python3 tools/bundle.py"""
 import base64
@@ -15,5 +15,5 @@ out = ('<title>PocketFootball</title>\n'
        ''.join('<script>\n' + rd(f) + '</script>\n' for f in ('js/data.js', 'js/vo.js', 'js/game.js', 'js/shaders.js', 'js/render3d.js', 'js/audio.js', 'js/league.js', 'js/media.js', 'js/career.js', 'js/season.js', 'js/camp.js', 'js/milestones.js', 'js/online.js')) +
        '<script>PG.VO.b64 = {' + ','.join('"%s":"%s"' % (n, base64.b64encode(open(os.path.join(root, f), 'rb').read()).decode('ascii')) for n, f in PACKS) + '};</script>\n'
        '<script>PG.boot();</script>\n')
-open(os.path.join(root, 'pocket-gridiron.html'), 'w', encoding='utf-8').write(out)
-print('wrote pocket-gridiron.html', len(out), 'bytes')
+open(os.path.join(root, 'pocketfootball.html'), 'w', encoding='utf-8').write(out)
+print('wrote pocketfootball.html', len(out), 'bytes')

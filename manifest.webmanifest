@@ -1,6 +1,6 @@
 {
   "name": "PocketFootball",
-  "short_name": "PocketFootball",
+  "short_name": "PocketFB",
   "description": "11-on-11 football for portrait phones.",
   "start_url": "./",
   "scope": "./",
