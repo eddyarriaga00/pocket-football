@@ -29,7 +29,7 @@
     const m = new T.ShaderMaterial({
       fog: true,
       uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, {
-        map: { value: null }, uTint: { value: new T.Color(1, 1, 1) }, uWet: { value: 0 }, uSnow: { value: 0 }, uLamp: { value: 1 },
+        map: { value: null }, uTint: { value: new T.Color(1, 1, 1) }, uWet: { value: 0 }, uSnow: { value: 0 }, uLamp: { value: 1 }, uStyle: { value: toonOn() ? 1 : 0 },
         uSky: { value: new T.Color(0.1, 0.13, 0.2) }, uTowers: { value: [new T.Vector3(), new T.Vector3(), new T.Vector3(), new T.Vector3()] },
       }]),
       vertexShader: /* glsl */ `
@@ -44,7 +44,7 @@
           #include <fog_vertex>
         }`,
       fragmentShader: /* glsl */ `
-        uniform sampler2D map; uniform vec3 uTint; uniform float uWet; uniform float uSnow; uniform float uLamp; uniform vec3 uSky; uniform vec3 uTowers[4];
+        uniform sampler2D map; uniform vec3 uTint; uniform float uWet; uniform float uSnow; uniform float uLamp; uniform vec3 uSky; uniform vec3 uTowers[4]; uniform float uStyle;
         varying vec2 vUv; varying vec3 vWorld;
         #include <common>
         #include <fog_pars_fragment>
@@ -60,16 +60,17 @@
           float near = 1.0 - smoothstep(14.0, 60.0, dist);
           float blades = noise(p * vec2(26.0, 10.0)) * 0.6 + noise(p * vec2(55.0, 21.0)) * 0.4;
           float patches = noise(p * 0.33) * 0.6 + noise(p * 1.2) * 0.4 * (1.0 - smoothstep(40.0, 120.0, dist));
-          c *= 1.0 + ((blades - 0.5) * 0.26 * near + (patches - 0.5) * 0.11) * (1.0 - paint * 0.7) * (1.0 - uSnow * 0.6);
+          float grain = 1.0 - uStyle * 0.85;  // the stylized look keeps the turf clean: bold stripes, little grain
+          c *= 1.0 + ((blades - 0.5) * 0.26 * near + (patches - 0.5) * 0.11) * grain * (1.0 - paint * 0.7) * (1.0 - uSnow * 0.6);
           /* mowing stripes: every other five-yard band leans the other way, so which ones look light depends on where you stand */
           float y = -vWorld.z, inField = step(0.0, y) * step(y, 100.0) * step(0.0, vWorld.x) * step(vWorld.x, 53.33);
           float band = mod(floor(y / 5.0), 2.0) * 2.0 - 1.0;
-          c *= 1.0 + band * V.z * 0.07 * inField * (1.0 - paint) * (1.0 - uSnow);
+          c *= 1.0 + band * V.z * (0.07 + uStyle * 0.05) * inField * (1.0 - paint) * (1.0 - uSnow);
           /* wear: down the middle between the hashes, where every play is run, the turf is thinner in patches and the
              soil shows through a little; it fades out toward the sidelines and the goal lines (not on the paint, not in snow) */
           float wear = inField * (1.0 - smoothstep(4.0, 15.0, abs(vWorld.x - 26.665))) * smoothstep(6.0, 18.0, y) * (1.0 - smoothstep(82.0, 94.0, y))
             * smoothstep(0.42, 0.72, fbm(p * 0.32) * 0.7 + noise(p * 1.7) * 0.3);
-          c = mix(c, c * vec3(1.1, 0.98, 0.76) + vec3(0.025, 0.018, 0.0), wear * 0.55 * (1.0 - paint) * (1.0 - uSnow));
+          c = mix(c, c * vec3(1.1, 0.98, 0.76) + vec3(0.025, 0.018, 0.0), wear * 0.55 * (1.0 - paint) * (1.0 - uSnow) * (1.0 - uStyle));
           /* rain: the turf picks up the sky at grazing angles and the towers leave long streaks */
           if (uWet > 0.0) {
             /* the wet surface ripples smoothly: sums of sines, not the lattice noise, whose cells showed in the
@@ -152,7 +153,7 @@
       side: T.DoubleSide, fog: true, extensions: { derivatives: true },
       uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, {
         uA1: { value: new T.Color() }, uA2: { value: new T.Color() }, uB1: { value: new T.Color() }, uB2: { value: new T.Color() },
-        uCheer: { value: 0 }, uBase: { value: 0.6 }, uTime: { value: 0 },
+        uCheer: { value: 0 }, uBase: { value: 0.6 }, uTime: { value: 0 }, uStyle: { value: toonOn() ? 1 : 0 },
       }]),
       vertexShader: /* glsl */ `
         attribute vec4 aSeat;
@@ -165,7 +166,7 @@
           #include <fog_vertex>
         }`,
       fragmentShader: /* glsl */ `
-        uniform vec3 uA1; uniform vec3 uA2; uniform vec3 uB1; uniform vec3 uB2; uniform float uCheer; uniform float uBase; uniform float uTime;
+        uniform vec3 uA1; uniform vec3 uA2; uniform vec3 uB1; uniform vec3 uB2; uniform float uCheer; uniform float uBase; uniform float uTime; uniform float uStyle;
         varying vec4 vSeat;
         #include <common>
         #include <fog_pars_fragment>
@@ -243,6 +244,7 @@
           c = mix(c, avg, smoothstep(0.5, 1.1, fw));
           /* the higher rows sit a little further from the lights */
           c *= mix(1.0, 0.8, up);
+          c = mix(vec3(dot(c, vec3(0.299, 0.587, 0.114))), c, 1.0 + uStyle * 0.35);
           gl_FragColor = vec4(c * uBase * (1.0 + 0.35 * uCheer), 1.0);
           #include <colorspace_fragment>
           #include <fog_fragment>
@@ -272,7 +274,14 @@
       return 1.0 - holes * 0.2 + (folds - 0.5) * 0.34;
     }`;
 
+  /* toon: the stylized look (PG.SET.look === 'toon'). Players are cel-shaded (MeshToonMaterial, three bands) with
+     shadows tinted cool instead of only darker, a crisp painted highlight on helmets, and no cloth noise: a clean,
+     bold, not-realistic finish. render3d.js decides which material; this patch adds the rest. */
+  const toonOn = () => !!(window.PG && PG.SET && PG.SET.look === 'toon');
+
   function rim(material, kind) {
+    const toon = toonOn();
+    if (toon && kind === 'cloth') kind = '';
     material.onBeforeCompile = shader => {
       shader.uniforms.uRim = rimColor;
       /* how high above the turf this point is, in the world: near the ground less light reaches (the man's own body
@@ -299,10 +308,22 @@
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\nuniform vec3 uRim;')
         .replace('#include <opaque_fragment>', `
-          outgoingLight *= mix(0.68, 1.0, smoothstep(0.0, 1.0, vGroundY)) * (1.0 + 0.06 * smoothstep(1.4, 2.0, vGroundY));
+          outgoingLight *= mix(${toon ? '0.82' : '0.68'}, 1.0, smoothstep(0.0, 1.0, vGroundY)) * (1.0 + 0.06 * smoothstep(1.4, 2.0, vGroundY));
+          ${toon ? `
+          {
+            // cool, colored shadows: where a band is darker than the paint, it leans blue-violet instead of grey
+            float pgL = dot(outgoingLight, vec3(0.299, 0.587, 0.114)), pgB = max(dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114)), 0.02);
+            outgoingLight *= mix(vec3(0.8, 0.84, 1.12), vec3(1.0), smoothstep(0.5, 0.9, pgL / pgB));
+          }` : ''}
           float rimAmount = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 3.0);
           outgoingLight += uRim * rimAmount;
-          ${kind === 'gloss' ? `
+          ${kind === 'gloss' && toon ? `
+          {
+            vec3 Vv = normalize(vViewPosition), Rv = reflect(-Vv, normalize(normal));
+            float hl = step(0.86, dot(Rv, normalize(vec3(0.35, 0.8, 0.5))));  // a painted, hard-edged highlight
+            outgoingLight += vec3(0.9, 0.95, 1.0) * hl * 0.55;
+          }` : ''}
+          ${kind === 'gloss' && !toon ? `
           {
             vec3 Vv = normalize(vViewPosition), Rv = reflect(-Vv, normalize(normal));
             float ring = smoothstep(-0.08, 0.2, Rv.y) * (1.0 - smoothstep(0.28, 0.62, Rv.y));  // the lights around the rim of the bowl
@@ -313,7 +334,7 @@
           }` : ''}
           #include <opaque_fragment>`);
     };
-    material.customProgramCacheKey = () => 'pg-rim-' + (kind || '');
+    material.customProgramCacheKey = () => 'pg-rim-' + (kind || '') + (toon ? '-toon' : '');
     return material;
   }
 
@@ -351,15 +372,15 @@
           gl_FragColor = vec4(c, 1.0);
         }`, { tex: { value: null }, uDir: { value: new T.Vector2() } });
       const out = pass( /* glsl */ `
-        uniform sampler2D tex; uniform sampler2D glow; uniform float uGlow; uniform float uVignette; varying vec2 vUv;
+        uniform sampler2D tex; uniform sampler2D glow; uniform float uGlow; uniform float uVignette; uniform float uSat; varying vec2 vUv;
         void main() {
           vec3 c = texture2D(tex, vUv).rgb + texture2D(glow, vUv).rgb * uGlow;
-          c = mix(vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))), c, 1.1);
+          c = mix(vec3(dot(c, vec3(0.2126, 0.7152, 0.0722))), c, uSat);
           vec2 q = vUv - 0.5;
           c *= 1.0 - uVignette * smoothstep(0.18, 0.75, dot(q, q) * 1.6);
           gl_FragColor = vec4(max(c, 0.0), 1.0);
           #include <colorspace_fragment>
-        }`, { tex: { value: null }, glow: { value: null }, uGlow: { value: 0.8 }, uVignette: { value: 0.32 } });
+        }`, { tex: { value: null }, glow: { value: null }, uGlow: { value: 0.8 }, uVignette: { value: 0.32 }, uSat: { value: toonOn() ? 1.28 : 1.1 } });
       const run = (material, to) => {
         tri.material = material;
         renderer.setRenderTarget(to);
@@ -401,5 +422,5 @@
     }
   }
 
-  PG.shaders = { turf, sky, crowd, rim, rimColor, post };
+  PG.shaders = { turf, sky, crowd, rim, rimColor, post, toonOn };
 })();

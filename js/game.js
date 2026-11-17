@@ -6467,6 +6467,7 @@
   <h2>Look</h2><div class="grp">
   <div class="opt"><span>Accent color</span><div class="sw" id="acc">${Object.entries(ACCENTS).map(([k,c])=>`<button data-a="${k}" class="${k===SET.acc?'on':''}" style="--c:${c}" aria-label="${k} accent"></button>`).join('')}</div></div>
   ${chip('sgf','Graphics',R3?'3D':'Classic 2D')}
+  ${R3?chip('slk','Style',SET.look==='toon'?'Stylized':'Classic'):''}
   ${R3?chip('spx','Sharpness',SET.px==='bal'?'Balanced':'High')+`<div class="opt"><span>Camera zoom</span><div class="step"><button class="chip" id="szo" aria-label="Zoom out">−</button><b>${zoomTxt()}</b><button class="chip" id="szi" aria-label="Zoom in">+</button></div></div>`+chip('scn','Camera before the snap',SET.cin===false?'Standard':'Cinematic')+chip('scut','Cutscenes',SET.cuts!==false?'On':'Off')+chip('ssh','Player shadows',SET.shad!==false?'On':'Off')+chip('sfx','Glow and color pass',SET.fx!==false?'On':'Off')+chip('sdt','Close-up player models',SET.detail!==false?'Detailed':'Simple'):''}
   ${chip('srp','Instant replays',SET.replay!==false?'On':'Off')}
   ${chip('slh','Buttons',SET.left?'Left side':'Right side')}
@@ -6501,6 +6502,12 @@
       on('sgf', () => {
         SET.gfx = R3 ? '2d' : '3d';
         setGfx(SET.gfx !== '2d');
+      });
+      on('slk', () => {
+        // the stadium and the players are built in one style when the page starts, so a change reloads (saves are kept)
+        SET.look = SET.look === 'toon' ? 'classic' : 'toon';
+        save('pg.settings', SET);
+        location.reload();
       });
       on('spx', () => {
         SET.px = SET.px === 'bal' ? 'hi' : 'bal';

@@ -388,13 +388,37 @@
   /* What each part is made of (see SH.rim): jersey cloth, a helmet's clear coat, the metal of a facemask, the satin of
      the pants; the rest (skin, socks, gloves, shoes) a plain matte. One material per part, shared by every figure. */
   const FINISH = { torso: 'cloth', pads: 'cloth', sleeveCap: 'cloth', helmet: 'gloss', stripe: 'gloss', mask: 'metal', hips: 'satin', thigh: 'satin' };
+  let toonRamp = null;
   function partMat(name, rimmed = true) {
-    const k = FINISH[name], m = k === 'gloss' ? new T.MeshPhongMaterial({ color: 0xffffff, shininess: 120, specular: 0x9aa0aa, vertexColors: true })
+    const k = FINISH[name];
+    if (SH.toonOn && SH.toonOn()) {
+      // the stylized look: three flat bands of light (see SH.rim for the colored shadows and the painted highlight)
+      if (!toonRamp) {
+        toonRamp = new T.DataTexture(new Uint8Array([95, 175, 255]), 3, 1, T.RedFormat);
+        toonRamp.minFilter = toonRamp.magFilter = T.NearestFilter;
+        toonRamp.needsUpdate = true;
+      }
+      const t = new T.MeshToonMaterial({ color: 0xffffff, vertexColors: true, gradientMap: toonRamp });
+      return rimmed ? SH.rim(t, k) : t;
+    }
+    const m = k === 'gloss' ? new T.MeshPhongMaterial({ color: 0xffffff, shininess: 120, specular: 0x9aa0aa, vertexColors: true })
       : k === 'metal' ? new T.MeshPhongMaterial({ color: 0xffffff, shininess: 70, specular: 0xb8bec8, vertexColors: true })
       : k === 'satin' ? new T.MeshPhongMaterial({ color: 0xffffff, shininess: 22, specular: 0x262a30, vertexColors: true })
       : new T.MeshLambertMaterial({ color: 0xffffff, vertexColors: true });
     if (k === 'cloth') m.extensions = { derivatives: true };  // the mesh fades by pixel size (fwidth); WebGL 1 needs asking
     return rimmed ? SH.rim(m, k) : m;
+  }
+
+  const OUTLINED = new Set(['torso', 'pads', 'helmet', 'upperArm', 'foreArm', 'hand', 'hips', 'thigh', 'shin', 'foot', 'sleeveCap']);
+  let outlineM = null;
+  function outlineMat() {
+    if (outlineM) return outlineM;
+    outlineM = new T.MeshBasicMaterial({ color: 0x0a0e18, side: T.BackSide });
+    outlineM.onBeforeCompile = sh => {
+      sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ntransformed += normalize(normal) * 0.018;');
+    };
+    outlineM.customProgramCacheKey = () => 'pg-outline';
+    return outlineM;
   }
 
   /* [name, joints it follows, color key, what body type scales it ('body', 'limb' or nothing), casts a shadow] */
@@ -3904,7 +3928,17 @@
         hi.count = 0;
         scene.add(hi);
       }
-      return { name, mesh, hi, joints, color, fit, shadow, opt: !!opt };
+      /* the stylized look draws an ink outline round the big parts: the same instances, drawn again from the back,
+         pushed out along their normals, in near-black */
+      let ol = null;
+      if (SH.toonOn && SH.toonOn() && OUTLINED.has(name)) {
+        ol = new T.InstancedMesh(GEO[name], outlineMat(), CAP * joints.length);
+        ol.instanceMatrix = mesh.instanceMatrix;
+        ol.frustumCulled = false;
+        ol.count = 0;
+        scene.add(ol);
+      }
+      return { name, mesh, hi, ol, joints, color, fit, shadow, opt: !!opt };
     });
     const holder = new T.Group();
     scene.add(holder);
@@ -4403,6 +4437,7 @@
       const n = p.joints.length, close = nearModel && !!p.hi && active > SIDELINE;
       p.mesh.userData.full = active * n;
       p.mesh.count = close ? SIDELINE * n : active * n;
+      if (p.ol) p.ol.count = active * n;
       p.mesh.instanceMatrix.needsUpdate = true;
       if (fresh) p.mesh.instanceColor.needsUpdate = true;
       if (p.hi) {

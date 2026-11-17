@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `bcca249`, before the Stylized look option (2026-11-16 night).
   - `8e282ac`, before grounded player lighting, sideline turf and team areas, and the leather ball (2026-11-16 night).
   - `c6a445d`, before the move to the pocket-football address and the PocketFB home-screen name (2026-11-16 night).
   - `a523399`, before the rename to PocketFootball (2026-11-16 night).
@@ -3068,6 +3069,18 @@ six were done as the pro game has them; the choices where there was one are mine
   test server (tools/serve.py) queues 128 connections; the default five dropped scripts when the page asked for
   fifteen at once, which showed as the 3D view not starting in the test pane. Fingerprint unchanged; the rough
   player, careers and the audit clean.
+
+- 2026-11-16 (night, "i obviously don't want a realism look ... i want visuals and texture and more to be better
+  looking but i don't want it to look more realistic ... u can research and use anything u need"). Research (three.js
+  forum and NPR tutorials, stylized art-direction write-ups): cel shading in two to five bands is cheap on phones,
+  shadows read better tinted than only darkened, inverted-hull outlines are the cheap outline, and a limited bold
+  palette with less fine detail keeps play readable. Built as a second style, Settings → Look → Style (Classic /
+  Stylized; the page reloads, saves kept; `SET.look === 'toon'`, `SH.toonOn()`): players in MeshToonMaterial with three
+  bands and cool tinted shadows, a hard-edged painted highlight on helmets, no cloth noise; an ink outline round the
+  big parts (the same instances again, back faces pushed out 0.018); the turf clean (grain and wear off, bolder
+  mowing stripes); the crowd and the whole picture more saturated (the finishing pass 1.28 instead of 1.1). Classic
+  stays the default until the owner picks. Fingerprint unchanged; the rough player, careers and the audit clean in
+  the stylized look; no shader errors.
 
 ## Morning hand-off
 
