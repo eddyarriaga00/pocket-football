@@ -16,6 +16,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `d41c07d`, before the service worker always asking for fresh game files (2026-11-16 night).
   - `8ec7bd0`, before the one-time re-count of last season's MVP vote (2026-11-16 night).
   - `f74c71a`, before the MVP vote, the Championship Game MVP and the championship experience (2026-11-16 night).
   - `83eb868`, before the single ring again, the reshaped power bar and fewer off-target misses on your throws (2026-11-16 night).
@@ -3010,6 +3011,14 @@ six were done as the pro game has them; the choices where there was one are mine
   the hub, once; `C.recounted` keeps it from running twice. Tested on a dominant season with the awards stripped as
   an old save would have them (both paths grant both awards, +2,000 XP, nothing on a second visit) and on an
   ordinary season (nothing granted). Fingerprint unchanged; careers and the audit clean.
+
+- 2026-11-16 (night, the owner's screenshots at 19:23: awards night still giving the MVP to Bowen, the season card
+  already the new "League champions" one). His phone was running career.js from the 19:14 push, two minutes after
+  the 19:21 re-count went live: the service worker fetched with the browser's ordinary cache, and the site lets a
+  copy be reused for ten minutes. The re-count had not run (it marks a season only when it does), so it will on the
+  next open. Fix for every push from now: the service worker asks for the game's own files fresh each time
+  (`cache: 'no-cache'`: the server answers "not changed" in a few bytes); libraries and fonts, versioned in their
+  addresses, may still come from the cache, and with no connection the saved copy still plays.
 
 ## Morning hand-off
 
