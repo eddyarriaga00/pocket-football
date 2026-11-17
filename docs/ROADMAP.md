@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `9cca8a7`, before the 53-man rosters with full names (2026-11-17).
   - `53cc466`, before the motion-capture catch and two-hand secure (2026-11-17).
   - `14525cf`, before the motion-capture throw and the tuned juke and running arms (2026-11-17).
   - `56c0c15`, before the new juke, spin and broken-tackle animations (2026-11-17).
@@ -3244,6 +3245,22 @@ six were done as the pro game has them; the choices where there was one are mine
   Tried and left: the Cabbage Patch and the Twist in CMU 15_04 for touchdown celebrations; the clip is a three-minute
   mix and the dances could not be cut out reliably. Checked in the catch strips and catchTest; fingerprint unchanged,
   the rough player through a receiver's career clean.
+
+- **2026-11-17: full 53-man rosters.** Asked for: "have full rosters with full character names and such, like normal
+  nfl teams the same amount of players and such". New js/roster.js: every team carries 53 (3 QB, 3 RB, a FB, 6 WR, 3
+  TE, 4 OT, 3 OG, 2 C, 4 DE, 5 DT, 4 OLB, 2 MLB, 6 CB, 2 FS, 2 SS, K, P, LS), each with a first and last name (all
+  1,696 full names different, no surname twice on a team), a number inside the NFL's ranges for his position (none
+  twice on a team), an age, a depth-chart place and his own rating against the team's. Made from each team's own
+  seed (never the game's generator, nothing saved), the same men every game and season. Games take their starters
+  from it (mkRoster: until now the starters were made up each game, surnames only), the sideline reserves are the
+  team's backups in their own numbers, names and builds, and the player of the game is named in full. Season's
+  Roster tab shows all 53 (starters in bold with their stat lines and the ratings they have grown), and its saved
+  starters take the roster's names; Career's Season tab ends with the team's 53, you in as the starter at your
+  position (the man you replace becomes the first backup, the last backup makes room) and the feed's teammates in
+  their spots; a new career (or a move) takes its feed teammates from the roster. Balance over 16 computer games
+  is where it was (75% completions, 2.1% interceptions, 3.9 a carry); the fingerprint re-pinned (now a team's starters
+  are its own, so a matchup decides more), the old one kept as pg.fingerprint.before-rosters. The audit clean at 390,
+  the rough player clean.
 
 ## Morning hand-off
 

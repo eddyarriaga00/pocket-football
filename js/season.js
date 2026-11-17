@@ -23,6 +23,15 @@
 
   function ensureRoster() {
     if (!S.roster) S.roster = PG.mkRoster(S.team, 0, S.ovrs ? S.ovrs[S.team] : undefined);
+    /* a season saved before the rosters (2026-11-17) had made-up starters: they take the roster's names and numbers,
+       and keep the ratings they have grown into */
+    if (PG.roster && !S.rosterV) {
+      for (const role in S.roster) {
+        const p = PG.roster.starter(S.team, role);
+        if (p) Object.assign(S.roster[role], { name: p.last, first: p.first, num: p.num });
+      }
+      S.rosterV = 1;
+    }
     if (!S.ps) S.ps = {};
   }
 
@@ -64,6 +73,13 @@
       const p = S.roster[role], l = statLine(role);
       return `<tr><td>${POSN[role]} · #${p.num} ${p.name}${l ? `<small>${l}</small>` : ''}</td><td>${p.rt}</td></tr>`;
     }).join('')}</table>`;
+    /* the whole 53 (roster.js); the starters carry the ratings this season has grown and their stat lines */
+    if (PG.roster) {
+      const rt = {};
+      for (const role in S.roster) rt[role] = S.roster[role].rt;
+      return (lead ? `<h2>Team leaders</h2><table class="lg">${lead}</table>` : '<p class="note">Leaders and stat lines fill in as you play.</p>')
+        + `<h2>Roster</h2>${PG.roster.html(S.team, S.ovrs ? S.ovrs[S.team] : undefined, { rt, stat: role => (S.roster[role] ? statLine(role) : '') })}`;
+    }
     return (lead ? `<h2>Team leaders</h2><table class="lg">${lead}</table>` : '<p class="note">Leaders and stat lines fill in as you play.</p>')
       + group('Offense', PG.OFFR) + group('Defense', PG.DEFR);
   }

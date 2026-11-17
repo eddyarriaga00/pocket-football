@@ -1237,7 +1237,16 @@
         return l;
       };
       const roles = C.pos === 'QB' ? ['WR', 'TE', 'RB', 'LT', 'C'] : ['QB', 'WR', 'RB', 'LT', 'C'];
-      so.mates = roles.map(role => ({ role, first: pick(PG.media.FIRST), last: name(), num: { QB: 7, WR: 81, TE: 88, RB: 23, LT: 71, C: 62 }[role] + Math.floor(Math.random() * 5) }));
+      /* since the rosters (2026-11-17) they are the team's own starters at those spots (roster.js); a made-up man only
+         where a starter would share a name you or your coach already have */
+      so.mates = roles.map(role => {
+        const r = PG.roster && PG.roster.starter(C.team, fieldRole(role));
+        if (r && !taken.has(r.last)) {
+          taken.add(r.last);
+          return { role, first: r.first, last: r.last, num: r.num };
+        }
+        return { role, first: pick(PG.media.FIRST), last: name(), num: { QB: 7, WR: 81, TE: 88, RB: 23, LT: 71, C: 62 }[role] + Math.floor(Math.random() * 5) };
+      });
       so.matesTeam = C.team;
     }
     return so;
@@ -1260,7 +1269,7 @@
   const chemTier = v => v >= 80 ? 'Elite' : v >= 62 ? 'In sync' : v >= 40 ? 'Building' : 'Off';
   function gameMates() {
     const so = social(), p = partner();
-    return { mates: so.mates.map(m => ({ role: fieldRole(m.role), name: m.last, num: m.num })), mate: p ? { role: fieldRole(p.role), v: p.chem, name: p.last } : null };
+    return { mates: so.mates.map(m => ({ role: fieldRole(m.role), name: m.last, first: m.first, num: m.num })), mate: p ? { role: fieldRole(p.role), v: p.chem, name: p.last } : null };
   }
   const short = n => PG.media.short(n), signed = n => (n >= 0 ? '+' : '\u2212') + Math.abs(n);
 
@@ -1662,7 +1671,16 @@
 
   function tabSeason() {
     return contractHtml() + LG.standingsHtml(C)
-      + schedHtml();
+      + schedHtml() + rosterHtml();
+  }
+
+  /* the team's 53 (roster.js), with you in as the starter at your position and your feed's teammates in their spots */
+  function rosterHtml() {
+    if (!PG.roster) return '';
+    const so = social(), names = {};
+    for (const m of so.mates || []) names[fieldRole(m.role)] = { first: m.first, last: m.last, num: m.num };
+    const me = { full: C.name, last: PG.media.lastOf(C.name), pos: C.pos, num: C.num, rt: ovr(), age: 21 + (C.season || 1) };
+    return `<h2>Roster · ${esc(team(C.team).name)}</h2>${PG.roster.html(C.team, C.ovrs ? C.ovrs[C.team] : undefined, { me, names })}`;
   }
 
   const retTot = m => {

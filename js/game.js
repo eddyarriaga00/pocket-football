@@ -143,15 +143,14 @@
   }
   const namesOf = ros => new Set(ros ? Object.values(ros).map(p => p && p.name).filter(Boolean) : []);
 
-  /* `used`: surnames already in the game (the other side's), so no two men on the field share one */
-  function mkRoster(ti, delta, ovr, used = new Set()) {
-    const o = (ovr ?? TEAMS[ti].ovr) + (delta || 0), r = {}, worn = new Set();
+  /* A team's starters for a game, from its roster (roster.js: the same men every game, each with his own number, his
+     first and last name, and his rating against the team's). delta moves the whole side (the difficulty). Until
+     2026-11-17 the starters were made up for each game from the game's generator. */
+  function mkRoster(ti, delta, ovr) {
+    const o = (ovr ?? TEAMS[ti].ovr) + (delta || 0), r = {};
     for (const role of [...OFFR, ...DEFR]) {
-      const g = role === 'S2' ? 'S' : role.replace(/\d/, ''), rt = Math.round(clamp(o + rnd(-9, 7), 58, 99)), nr = NUM[g] || [60, 79];
-      let num = Math.floor(rnd(nr[0], nr[1] + 1));
-      for (let i = 0; worn.has(num) && i < 12; i++) num = Math.floor(rnd(nr[0], nr[1] + 1));  // no two players in the same number
-      worn.add(num);
-      r[role] = { rt, spd: BASE[g] * (1 + (rt - 80) * 0.004), num, name: freeName(used) };
+      const g = role === 'S2' ? 'S' : role.replace(/\d/, ''), p = PG.roster.starter(ti, role), rt = Math.round(clamp(o + p.d, 58, 99));
+      r[role] = { rt, spd: BASE[g] * (1 + (rt - 80) * 0.004), num: p.num, name: p.last, first: p.first };
     }
     return r;
   }
@@ -238,6 +237,7 @@
       const dup = Object.entries(G.ros[0]).find(([k, x]) => k !== m.role && x && x.num === m.num);
       if (dup) dup[1].num = r.num;  // whoever wore his number takes the old one
       r.name = m.name;
+      r.first = m.first || '';  // his own first name, not the roster's man's
       r.num = m.num;
     }
     /* and nobody else on the field shares a surname with a career player or his named teammates: a generated man who
@@ -933,7 +933,7 @@
 
   function mkP(team, role, x, y) {
     const r = G.ros[team][role], ol = role in OLX;
-    const p = { team, role, x, y, vx: 0, vy: 0, dvx: 0, dvy: 0, spd: r.spd, acc: ol || role[0] === 'D' ? 9 : 13, rt: r.rt, num: r.num, name: r.name,
+    const p = { team, role, x, y, vx: 0, vy: 0, dvx: 0, dvy: 0, spd: r.spd, acc: ol || role[0] === 'D' ? 9 : 13, rt: r.rt, num: r.num, name: r.name, first: r.first || '',
       eng: null, block: null, shed: 0, immune: 0, beat: 0, stun: 0, down: false, tcd: 0, route: null, wp: 0, juke: 0, jcd: 0, dive: 0, anim: rnd(6), rd: 0, isOL: ol, asg: null, man: null,
       callT: 0, manT: 0, bt: null, rx: rnd(0.2, 0.45), thrT: 0, spinT: 0, fell: 0, jog: 0,
       stiff: 0, truck: 0, hurdle: 0, pcd: 0, hcd: 0, hit: 0, strip: 0, dcd: 0, flat: 0, sl: 0 };  // move timers: power, hurdle, hit stick, strip, knocked flat
@@ -2478,7 +2478,7 @@
      It feeds the player of the game. */
   function credit(p, k, v) {
     if (QUIET || !p || !G.box) return;
-    const key = p.team + p.role, b = G.box[key] || (G.box[key] = { name: p.name, num: p.num, team: p.team, role: p.role });
+    const key = p.team + p.role, b = G.box[key] || (G.box[key] = { name: p.name, first: p.first || '', num: p.num, team: p.team, role: p.role });
     b[k] = (b[k] || 0) + v;
   }
 
@@ -2506,13 +2506,13 @@
     if (b.int) parts.push(`${b.int} INT`);
     if (b.ff) parts.push(`${b.ff} forced fumble${b.ff > 1 ? 's' : ''}`);
     if (b.fr) parts.push(`${b.fr} fumble recover${b.fr > 1 ? 'ies' : 'y'}`);
-    return { name: b.name, num: b.num, team: b.team, role: b.role, line: parts.join(' · ') };
+    return { name: b.name, first: b.first || '', num: b.num, team: b.team, role: b.role, line: parts.join(' · ') };
   }
 
   const potdHtml = () => (G.potd ? `<button class="btn2" id="potd" style="margin:8px 0 2px">Watch the play of the game<small style="display:block;font-weight:500;text-transform:none;letter-spacing:0;color:var(--mute);margin-top:2px">${G.potd.text}</small></button>` : '');
   const potgHtml = () => {
     const p = playerOfGame();
-    return p ? `<p class="potg"><small>Player of the game</small><b>#${p.num} ${p.name} · ${ab(p.team)}</b><span>${p.line}</span></p>` : '';
+    return p ? `<p class="potg"><small>Player of the game</small><b>#${p.num} ${p.first ? p.first + ' ' : ''}${p.name} · ${ab(p.team)}</b><span>${p.line}</span></p>` : '';
   };
 
   /* a ball on the ground: gravity, a dead bounce or two with a random kick, then it rolls to a stop */

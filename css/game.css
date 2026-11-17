@@ -1194,3 +1194,16 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
   font:800 10px/17px var(--display);letter-spacing:0;text-transform:none;text-align:center;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.5)}
 .pb.big .hk{top:auto;bottom:-6px;right:50%;transform:translateX(50%)}
 .pb.wt .hk{top:-7px;right:-4px}
+
+/* a team's roster (roster.js): a row a man, number, name (a starter's stat line under it), position, age, rating */
+.rsh{margin:14px 0 6px;font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.rst{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.rst>div{display:grid;grid-template-columns:30px minmax(0,1fr) 34px 26px 28px;align-items:center;gap:6px;padding:6px 10px;font-size:12.5px}
+.rst>div+div{border-top:1px solid var(--line)}
+.rst i{font-style:normal;font-family:var(--display);font-weight:800;font-variant-numeric:tabular-nums;color:var(--mute);text-align:right}
+.rst b{font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rst b small{display:block;color:var(--mute);font-size:10.5px;font-weight:400;white-space:normal}
+.rst span,.rst em{font-style:normal;color:var(--mute);font-size:11px;font-family:var(--display);font-weight:700;letter-spacing:.04em}
+.rst u{text-decoration:none;font-family:var(--display);font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.rst .st b{font-weight:800}
+.rst .me{background:var(--panel2);box-shadow:inset 3px 0 0 var(--acc)}

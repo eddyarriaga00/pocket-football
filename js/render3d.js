@@ -4443,11 +4443,19 @@
     paintField(t0, t1, hs ? t1 : t0, both);
     paintCrowd(hs ? t1 : t0, hs ? t0 : t1);
     const kinds = [BUILD.line, BUILD.big, BUILD.slim, BUILD.back, BUILD.db, BUILD.end, BUILD.qb];
+    /* the reserves are the team's own (roster.js): ten of its backups a side, each in his own number and name and built
+       for his position */
+    const benchOf = t => {
+      const ti = (PG.TEAMS || []).indexOf(t), all = ti >= 0 && PG.roster ? PG.roster.reserves(ti) : [];
+      return all.length ? [...Array(SIDELINE / 2)].map((_, k) => all[Math.floor(k * all.length / (SIDELINE / 2))]) : null;
+    };
+    const bench = [benchOf(t0), benchOf(t1)];
     for (let i = 0; i < SIDELINE; i++) {
       const home = i < SIDELINE / 2, n = i % (SIDELINE / 2), f = figs[i], t = home ? t0 : t1, kit = (home ? 0 : 1) === hs;  // home: your bench, on the near side
       /* two loose ranks, unevenly spaced, each man turned a little his own way: a sideline, not a parade */
       const x = (home ? -4.2 - (n % 2) * 1.1 : FW + 4.2 + (n % 2) * 1.1) + (Math.random() - 0.5) * 0.7, y = 33 + n * 3.6 + (Math.random() - 0.5) * 2.4;
-      setBuild(f, kinds[(i * 5 + n) % kinds.length]);
+      const man = bench[home ? 0 : 1] && bench[home ? 0 : 1][n];
+      setBuild(f, man ? BUILD[man.build] : kinds[(i * 5 + n) % kinds.length]);
       f.root.position.set(x, 0, -y);
       f.root.rotation.y = (home ? -Math.PI / 2 : Math.PI / 2) + (Math.random() - 0.5) * 0.5;
       f.benchY = y;  // his place on the bench (a few of them pace up and down from it: see poseBench)
@@ -4455,8 +4463,8 @@
       f.root.visible = true;
       f.snap = true;
       const c = teamColors(t, kit, SKIN[Math.floor(Math.random() * SKIN.length)]);
-      f.num.material = numberMaterial(Math.floor(Math.random() * 98) + 1, c.number);
-      f.nameplate.material = nameMaterial(PG.NAMES[Math.floor(Math.random() * PG.NAMES.length)], c.number);
+      f.num.material = numberMaterial(man ? man.num : Math.floor(Math.random() * 98) + 1, c.number);
+      f.nameplate.material = nameMaterial(man ? man.name : PG.NAMES[Math.floor(Math.random() * PG.NAMES.length)], c.number);
       colorFigure(i, c);
     }
     for (const p of parts) p.mesh.instanceColor.needsUpdate = true;
