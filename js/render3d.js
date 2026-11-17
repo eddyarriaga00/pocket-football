@@ -55,6 +55,10 @@
     [1.54, 1.74, 1.78, -0.36, -1.10, 0.49, 0.55, -1.42], [1.63, 1.83, 1.96, -0.79, -0.94, 0.56, 0.50, -1.34], [1.83, 1.81, 2.11, -0.99, -0.69, 0.87, 0.38, -1.09], [2.10, 1.75, 2.22, -0.81, -0.58, 1.14, 0.22, -0.59],
     [1.96, 1.43, 1.87, -0.32, -0.77, 1.35, 0.10, 0.03], [1.61, 1.16, 0.84, -0.42, -0.71, 1.58, 0.15, 0.41], [1.19, 1.06, 0.75, -0.70, -0.59, 1.56, 0.16, 0.71], [0.99, 1.15, 0.60, -0.82, -0.56, 1.48, 0.16, 1.03],
     [0.90, 1.18, 0.55, -0.88, -0.51, 1.41, 0.11, 1.19], [0.89, 1.17, 0.55, -0.85, -0.46, 1.31, 0.07, 1.26], [0.92, 1.13, 0.56, -0.79, -0.39, 1.21, 0.04, 1.28]], TH_CH = [SRX, SRZ, ER, SLX, SLZ, EL, CHRX, CHRY];
+  /* The catch secured (CMU capture 34_01, 2.72 to 2.96 s): rows of SRX, SRZ, ER, SLX, SLZ, EL, CHRX from the ball in
+     both hands at the chest to the ball held at the belly. */
+  const SECURE = [[0.89, 0, 1.39, 0.87, 0.2, 1.27, -0.02], [0.39, -0.02, 1.93, 0.45, 0.22, 1.68, -0.07], [0.16, 0.03, 2.03, 0.24, 0.13, 1.81, -0.09],
+    [0.13, 0.1, 2.02, 0.23, 0.11, 1.81, -0.08], [0.19, 0.14, 1.87, 0.25, 0.13, 1.79, -0.08]], SECURE_CH = [SRX, SRZ, ER, SLX, SLZ, EL, CHRX];
   /* the throw at row x (fractional), blended over the pose so far by k; the head turns back against the chest, so his
      eyes stay on the man he is throwing to */
   function throwPose(tg, x, k) {
@@ -2884,6 +2888,19 @@
           tg[SRZ] = -0.15;
           tg[ER] = 2.0;
         }  // ball tucked away
+      /* Securing a catch: for a quarter of a second after it the ball is pulled into the belly with both hands, the
+         left hand coming across to the right and the elbows folding, before it goes under one arm (CMU capture 34_01,
+         the receiver's hands from the catch at chest height to the ball held at the belly). */
+      if (carrier && ps.caught && p !== ps.qb && f.secPs !== ps) {
+        f.secPs = ps;
+        f.secT = 0.26;
+      }
+      if (!carrier) f.secT = 0;
+      if (f.secT > 0) {
+        f.secT = Math.max(0, f.secT - dt);
+        const x = 4 * (1 - f.secT / 0.26), i = Math.min(3, Math.floor(x)), a = x - i, k = Math.min(1, f.secT / 0.08);  // the last few hundredths ease into the carry
+        for (let c = 0; c < SECURE_CH.length; c++) tg[SECURE_CH[c]] = lerp(tg[SECURE_CH[c]], lerp(SECURE[i][c], SECURE[i + 1][c], a), k);
+      }
       if (ps.mode === 'run' && s.live && ps.runner && ps.runner !== ps.qb) {
         // the exchange
         if (p === ps.qb && !ps.handoff) {
@@ -2942,12 +2959,15 @@
           let rel = Math.atan2(-bx, by) - f.heading;
           rel = Math.atan2(Math.sin(rel), Math.cos(rel));
           const over = Math.abs(rel) > 1.9, elev = Math.atan2(passZ(a) - 2.5, Math.max(0.8, Math.hypot(bx, by))), reach = over ? 2.7 : clamp(1.45 + elev, 1.2, 2.8);
-          tg[SLX] = reach;
-          tg[SRX] = reach;
+          /* a ball at chest height is taken as a real receiver takes it (CMU capture 34_01): hands out in front of the
+             chest with the elbows bent, not with the arms locked out; higher balls straighten the arms */
+          const chestK = over ? 0 : clamp((1.75 - reach) / 0.4, 0, 1);
+          tg[SLX] = lerp(reach, 0.97, chestK);
+          tg[SRX] = lerp(reach, 0.97, chestK);
           tg[SLZ] = over ? -0.15 : 0.22;
           tg[SRZ] = over ? 0.15 : -0.22;
-          tg[EL] = 0.35;
-          tg[ER] = 0.35;
+          tg[EL] = lerp(0.35, 1.3, chestK);
+          tg[ER] = lerp(0.35, 1.3, chestK);
           tg[CHRY] = over ? 0 : clamp(rel, -1.1, 1.1);
           tg[HEADRX] = over ? 0.4 : clamp(elev * 0.7, -0.05, 0.45);
           /* Contested (a defender within 1.8 yards of where it comes down): he goes up for it, both arms high,

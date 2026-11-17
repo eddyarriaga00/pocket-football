@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `53cc466`, before the motion-capture catch and two-hand secure (2026-11-17).
   - `14525cf`, before the motion-capture throw and the tuned juke and running arms (2026-11-17).
   - `56c0c15`, before the new juke, spin and broken-tackle animations (2026-11-17).
   - `5813a2d`, before more field detail (end zone bands, worn lanes, post pads, sideline yardage markers) (2026-11-17).
@@ -3233,6 +3234,16 @@ six were done as the pro game has them; the choices where there was one are mine
   PG.r3d.throwStrip, draws the quarterback through the table. Checked in strips from the side and from behind and the
   stride measured; fingerprint unchanged, the rough player clean. Credit: the data used in this project was obtained
   from mocap.cs.cmu.edu; the database was created with funding from NSF EIA-0196217.
+
+- **2026-11-17: the catch from real motion capture.** Asked for: "keep going" (after the motion-capture throw). In CMU
+  34_01 (two players throwing a football to each other) the receiver takes a chest-high ball with the hands out in
+  front of the chest and the elbows bent (about 70 to 80 degrees), then in a quarter of a second pulls it into the belly
+  with both hands, the left hand crossing to the right, before it goes under one arm. Now a ball at chest height is
+  taken that way (high balls still straighten the arms, over-the-shoulder and contested catches unchanged), and after
+  every catch the receiver secures it with both hands for 0.26 s (the SECURE table in render3d.js) before the carry.
+  Tried and left: the Cabbage Patch and the Twist in CMU 15_04 for touchdown celebrations; the clip is a three-minute
+  mix and the dances could not be cut out reliably. Checked in the catch strips and catchTest; fingerprint unchanged,
+  the rough player through a receiver's career clean.
 
 ## Morning hand-off
 
