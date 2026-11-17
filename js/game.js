@@ -2452,6 +2452,7 @@
           return;
         }
         release(o);
+        c2.shrugN = (c2.shrugN || 0) + 1;  // drawn as a stumble through the tackle (render3d.js); the game itself does not read it
         const moved = c2.truck > 0 ? 'truck' : c2.stiff > 0 ? 'stiff' : '';
         o.stun = o.hit > 0 ? 1.3 : moved ? 1.2 : 0.9;  // a missed hit stick takes longer to recover from
         o.dive = 0;

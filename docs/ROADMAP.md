@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `56c0c15`, before the new juke, spin and broken-tackle animations (2026-11-17).
   - `5813a2d`, before more field detail (end zone bands, worn lanes, post pads, sideline yardage markers) (2026-11-17).
   - `81c16db`, before three-minute quarters by default (2026-11-17).
   - `ff5d7d8`, before the NFL calendar (17 games, byes, seven-team playoffs) (2026-11-17).
@@ -3204,6 +3205,14 @@ six were done as the pro game has them; the choices where there was one are mine
   white band; yardage markers every ten yards just off the far sideline (white boxes with the number facing the field,
   orange G boxes at the goal lines; one mesh of faces on a six-number atlas, the bodies in the merged sideline mesh).
   Checked up close with the debug camera and at play distance upright and sideways; no new errors.
+
+- **2026-11-17: ball carrier animations.** Asked for: "improve the animations". The survey found the juke was only a
+  tilt of the hips, the spin only a turn, and a broken tackle not shown on the runner at all. Now the juke is two beats:
+  the plant (low on the outside foot, shoulders and helmet selling the other way) and the cut (a hard lean into the new
+  direction, the free arm thrown out for balance), its side read from the burst sideways; the spin goes low with the
+  ball locked in both arms against the chest; and a runner who breaks a tackle stumbles through it (chest pitched
+  forward, free arm flung out, a wobble at the hips) for under half a second (game.js counts it on p.shrugN, which play
+  never reads). Checked frame by frame with the debug camera; fingerprint unchanged, the rough player clean.
 
 ## Morning hand-off
 

@@ -2987,7 +2987,61 @@
           }
         }
       }
-      if (p.juke > 0 && !(p.spinT > 0)) tg[PELRZ] = clamp(-p.vx * Math.cos(f.heading) * 0.06, -0.4, 0.4);
+      /* The juke (reworked 2026-11-17; it was only a tilt of the hips): first the plant, low on the outside foot with
+         the shoulders and helmet selling the other way, then the cut, leaning hard into the new direction with the free
+         arm thrown out for balance. The side is read from the burst of speed sideways the move gives him (doJuke). */
+      if (p.juke > (f.jkLast || 0) + 0.05) {
+        f.jk0 = p.juke;
+        f.jkSide = Math.sign(p.vx * Math.cos(f.heading)) || 1;  // 1: the cut goes to his right
+      }
+      f.jkLast = p.juke;
+      if (p.juke > 0 && !(p.spinT > 0) && f.jk0) {
+        const u = clamp(1 - p.juke / f.jk0, 0, 1), sd = f.jkSide, free = f.ballL ? [SRX, SRZ, ER, 1] : [SLX, SLZ, EL, -1];
+        if (u < 0.35) {
+          const e = Math.sin(u / 0.35 * Math.PI / 2);
+          tg[PELY] -= 0.13 * e;
+          tg[PELRZ] = sd * 0.22 * e;
+          tg[CHRY] = sd * 0.32 * e;
+          tg[HEADRY] = sd * 0.25 * e;
+          tg[CHRX] = Math.min(tg[CHRX], -0.25 * e);
+        } else {
+          const e = Math.sin((u - 0.35) / 0.65 * Math.PI);
+          tg[PELY] -= 0.08 * e;
+          tg[PELRZ] = -sd * 0.42 * e;
+          tg[CHRY] = -sd * 0.18 * e;
+          tg[CHRX] = Math.min(tg[CHRX], -0.2 * e);
+          tg[free[0]] = lerp(tg[free[0]], 0.55, e);
+          tg[free[1]] = lerp(tg[free[1]], 0.75 * free[3], e);
+          tg[free[2]] = lerp(tg[free[2]], 0.5, e);
+        }
+      }
+      /* the spin: low through it, the ball locked away in both arms against his chest */
+      if (p.spinT > 0) {
+        const e = Math.sin(clamp(1 - p.spinT / 0.5, 0, 1) * Math.PI);
+        tg[PELY] -= 0.12 * e;
+        tg[CHRX] = Math.min(tg[CHRX], -0.3 * e);
+        tg[SLX] = tg[SRX] = 0.75;
+        tg[SLZ] = 0.32;
+        tg[SRZ] = -0.32;
+        tg[EL] = tg[ER] = 1.85;
+        tg[PELRZ] = 0.12 * e;
+      }
+      /* a broken tackle (game.js counts them on p.shrugN): a stumble through it, chest pitched forward, the free arm
+         flung out, a wobble at the hips, then back into his stride */
+      if ((p.shrugN || 0) !== (f.shrugSeen || 0)) {
+        f.shrugSeen = p.shrugN;
+        f.shrug = 0.45;
+      }
+      if (f.shrug > 0) {
+        f.shrug = Math.max(0, f.shrug - dt);
+        const e = Math.sin(clamp(1 - f.shrug / 0.45, 0, 1) * Math.PI), free = f.ballL ? [SRX, SRZ, 1] : [SLX, SLZ, -1];
+        tg[PELY] -= 0.1 * e;
+        tg[CHRX] = Math.min(tg[CHRX], -0.45 * e);
+        tg[PELRZ] += Math.sin(time * 26 + f.seed) * 0.13 * e;
+        tg[free[0]] = lerp(tg[free[0]], 0.9, e);
+        tg[free[1]] = lerp(tg[free[1]], 1.0 * free[2], e);
+        tg[HEADRX] = lerp(tg[HEADRX], 0.2, e);
+      }
       if (p.truck > 0) {
         // shoulder down, both arms over the ball
         eyes = false;
