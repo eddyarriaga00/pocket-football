@@ -275,6 +275,19 @@
   function rim(material, kind) {
     material.onBeforeCompile = shader => {
       shader.uniforms.uRim = rimColor;
+      /* how high above the turf this point is, in the world: near the ground less light reaches (the man's own body
+         and the grass block it), so the legs settle into the turf instead of floating, lit the same top to toe */
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying float vGroundY;')
+        .replace('#include <project_vertex>', `#include <project_vertex>
+          {
+            vec4 pgW = vec4(transformed, 1.0);
+            #ifdef USE_INSTANCING
+              pgW = instanceMatrix * pgW;
+            #endif
+            vGroundY = (modelMatrix * pgW).y;
+          }`);
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vGroundY;');
       if (kind === 'cloth') {
         shader.vertexShader = shader.vertexShader
           .replace('#include <common>', '#include <common>\nvarying vec3 vLocal;')
@@ -286,6 +299,7 @@
       shader.fragmentShader = shader.fragmentShader
         .replace('#include <common>', '#include <common>\nuniform vec3 uRim;')
         .replace('#include <opaque_fragment>', `
+          outgoingLight *= mix(0.68, 1.0, smoothstep(0.0, 1.0, vGroundY)) * (1.0 + 0.06 * smoothstep(1.4, 2.0, vGroundY));
           float rimAmount = pow(1.0 - clamp(dot(normalize(normal), normalize(vViewPosition)), 0.0, 1.0), 3.0);
           outgoingLight += uRim * rimAmount;
           ${kind === 'gloss' ? `

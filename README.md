@@ -1,6 +1,6 @@
 # PocketFootball
 
-(Called Pocket Gridiron until 2026-11-16. The old address, eddyarriaga00.github.io/pocket-gridiron/, now forwards here.)
+(Called Pocket Gridiron until 2026-11-16.)
 
 <img src="icons/icon-512.png" width="112" align="right" alt="">
 

@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `8e282ac`, before grounded player lighting, sideline turf and team areas, and the leather ball (2026-11-16 night).
   - `c6a445d`, before the move to the pocket-football address and the PocketFB home-screen name (2026-11-16 night).
   - `a523399`, before the rename to PocketFootball (2026-11-16 night).
   - `9f56170`, before the new crowd and stands, the uniform finishes and turf wear (2026-11-16 night).
@@ -3056,6 +3057,17 @@ six were done as the pro game has them; the choices where there was one are mine
   Saves carry over: they belong to the site (eddyarriaga00.github.io), not the path. The one-file build is now
   pocketfootball.html (the same Claude artifact), the service worker's cache pocketfootball-v1. Kept on purpose:
   the saved-data keys (pg.*) and the code's PG namespace, which no player sees.
+
+- 2026-11-16 (night, "i dont care about the old links honestly u can remove them etc, anyways lets keep improving the
+  textures and visuals of the game"). The forwarding repository at the old address was deleted (it was today's,
+  one commit); /pocket-gridiron/ now 404s, by the owner's choice. Visuals: every player part is darker near the turf
+  and a touch brighter at the head (world height in the rim patch, vGroundY), so men stand on the grass instead of
+  floating evenly lit; the apron beyond the field's pad is turf (a canvas with long mown bands and grain) instead of
+  one flat dark green; each sideline's team area (between the 30s, outside the border) is outlined in white with
+  the turf inside worn darker; the football is pebbled leather, darker at the tips, with a soft sheen. Also: the
+  test server (tools/serve.py) queues 128 connections; the default five dropped scripts when the page asked for
+  fifteen at once, which showed as the 3D view not starting in the test pane. Fingerprint unchanged; the rough
+  player, careers and the audit clean.
 
 ## Morning hand-off
 

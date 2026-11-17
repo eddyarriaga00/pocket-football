@@ -13,5 +13,10 @@ class NoCache(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+class Server(http.server.ThreadingHTTPServer):
+    request_queue_size = 128  # the page asks for fifteen files at once; the default queue of five dropped some
+    daemon_threads = True
+
+
 port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
-http.server.ThreadingHTTPServer(('127.0.0.1', port), NoCache).serve_forever()
+Server(('127.0.0.1', port), NoCache).serve_forever()

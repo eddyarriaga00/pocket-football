@@ -3229,6 +3229,17 @@
     c.fillRect(0, 0, TEXW, TEXH);
     c.fillStyle = '#e6ece6';
     c.fillRect(X(-2), Y(112), (FW + 4) * S, 124 * S);  // the white border
+    /* each side's team area, where its reserves stand: between the 30s, just outside the border, outlined in white,
+       the turf inside worn darker by a game's worth of cleats */
+    for (const side of [-1, 1]) {
+      const xa = side < 0 ? -5.7 : FW + 2, w = 3.7;
+      c.fillStyle = 'rgba(0,0,0,0.12)';
+      c.fillRect(X(xa), Y(70), w * S, 40 * S);
+      c.fillStyle = '#e6ece6';
+      c.fillRect(X(side < 0 ? xa : xa + w - 0.16), Y(70), 0.16 * S, 40 * S);
+      c.fillRect(X(xa), Y(70), w * S, 0.16 * S);
+      c.fillRect(X(xa), Y(30.16), w * S, 0.16 * S);
+    }
     /* the turf: five-yard bands mown one way and then the other, each with a little light across it, and the end zones
        in the team's color with a diagonal weave */
     for (let y = -10; y < 110; y += 5) {
@@ -3534,7 +3545,25 @@
     scene.add(field);
 
     /* the apron: what lies between the turf and the wall (it was the bare ground, a dark void the benches stood in) */
-    const apron = new T.Mesh(new T.PlaneGeometry(FW + 28, 148), new T.MeshLambertMaterial({ color: 0x1d3a29 }));
+    /* its turf: the same green as the field's edge, mown in long bands, with grain (it was one flat dark green) */
+    const apC = document.createElement('canvas');
+    apC.width = 256;
+    apC.height = 512;
+    const ap = apC.getContext('2d');
+    ap.fillStyle = '#1b5a30';
+    ap.fillRect(0, 0, 256, 512);
+    for (let i = 0; i < 16; i++) {
+      ap.fillStyle = i % 2 ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.04)';
+      ap.fillRect(0, i * 32, 256, 32);
+    }
+    for (let i = 0; i < 9000; i++) {
+      ap.fillStyle = Math.random() < 0.5 ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.06)';
+      ap.fillRect(Math.random() * 256, Math.random() * 512, 1, 2 + Math.random() * 3);
+    }
+    const apTex = new T.CanvasTexture(apC);
+    apTex.colorSpace = T.SRGBColorSpace;
+    apTex.anisotropy = 4;
+    const apron = new T.Mesh(new T.PlaneGeometry(FW + 28, 148), new T.MeshLambertMaterial({ map: apTex, color: 0xd8e2d8 }));
     apron.rotation.x = -Math.PI / 2;
     apron.position.set(FW / 2, -0.03, -50);
     scene.add(apron);
@@ -3818,7 +3847,26 @@
        white stripe near each point and the laces along the top, a strip with eight stitches across it */
     const ballR = z => 0.124 * Math.pow(Math.max(0, 1 - (z / 0.205) ** 2), 0.62), prof = [];
     for (let i = 0; i <= 14; i++) prof.push([Math.max(0.002, ballR(-0.205 + i * 0.41 / 14)), -0.205 + i * 0.41 / 14]);
-    const leather = new T.Mesh(lathe(prof, 14).rotateX(Math.PI / 2), new T.MeshLambertMaterial({ color: 0x7a4a21 }));
+    /* leather: a pebbled grain, a little darker toward the tips, and a soft sheen */
+    const lc = document.createElement('canvas');
+    lc.width = 128;
+    lc.height = 64;
+    const lcx = lc.getContext('2d'), lg = lcx.createLinearGradient(0, 0, 0, 64);
+    lg.addColorStop(0, '#4f2c12');
+    lg.addColorStop(0.3, '#7a4a21');
+    lg.addColorStop(0.7, '#7a4a21');
+    lg.addColorStop(1, '#4f2c12');
+    lcx.fillStyle = lg;
+    lcx.fillRect(0, 0, 128, 64);
+    for (let i = 0; i < 1400; i++) {
+      lcx.fillStyle = Math.random() < 0.5 ? 'rgba(0,0,0,0.16)' : 'rgba(255,220,180,0.07)';
+      lcx.beginPath();
+      lcx.arc(Math.random() * 128, Math.random() * 64, 0.5 + Math.random() * 0.6, 0, 7);
+      lcx.fill();
+    }
+    const lTex = new T.CanvasTexture(lc);
+    lTex.colorSpace = T.SRGBColorSpace;
+    const leather = new T.Mesh(lathe(prof, 14).rotateX(Math.PI / 2), new T.MeshPhongMaterial({ map: lTex, shininess: 28, specular: 0x3a2a1c }));
     const white = [];
     for (const z of [-0.135, 0.135]) white.push(lathe([[ballR(z - 0.013) + 0.002, z - 0.013], [ballR(z) + 0.003, z], [ballR(z + 0.013) + 0.002, z + 0.013]], 14).rotateX(Math.PI / 2));
     white.push(new T.BoxGeometry(0.014, 0.01, 0.15).translate(0, 0.126, 0));
