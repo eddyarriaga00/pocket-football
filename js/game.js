@@ -63,7 +63,14 @@
     } catch (_) {}
   }
 
-  const SET = Object.assign({ snd: true, mus: true, ql: 180, diff: 1, me: 0, opp: 5, acc: 'blue' }, load('pg.settings', {}));
+  const SET = Object.assign({ snd: true, mus: true, ql: 180, diff: 1, me: 0, opp: 5, acc: 'white' }, load('pg.settings', {}));
+  /* white is the default accent since 2026-11-16 (the owner's pick); the settings saved before then carry the old
+     default, blue, so that becomes white once, and any accent chosen after this sticks */
+  if (SET.accV !== 2) {
+    if (SET.acc === 'blue') SET.acc = 'white';
+    SET.accV = 2;
+    save('pg.settings', SET);
+  }
 
   /* ---------- difficulty: one slider, five steps ----------
      0 Rookie to 4 Legend, with Pro (2) in the middle. A game's `diff` is the step. Saves from before the slider hold
@@ -95,7 +102,7 @@
   let ACC = ACCENTS.blue;
 
   function applyTheme() {
-    if (!ACCENTS[SET.acc]) SET.acc = 'blue';
+    if (!ACCENTS[SET.acc]) SET.acc = 'white';
     ACC = ACCENTS[SET.acc];
     document.documentElement.style.setProperty('--acc', ACC);
     app.classList.toggle('lefty', !!SET.left);  // buttons on the left for left-handed play

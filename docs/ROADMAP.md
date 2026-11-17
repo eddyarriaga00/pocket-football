@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `d29ee21`, before white became the default accent (2026-11-16 night).
   - `60ed5d7`, before Stylized became the default look (2026-11-16 night).
   - `bcca249`, before the Stylized look option (2026-11-16 night).
   - `8e282ac`, before grounded player lighting, sideline turf and team areas, and the leather ball (2026-11-16 night).
@@ -3085,6 +3086,9 @@ six were done as the pro game has them; the choices where there was one are mine
 
 - 2026-11-16 (night, "default to new style so i can test"). Stylized is now the default: everyone who has not chosen
   gets it (`look !== 'classic'`); Settings → Style still switches to Classic.
+
+- 2026-11-16 (night, "make default accent color white"). White is the default accent; settings saved with the old
+  default (blue) switch to white once (`accV: 2`), and an accent picked after that sticks. Audit empty at 440x956.
 
 ## Morning hand-off
 
