@@ -25,8 +25,6 @@
 </div>
 <div id="screen"></div><div id="ov" hidden></div>`;
 
-  /* a phone on its side: the stylesheet shows this instead of a sliver of a game (small touch screens in landscape only) */
-  document.body.insertAdjacentHTML('beforeend', '<div id="turn" role="status"><i></i><b>Turn your phone upright</b><span>PocketFootball is played in portrait.</span></div>');
   const cv = $('#c'), ctx = cv.getContext('2d'), pad = $('#pad'), scr = $('#screen');
   const FW = 53.33, PITCH = 48 * Math.PI / 180, CS = Math.cos(PITCH), SN = Math.sin(PITCH), PS = 1.6, CAMH = 19.3;
   let W = 1, H = 1, F = 1, CY = 1, DPR = 1, AUTO = false, QUIET = false, FDT = 0.016, SDT = 0.016, shake = 0;  // FDT: last frame time, SDT: current simulation step
@@ -117,7 +115,7 @@
     H = r.height || 1;
     cv.width = W * DPR;
     cv.height = H * DPR;
-    F = W * 0.62;
+    F = Math.min(W, H * 0.62) * 0.62;  // on a wide screen the flat field fits the height
     CY = H * 0.5;
     if (R3) R3.resize(W, H, SET.px === 'bal' ? Math.min(DPR, 1.5) : DPR);
   }
@@ -1033,7 +1031,7 @@
       }
     }
     ps.recs.sort((a, b) => a.x - b.x).forEach((p, i) => {
-      p.let = (GP.on ? GLET : 'ABCDE')[i];  // with a controller, the button that throws to him
+      p.let = recLet(i);  // the key or controller button that throws to him, or a plain letter on a touch screen
       p.col = LCOL[i];
     });
     const el = P.filter(p => !p.isOL && p !== o.QB), byx = [...el].sort((a, b) => a.x - b.x), d = {};
@@ -4826,7 +4824,7 @@
     ps.prot = kind;
     ps.recs = P.filter(p => p.team === off && p.route && p !== ps.qb).sort((a, b) => a.x - b.x);
     ps.recs.forEach((p, i) => {
-      p.let = (GP.on ? GLET : 'ABCDE')[i];
+      p.let = recLet(i);
       p.col = LCOL[i];
     });
     return true;
@@ -5086,10 +5084,12 @@
     pad.innerHTML = '';
     G.sprintBtn = 0;
     tip(kind);
-    const B = (label, cls, down, up) => {
+    const B = (label, cls, down, up, k) => {
       const b = document.createElement('button');
       b.className = 'pb ' + cls;
       b.textContent = label;
+      const h = k && hintOf(kind, k);
+      if (h) b.insertAdjacentHTML('beforeend', `<kbd class="hk" aria-hidden="true">${h}</kbd>`);
       b.addEventListener('pointerdown', e => {
         e.preventDefault();
         down();
@@ -5098,68 +5098,68 @@
       pad.appendChild(b);
       return b;
     };
-    const spr = () => B('Sprint', 'spr', () => G.sprintBtn = 1, () => G.sprintBtn = 0);
+    const spr = () => B('Sprint', 'spr', () => G.sprintBtn = 1, () => G.sprintBtn = 0, 'sprint');
     if (kind === 'snap') {
       const more = ps && ps.mode !== 'kick';
-      if (more) B('Audible', '', () => act('audible'));  // the bottom row: Audible, then Snap in the corner under the thumb
-      B('SNAP', 'big', () => act('main'));
+      if (more) B('Audible', '', () => act('audible'), null, 'audible');  // the bottom row: Audible, then Snap in the corner under the thumb
+      B('SNAP', 'big', () => act('main'), null, 'main');
       if (more) {
-        B('Flip', '', () => act('flip'));
-        if (!ps.hard) B('Hard count', 'hc', () => act('hard'));
-        if (!ps.mot) B('Motion', '', () => act('motion'));
-        if (ps.mode === 'pass' && !ps.rpo) B(ps.prot === 'left' ? 'Slide L' : ps.prot === 'right' ? 'Slide R' : ps.prot === 'max' ? 'Max pro' : 'Protect', 'hc', () => act('protect'));
+        B('Flip', '', () => act('flip'), null, 'flip');
+        if (!ps.hard) B('Hard count', 'hc', () => act('hard'), null, 'hard');
+        if (!ps.mot) B('Motion', '', () => act('motion'), null, 'motion');
+        if (ps.mode === 'pass' && !ps.rpo) B(ps.prot === 'left' ? 'Slide L' : ps.prot === 'right' ? 'Slide R' : ps.prot === 'max' ? 'Max pro' : 'Protect', 'hc', () => act('protect'), null, 'protect');
       }
-    } else if (kind === 'ready') B('READY', 'big', () => act('main'));
-    else if (kind === 'kick') B('KICK', 'big', () => act('main'));
+    } else if (kind === 'ready') B('READY', 'big', () => act('main'), null, 'main');
+    else if (kind === 'kick') B('KICK', 'big', () => act('main'), null, 'main');
     else if (kind === 'pass') {
       ps.recs.forEach((r, i) => {
         const b = B(r.let, 'rc', () => startCharge(i), () => endCharge(i));  // hold to build power, let go to throw
         b.style.background = r.col;
         b.dataset.i = i;
       });
-      B('Away', 'aw', () => act('away'));  // nobody open: throw it out of bounds (from inside the pocket it may be grounding)
-      B('Pump', 'aw', () => act('pump'));  // a fake throw: zone defenders may bite
+      B('Away', 'aw', () => act('away'), null, 'away');  // nobody open: throw it out of bounds (from inside the pocket it may be grounding)
+      B('Pump', 'aw', () => act('pump'), null, 'pump');  // a fake throw: zone defenders may bite
     }
     else if (kind === 'carryq') {
       spr();
-      B('Juke', '', () => act('juke'));
-      B('Spin', '', () => act('spin'));
-      B('Power', '', () => act('power'));
-      B('Slide', 'hc', () => act('slide'));  // the quarterback past the line: give yourself up, safely
+      B('Juke', '', () => act('juke'), null, 'juke');
+      B('Spin', '', () => act('spin'), null, 'spin');
+      B('Power', '', () => act('power'), null, 'power');
+      B('Slide', 'hc', () => act('slide'), null, 'slide');  // the quarterback past the line: give yourself up, safely
     } else if (kind === 'carry') {
       spr();
-      B('Juke', '', () => act('juke'));
-      B('Spin', '', () => act('spin'));
-      B('Power', '', () => act('power'));
-      B('Hurdle', '', () => act('hurdle'));
+      B('Juke', '', () => act('juke'), null, 'juke');
+      B('Spin', '', () => act('spin'), null, 'spin');
+      B('Power', '', () => act('power'), null, 'power');
+      B('Hurdle', '', () => act('hurdle'), null, 'hurdle');
     } else if (kind === 'def') {
       spr();
-      B('Dive', '', () => act('dive'));
-      B('Switch', '', () => act('switch'));
-      B('Hit', '', () => act('hit'));
-      B('Strip', '', () => act('strip'));
+      B('Dive', '', () => act('dive'), null, 'dive');
+      B('Switch', '', () => act('switch'), null, 'switch');
+      B('Hit', '', () => act('hit'), null, 'hit');
+      B('Strip', '', () => act('strip'), null, 'strip');
     } else if (kind === 'deflock') {
       spr();
-      B('Dive', '', () => act('dive'));
-      B('Hit', '', () => act('hit'));
-      B('Strip', '', () => act('strip'));
+      B('Dive', '', () => act('dive'), null, 'dive');
+      B('Hit', '', () => act('hit'), null, 'hit');
+      B('Strip', '', () => act('strip'), null, 'strip');
     } else if (kind === 'route') {
       spr();
-      B('Call', 'hot', () => act('call'));
+      B('Call', 'hot', () => act('call'), null, 'call');
     } else if (kind === 'offball') spr();
     else if (kind === 'defpre') {
-      B('Switch', '', () => act('switch'));
-      B('Audible', '', () => act('audible'));
-    } else if (kind === 'timeout') B('Time out', '', () => act('timeout'));
-    else if (kind === 'fair') B('Fair catch', '', () => act('fair'));
+      B('Switch', '', () => act('switch'), null, 'switch');
+      B('Audible', '', () => act('audible'), null, 'audible');
+    } else if (kind === 'timeout') B('Time out', '', () => act('timeout'), null, 'timeout');
+    else if (kind === 'fair') B('Fair catch', '', () => act('fair'), null, 'fair');
     else if (/^watch/.test(kind)) {
       const f = /F$/.test(kind);
-      B(/K/.test(kind) ? 'Skip' : 'Skip drive', 'wt', () => act('skipd')).id = 'wSkip';
-      B(f ? '3x · on' : 'Fast fwd', 'wt' + (f ? ' on' : ''), () => act('ff')).id = 'wFF';
+      B(/K/.test(kind) ? 'Skip' : 'Skip drive', 'wt', () => act('skipd'), null, 'skipd').id = 'wSkip';
+      B(f ? '3x · on' : 'Fast fwd', 'wt' + (f ? ' on' : ''), () => act('ff'), null, 'ff').id = 'wFF';
     }
     else if (kind === 'loose') {
       spr();
-      B('Dive', '', () => act('dive'));
+      B('Dive', '', () => act('dive'), null, 'dive');
     }
     fitPad();
   }
@@ -5172,8 +5172,39 @@
     if (bs.length) pad.style.width = Math.ceil(Math.max(...bs.map(b => b.offsetLeft + b.offsetWidth)) - Math.min(...bs.map(b => b.offsetLeft))) + 'px';
   }
 
+  /* On a screen of buttons the keyboard works like a controller: the arrow keys move the ring, Enter (or Space once the
+     ring is showing) presses, Escape goes back, Q and E change tabs. Returns whether it used the key. */
+  const KNAV = { ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [-1, 0], ArrowRight: [1, 0], KeyW: [0, 1], KeyS: [0, -1], KeyA: [-1, 0], KeyD: [1, 0] };
+  function kbNav(e) {
+    const ui = uiLayer();
+    if (!ui || e.ctrlKey || e.metaKey || e.altKey) return false;
+    const ring = !!GP.foc && (!ui.contains(GP.foc) || shown(GP.foc));  // showing, or showing before the screen was redrawn
+    const press = b => {
+      e.preventDefault();
+      navUI(ui, 0, 0, i => i === b, 0);
+      return true;
+    };
+    if (KNAV[e.code]) {
+      e.preventDefault();
+      const [x, y] = KNAV[e.code];
+      GP.nav.dir = '';
+      navUI(ui, ring ? x : 0, ring ? y : 0, () => false, 0);  // the first press only shows the ring
+      GP.nav.dir = '';
+      return true;
+    }
+    if (e.code === 'Enter' || e.code === 'NumpadEnter' || (e.code === 'Space' && ring)) return ring ? press(GB.A) : false;
+    if (e.code === 'Escape' || e.code === 'Backspace') {
+      if (G.paused || [...ui.querySelectorAll('.back, #pk')].some(shown)) return press(GB.B);
+      return false;  // nothing to go back to (the play call): Escape pauses as before
+    }
+    if (e.code === 'KeyQ' || e.code === 'KeyE') return press(e.code === 'KeyQ' ? GB.LB : GB.RB);
+    return false;
+  }
+
   addEventListener('keydown', e => {
-    if (e.target && e.target.tagName === 'INPUT') return;
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
+    if (!/^(Shift|Control|Alt|Meta)/.test(e.code)) setInput('kb');
+    if (kbNav(e)) return;
     keys[e.code] = 1;
     if (e.repeat) return;
     if (e.code === 'Space') {
@@ -5348,7 +5379,7 @@
     inp.x = x;
     inp.y = y;
     inp.manual = hyp(x, y) > 0.18;
-    inp.sprint = !!(G.sprintBtn || keys.ShiftLeft || (keys.Space && G.state === 'live') || GP.sprint);
+    inp.sprint = !!(G.sprintBtn || keys.ShiftLeft || keys.ShiftRight || (keys.Space && G.state === 'live') || GP.sprint);
   }
 
   /* ---------- controllers ----------
@@ -5364,6 +5395,34 @@
   const GP = { on: false, prev: [], x: 0, y: 0, sprint: false, nav: { dir: '', t: 0 }, zoomT: 0, foc: null, last: null };
   const GB = { A: 0, B: 1, X: 2, Y: 3, LB: 4, RB: 5, LT: 6, RT: 7, VIEW: 8, START: 9, UP: 12, DOWN: 13, LEFT: 14, RIGHT: 15 };
   const GLET = ['A', 'B', 'X', 'Y', 'RB'];  // the throw buttons, in the order of the receivers across the field
+  /* What the player is holding: 'touch', 'kb' (a keyboard, the default on a computer) or 'pad'. The receivers' letters
+     and the small badges on the buttons beside the field follow it, so they always name what to press. */
+  const IN = { mode: window.matchMedia && matchMedia('(hover:hover) and (pointer:fine)').matches ? 'kb' : 'touch', ps: false };
+  // a PlayStation controller's buttons are shapes, not letters
+  const PSG = { A: '\u2715', B: '\u25CB', X: '\u25A1', Y: '\u25B3', LB: 'L1', RB: 'R1', LT: 'L2', RT: 'R2', VIEW: 'Share', START: 'Options' };
+  const glyph = b => (IN.ps && PSG[b]) || b;
+  const recLet = i => (IN.mode === 'pad' ? GLET.map(glyph) : IN.mode === 'kb' ? '12345' : 'ABCDE')[i];
+  function setInput(m) {
+    if (IN.mode === m) return;
+    IN.mode = m;
+    if (ps && ps.recs) ps.recs.forEach((p, i) => (p.let = recLet(i)));
+    G.pad = null;  // the buttons are drawn again with the new labels
+  }
+  addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch' || e.pointerType === 'pen') setInput('touch');
+  }, { capture: true, passive: true });
+  /* the key or button for each action on the pad (the receivers' buttons carry their own) */
+  const KEYOF = { main: 'Space', sprint: 'Shift', juke: 'J', spin: 'K', switch: 'Q', dive: 'E', power: 'L', hurdle: 'H', hit: 'F', strip: 'R', timeout: 'T', audible: 'V', flip: 'X', call: 'C', hard: 'G',
+    motion: 'M', protect: 'O', away: 'Z', pump: 'B', slide: 'N', ff: 'F', skipd: 'K', fair: 'Space' };
+  function hintOf(kind, k) {
+    if (IN.mode === 'kb') return KEYOF[k] || '';
+    if (IN.mode !== 'pad') return '';
+    if (k === 'sprint') return glyph('RT');
+    if (kind === 'pass') return k === 'away' ? glyph('LB') : k === 'pump' ? glyph('LT') : '';
+    const map = GMAP[kind] || {};
+    for (const b in map) if (map[b] === k || (k === 'main' && map[b] === 'main')) return glyph(b);
+    return k === 'timeout' ? glyph('VIEW') : '';
+  }
   const GMAP = { snap: { A: 'main', X: 'motion', Y: 'hard', LB: 'audible', RB: 'flip', LT: 'protect' }, ready: { A: 'main' }, kick: { A: 'main' }, fair: { A: 'fair' }, carry: { A: 'power', B: 'juke', X: 'spin', Y: 'hurdle' }, carryq: { A: 'power', B: 'juke', X: 'spin', Y: 'slide' },
     def: { A: 'dive', B: 'switch', X: 'hit', Y: 'strip' }, deflock: { A: 'dive', X: 'hit', Y: 'strip' }, route: { A: 'call' }, watch: { A: 'ff', B: 'skipd' }, watchF: { A: 'ff', B: 'skipd' }, watchK: { A: 'ff', B: 'skipd' }, watchKF: { A: 'ff', B: 'skipd' }, defpre: { B: 'switch', LB: 'audible' }, loose: { A: 'dive' }, timeout: { A: 'timeout' } };
   addEventListener('gamepadconnected', e => toast('Controller connected' + (e.gamepad && e.gamepad.mapping === 'standard' ? '' : ' · buttons may differ')));
@@ -5381,20 +5440,24 @@
         GP.on = false;
         GP.x = GP.y = 0;
         GP.sprint = false;
-        G.pad = null;
+        GP.gp = null;
+        setInput(window.matchMedia && matchMedia('(hover:hover) and (pointer:fine)').matches ? 'kb' : 'touch');
       }
       return;
     }
+    GP.gp = gp;
     const val = i => (gp.buttons[i] ? gp.buttons[i].value || (gp.buttons[i].pressed ? 1 : 0) : 0), now = gp.buttons.map((_, i) => val(i) > 0.5), was = GP.prev;
     GP.prev = now;
     const hit = i => now[i] && !was[i], rel = i => !now[i] && was[i];
     if (!GP.on) {
       if (!now.some(Boolean) && Math.hypot(gp.axes[0] || 0, gp.axes[1] || 0) < 0.5) return;  // it takes over from the first press, so a controller left plugged in changes nothing
       GP.on = true;
-      G.pad = null;  // the field buttons are drawn again with the controller's letters
+      IN.ps = /054c|dualsense|dualshock|playstation/i.test(gp.id || '');
+      setInput('pad');  // the field buttons are drawn again with the controller's buttons on them
       const ui = uiLayer();
       if (ui) return navUI(ui, 0, 0, () => false, dt);  // on a screen the first press only shows the ring: it does not pick anything yet
     }
+    if (IN.mode !== 'pad' && (now.some((v, i) => v && !was[i]) || Math.hypot(gp.axes[0] || 0, gp.axes[1] || 0) > 0.5)) setInput('pad');  // back on the controller after the keyboard or the screen
     let x = gp.axes[0] || 0, y = -(gp.axes[1] || 0);
     const m = Math.hypot(x, y);
     if (m < 0.2) x = y = 0;
@@ -5417,7 +5480,7 @@
     if (ui) {
       GP.x = GP.y = 0;
       GP.sprint = false;
-      return navUI(ui, x, y, hit, dt);
+      return navUI(ui, x, y, hit, dt, -(gp.axes[3] || 0));  // the right stick scrolls a long screen
     }
     if (GP.foc) GP.foc.classList.remove('gpf');
     GP.foc = null;
@@ -5478,8 +5541,8 @@
     el.click();
   }
 
-  function navUI(root, x, y, hit, dt) {
-    const els = [...root.querySelectorAll('button, input, select, a[href]')].filter(el => !el.disabled && el.getAttribute('aria-disabled') !== 'true' && shown(el));
+  function navUI(root, x, y, hit, dt, sy) {
+    const els = [...root.querySelectorAll('button, input, select, a[href], summary')].filter(el => !el.disabled && el.getAttribute('aria-disabled') !== 'true' && shown(el));
     if (!els.length) return;
     let cur = GP.foc && els.includes(GP.foc) ? GP.foc : null;
     if (!cur) {
@@ -5489,6 +5552,16 @@
     }
     const dir = Math.abs(x) > 0.5 || Math.abs(y) > 0.5 ? (Math.abs(x) > Math.abs(y) ? (x > 0 ? 'R' : 'L') : y > 0 ? 'U' : 'D') : '';
     const move = d => {
+      if (cur.tagName === 'INPUT' && cur.type === 'range' && (d === 'L' || d === 'R')) {
+        // a slider (the difficulty): left and right move it a notch
+        const v = clamp((parseFloat(cur.value) || 0) + (d === 'R' ? 1 : -1) * (parseFloat(cur.step) || 1), parseFloat(cur.min) || 0, parseFloat(cur.max) || 100);
+        if (String(v) !== cur.value) {
+          cur.value = String(v);
+          cur.dispatchEvent(new Event('input', { bubbles: true }));
+          cur.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        return;
+      }
       if (cur.tagName === 'INPUT' && cur.inputMode === 'numeric' && (d === 'L' || d === 'R')) {
         cur.value = String(clamp((parseInt(cur.value, 10) || 0) + (d === 'R' ? 1 : -1), 1, 99));  // a number box: left and right change it
         cur.dispatchEvent(new Event('input', { bubbles: true }));
@@ -5509,6 +5582,12 @@
       }
       if (best) gpFocus((cur = best));
     };
+    if (sy && Math.abs(sy) > 0.25) {
+      // scroll the screen the ring is on (the news, the feed, a long list) without moving the ring
+      let sc = cur.parentElement;
+      while (sc && sc !== root.parentElement && !(sc.scrollHeight > sc.clientHeight + 2 && /auto|scroll/.test(getComputedStyle(sc).overflowY))) sc = sc.parentElement;
+      if (sc && sc !== root.parentElement) sc.scrollTop -= sy * Math.abs(sy) * dt * 1300;
+    }
     if (dir !== GP.nav.dir) {
       GP.nav.dir = dir;
       GP.nav.t = 0.38;
@@ -5537,8 +5616,8 @@
       // a page along the play-call row
       const cards = [...root.querySelectorAll('.grid.row .card')];
       if (cards.length) {
-        const i = Math.max(0, cards.indexOf(cur));
-        gpFocus(cards[clamp(i - (i % 3) + (hit(GB.RT) ? 3 : -3), 0, cards.length - 1)]);
+        const i = Math.max(0, cards.indexOf(cur)), row = cards[0].parentElement, per = row.per ? row.per() : 3;
+        gpFocus(cards[clamp(i - (i % per) + (hit(GB.RT) ? per : -per), 0, cards.length - 1)]);
       }
     }
   }
@@ -5558,10 +5637,23 @@
   }, { capture: true, once: true });
 
   function buzz(pattern) {
-    if (AUTO || QUIET || !touched || SET.hap === false || !navigator.vibrate) return;
+    if (AUTO || QUIET || SET.hap === false) return;
+    if (IN.mode === 'pad') return rumble(pattern);
+    if (!touched || !navigator.vibrate) return;
     if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return;  // a scripted tap is not a real one: the browser would refuse and log an error
     try {
       navigator.vibrate(pattern);
+    } catch (_) {}
+  }
+
+  /* the same buzz as a controller's rumble: a pattern's buzzing parts added up, harder the longer it is */
+  function rumble(pattern) {
+    const va = GP.gp && GP.gp.vibrationActuator;
+    if (!va || !va.playEffect) return;
+    const ms = Array.isArray(pattern) ? pattern.reduce((t, v, i) => t + (i % 2 ? 0 : v), 0) : +pattern || 30;
+    try {
+      const r = va.playEffect('dual-rumble', { duration: Math.min(450, ms), strongMagnitude: clamp(ms / 160, 0.2, 0.9), weakMagnitude: clamp(ms / 100, 0.3, 1) });
+      if (r && r.catch) r.catch(() => {});
     } catch (_) {}
   }
 
@@ -6138,11 +6230,11 @@
     if (document.hidden && G.ros && G.state !== 'over' && !AUTO && !window.PG_TEST) openPause();
   });  // PG_TEST: screenshots in the test pane hide the page
 
-  /* the game also stops when the "turn your phone" notice covers it */
-  const sideways = window.matchMedia ? matchMedia('(orientation:landscape) and (max-height:480px) and (pointer:coarse)') : null;
-  if (sideways && sideways.addEventListener) sideways.addEventListener('change', e => {
-    if (e.matches && G.ros && G.state !== 'over' && !AUTO) openPause();
-  });
+  /* turning the phone redraws everything at the new size (the layout itself is the stylesheet's) */
+  addEventListener('orientationchange', () => setTimeout(() => {
+    resize();
+    G.pad = null;
+  }, 120));
 
   function drawArt(c, pl, def) {
     const x = c.getContext('2d'), w = c.width = 280, h = c.height = 200, sc = 7, ox = w / 2, oy = def ? h - 26 : h - 62, X = d => ox + d * sc, Y = d => oy - d * sc;
@@ -6288,13 +6380,14 @@
   /* A row of cards three at a time: swipe it, scroll it with a mouse wheel (up and down turn into across), or page it
      with the arrows under it, which also say where you are ("4–6 of 49"). */
   function pager(row, n) {
-    const L = $('#pgL'), R = $('#pgR'), N = $('#pgN'), per = 3;
+    const L = $('#pgL'), R = $('#pgR'), N = $('#pgN');
+    const perOf = () => parseInt(getComputedStyle(row).getPropertyValue('--per'), 10) || 3;  // three on a phone held upright, five on a wide screen
     const step = () => {
       const c = row.querySelector('.card');
-      return c ? c.offsetWidth + parseFloat(getComputedStyle(row).columnGap || 8) : row.clientWidth / per;
+      return c ? c.offsetWidth + parseFloat(getComputedStyle(row).columnGap || 8) : row.clientWidth / perOf();
     };
     const upd = () => {
-      const i = Math.round(row.scrollLeft / step()), a = Math.min(n, i + 1), b = Math.min(n, i + per);
+      const per = perOf(), i = Math.round(row.scrollLeft / step()), a = Math.min(n, i + 1), b = Math.min(n, i + per);
       N.textContent = n <= per ? `${n} play${n === 1 ? '' : 's'}` : `${a}–${b} of ${n}`;
       L.setAttribute('aria-disabled', i <= 0 ? 'true' : 'false');
       R.setAttribute('aria-disabled', b >= n ? 'true' : 'false');
@@ -6321,7 +6414,7 @@
       requestAnimationFrame(f);
       setTimeout(end, 400);  // where frames are not running (a background tab), it still lands
     };
-    const go = d => slide((Math.round(row.scrollLeft / step() / per) + d) * per * step());
+    const go = d => slide((Math.round(row.scrollLeft / step() / perOf()) + d) * perOf() * step());
     L.onclick = () => go(-1);
     R.onclick = () => go(1);
     row.addEventListener('scroll', upd, { passive: true });
@@ -6340,9 +6433,10 @@
     row.pageBy = go;
     row.pageTo = i => {
       // the page holding card i (the controller's ring): scrolling it just into view would snap back to the page before
-      const x = Math.floor(i / per) * per * step();
+      const per = perOf(), x = Math.floor(i / per) * per * step();
       if (Math.abs(row.scrollLeft - x) > 2) slide(x);
     };
+    row.per = perOf;
     upd();
   }
 
@@ -6642,7 +6736,8 @@
   const HOW_KEYS = [['Arrows', 'Move'], ['W A S D', 'Move'], ['Space', 'Snap, sprint'], ['1–5', 'Hold, let go: throw'], ['J', 'Juke'], ['K', 'Spin'], ['L', 'Power'], ['H', 'Hurdle'], ['Q', 'Switch'], ['E', 'Dive'], ['F', 'Hit'], ['R', 'Strip'], ['T', 'Time out'], ['V', 'Audible'], ['X', 'Flip'], ['G', 'Hard count'], ['C', 'Call for the ball'], ['B', 'Pump fake'], ['N', 'Slide'], ['O', 'Protection'], ['P', 'Pause'], ['− =', 'Zoom']];
   const HOW_PAD = [
     ['Any time', [['Stick', 'Move'], ['RT', 'Sprint'], ['R stick', 'Zoom'], ['Start', 'Pause'], ['View', 'Time out']]],
-    ['Before the snap', [['A', 'Snap'], ['Y', 'Hard count'], ['LB', 'Audible'], ['RB', 'Flip']]],
+    ['Before the snap', [['A', 'Snap'], ['Y', 'Hard count'], ['X', 'Motion'], ['LB', 'Audible'], ['RB', 'Flip'], ['LT', 'Protect']]],
+    ['Passing', [['A B X Y RB', 'Hold, let go: throw'], ['LB', 'Away'], ['LT', 'Pump']]],
     ['Running', [['A', 'Power'], ['B', 'Juke'], ['X', 'Spin'], ['Y', 'Hurdle']]],
     ['Defense', [['A', 'Dive'], ['B', 'Switch'], ['X', 'Hit'], ['Y', 'Strip']]]
   ];
@@ -6652,10 +6747,10 @@
     scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ Menu</button><h1 class="sm">How to play</h1>
   <div class="hwj">${HOW.map(([t, k], i) => `<button data-j="hw${i}">${ico(k)}<span>${t}</span></button>`).join('')}<button data-j="hwk">${ico('tag')}<span>Keys</span></button><button data-j="hwp">${ico('drag')}<span>Controller</span></button></div>
   ${secs}
-  <h2 id="hwk">Keyboard</h2>${caps(HOW_KEYS)}<p class="note">Hold 1–5 to build throw power, let go to throw. The mouse wheel zooms too.</p>
+  <h2 id="hwk">Keyboard</h2>${caps(HOW_KEYS)}<p class="note">Hold 1–5 to build throw power, let go to throw. The mouse wheel zooms too. On the menus and the play call: arrows move, Enter picks, Esc goes back, Q and E change tabs.</p>
   <h2 id="hwp">Controller</h2><p class="note" style="margin-top:0">Any controller your browser sees: plug it in or pair it and press a button. The d-pad moves as well as the left stick; R2 is RT and Select is View.</p>
   ${HOW_PAD.map(([t, l]) => `<h3 class="kch">${t}</h3>${caps(l)}`).join('')}
-  <ul class="how" style="margin-top:10px"><li>Passing: each receiver's letter becomes a button, A, B, X, Y or RB. Hold it to build power and let go to throw.</li><li>As a receiver, A calls for the ball.</li><li>On the menus and the play-call sheet the d-pad moves a ring, A picks, B goes back, LB and RB change tabs, LT and RT page through the plays.</li></ul></div>`;
+  <ul class="how" style="margin-top:10px"><li>The buttons beside the field show which controller button does what (on a PlayStation controller, its shapes).</li><li>As a receiver, A calls for the ball.</li><li>On the menus and the play-call sheet the d-pad moves a ring, A picks, B goes back, LB and RB change tabs, LT and RT page through the plays, the right stick scrolls.</li></ul></div>`;
     $('#bk').onclick = showMenu;
     scr.querySelectorAll('.hwj button').forEach(b => b.onclick = () => {
       const el = $('#' + b.dataset.j);

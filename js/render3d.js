@@ -4317,6 +4317,9 @@
     renderer.setPixelRatio(Math.min(dpr, 2));
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    /* upright, a 76-degree lens; on a wide screen a narrower one, so the view across stays near 96 degrees and the stands
+       at the edges do not stretch */
+    camera.fov = w > h ? clamp(2 * Math.atan(Math.tan(0.84) / camera.aspect) * 180 / Math.PI, 50, 76) : 76;
     camera.updateProjectionMatrix();
   }
 
@@ -4630,10 +4633,13 @@
       const chase = ps && ps.carrier && !ps.air && (ps.open || ps.mode === 'ko') && (G.state === 'live' || G.state === 'dead');
       zoom += ((chase ? 0.68 : 1) - zoom) * (1 - Math.exp(-dt * 2.4));
       const view = 1 / clamp(s.zoom || 1, 0.5, 2);  // the player's zoom: under 1 pulls the camera back and up, over 1 brings it in and down
-      const up = cm.up, back = (up ? 40 : 46) * zoom * view, ahead = (up ? 10 : 3) * zoom + (1 - zoom) * 8, tx = lerp(FW / 2, cm.fx, 0.75 + (1 - zoom) * 0.6);
+      /* a wide screen already shows the whole width of the field, so the camera comes in closer and looks a little further
+         ahead: bigger players, the same view downfield */
+      const wd = clamp((camera.aspect - 1) / 0.8, 0, 1);
+      const up = cm.up, back = (up ? 40 : 46) * zoom * view * (1 - 0.24 * wd), ahead = (up ? 10 : 3) * zoom + (1 - zoom) * 8 + 5 * wd, tx = lerp(FW / 2, cm.fx, 0.75 + (1 - zoom) * 0.6);
       /* The camera may not back out through the end-zone stand (the video board would hide the play). Zoomed out and
          pinned on your own goal line, it stops at the wall and climbs instead, keeping its distance from the ball. */
-      let camY = cm.fy - back, camH = 24 * zoom * view;
+      let camY = cm.fy - back, camH = 24 * zoom * view * (1 - 0.12 * wd);
       if (camY < CAM_WALL) {
         const reach = Math.hypot(back, camH);
         camY = CAM_WALL;

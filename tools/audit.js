@@ -217,7 +217,15 @@ window.A = (() => {
     const seen = c => {
       let h = c.h, r = c.el.getBoundingClientRect();
       for (let e = c.el.parentElement; e && e.id !== 'app'; e = e.parentElement) {
-        if (!/auto|scroll/.test(getComputedStyle(e).overflowY) || e.scrollHeight <= e.clientHeight + 4 || e.matches('.menu,.sheet')) continue;
+        const cs = getComputedStyle(e);
+        if (/auto|scroll|hidden/.test(cs.overflowX) && e.scrollWidth > e.clientWidth + 4) {
+          // a row that scrolls across (the play cards): a card past its edge is not on screen
+          const b = e.getBoundingClientRect();
+          h = { ...h, left: Math.max(h.left, b.left), right: Math.min(h.right, b.right) };
+          r = { left: Math.max(r.left, b.left), right: Math.min(r.right, b.right), top: r.top, bottom: r.bottom };
+          if (h.right - h.left <= 1 || r.right - r.left <= 1) return null;
+        }
+        if (!/auto|scroll/.test(cs.overflowY) || e.scrollHeight <= e.clientHeight + 4 || e.matches('.menu,.sheet')) continue;
         const b = e.getBoundingClientRect();
         h = { ...h, top: Math.max(h.top, b.top), bottom: Math.min(h.bottom, b.bottom) };
         r = { left: r.left, right: r.right, top: Math.max(r.top, b.top), bottom: Math.min(r.bottom, b.bottom) };

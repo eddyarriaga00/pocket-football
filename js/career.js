@@ -1086,7 +1086,7 @@
   function tilesHtml() {
     const [, role, sh] = roleOf(), d = deal(), p = partner();
     return `<div class="tiles"><div><small>XP</small><b class="xpv">${fmt(C.xp)}</b><span>to spend</span></div>
-  <div><small>Contract</small><b>${d.left > 0 ? money(d.pay) : 'Ending'}</b><span>${d.left > 0 ? `${d.left} season${d.left > 1 ? 's' : ''} left` : 'up for renewal'}</span></div>
+  <div><small>Contract</small><b>${d.left > 0 ? money(d.pay) : 'Ending'}</b><span>${d.left > 0 ? `${d.left} yr${d.left > 1 ? 's' : ''} left` : 'expiring'}</span></div>
   <div><small>Trust</small><b>${C.trust}</b><span>${role} · ${Math.round(sh * 10)}/10</span><div class="bar"><i style="width:${C.trust}%"></i></div></div>
   ${p ? `<div><small>Chemistry</small><b>${Math.round(p.chem)}</b><span>${esc(p.last)} · ${chemTier(p.chem)}</span><div class="bar"><i style="width:${Math.round(p.chem)}%"></i></div></div>` : `<div><small>Earned</small><b>${money(C.cash || 0)}</b><span>career</span></div>`}</div>`;
   }
@@ -1591,7 +1591,7 @@
   /* your deal at a glance: pay, years, its incentive, what you are worth on the market now, and what you have earned */
   function contractHtml() {
     const d = deal(), inc = d.inc && INCENT[d.inc];
-    return `<h2>Contract</h2><div class="ctr"><div><small>Pay</small><b>${money(d.pay)}</b><span>a season</span></div><div><small>Left</small><b>${d.left}</b><span>of ${d.years} season${d.years > 1 ? 's' : ''}</span></div><div><small>Market</small><b>${money(Math.round(worth() * 10) / 10)}</b><span>your value now</span></div><div><small>Earned</small><b>${money(C.cash || 0)}</b><span>career</span></div></div>
+    return `<h2>Contract</h2><div class="ctr"><div><small>Pay</small><b>${money(d.pay)}</b><span>a season</span></div><div><small>Left</small><b>${d.left}</b><span>of ${d.years} season${d.years > 1 ? 's' : ''}</span></div><div><small>Market</small><b>${money(Math.round(worth() * 10) / 10)}</b><span>your value</span></div><div><small>Earned</small><b>${money(C.cash || 0)}</b><span>career</span></div></div>
   ${inc ? `<p class="note">Incentive: ${incTxt(d.inc)}, +${fmt(inc[1])} XP at the end of the season.</p>` : ''}`;
   }
 

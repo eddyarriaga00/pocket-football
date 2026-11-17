@@ -1,11 +1,11 @@
 {
   "name": "PocketFootball",
   "short_name": "PocketFB",
-  "description": "11-on-11 football for portrait phones.",
+  "description": "11-on-11 football for phones and computers.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#060a13",
   "theme_color": "#060a13",
   "icons": [

@@ -1,5 +1,5 @@
 /* PocketFootball
-   Layout: one portrait column. The field canvas fills it; a compact scorebug sits on top, small thumb
+   Layout: one portrait column (on a wide screen the field fills it all; see the end of this file). The field canvas fills it; a compact scorebug sits on top, small thumb
    controls at the bottom right, sheets slide over the lower part, full screens scroll inside it.
    Type: Archivo (upright, normal width) for display and numbers, the system face for reading text.
    Color: navy-tinted neutrals and one accent the player picks in the menu (set as --acc from settings). */
@@ -174,7 +174,7 @@ input{font:inherit;font-size:16px;color:var(--ink);background:var(--panel2);bord
 .card.sug{border-color:var(--acc)}
 .card canvas{width:100%;aspect-ratio:7/5;display:block}
 /* the play-call row: three cards across, the rest a swipe away, a page at a time */
-.grid.row{display:flex;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;touch-action:pan-x}
+.grid.row{--per:3;display:flex;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;touch-action:pan-x}
 .grid.row::-webkit-scrollbar{display:none}
 .grid.row .card{flex:0 0 calc((100% - 16px)/3)}  /* a grid's percentage tracks collapsed to nothing in a scrolling row; flex sizes them */
 .grid.row .card:nth-child(3n+1){scroll-snap-align:start;scroll-snap-stop:always}
@@ -448,14 +448,6 @@ tr.me td{color:var(--acc);font-weight:700}
 .stack{display:flex;flex-direction:column;gap:8px;margin-top:16px}
 #potd{height:auto;min-height:38px;padding:5px 10px}
 #potd small{font-size:11px}
-/* a phone held sideways leaves the portrait column too narrow to play: ask for it to be turned */
-#turn{display:none}
-@media (orientation:landscape) and (max-height:480px) and (pointer:coarse){
-  #turn{display:flex;position:fixed;inset:0;z-index:20;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:20px;background:var(--bg);text-align:center}
-  #turn i{width:30px;height:50px;margin-bottom:10px;border:2px solid var(--acc);border-radius:7px}
-  #turn b{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:.05em;text-transform:uppercase}
-  #turn span{color:var(--mute);font-size:13px}
-}
 @media (prefers-reduced-motion:reduce){#banner,#toast{transition:none}}
 
 /* career: awards night and the hall of fame */
@@ -1150,3 +1142,51 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 .morer summary{cursor:pointer;font-size:12px;color:var(--mute);padding:4px 0 2px 2px;list-style:none}
 .morer summary::-webkit-details-marker{display:none}
 .btn2.more{width:100%;margin:4px 0 10px}
+
+/* Wide screens: a phone on its side, a tablet, a computer (2026-11-17). The field fills the whole screen; the
+   scoreboard, the meters and the reading screens keep to a centered column, and the play cards show five at a time.
+   The notched edge of a phone on its side is kept clear with the safe-area insets. */
+@media (min-aspect-ratio:1/1){
+  #app{left:0;right:0;width:auto;transform:none}
+  #hud{left:50%;right:auto;width:min(100%,620px);box-sizing:border-box;transform:translateX(-50%)}
+  #deck{left:max(10px,calc(env(safe-area-inset-left,0px) + 4px));right:max(10px,calc(env(safe-area-inset-right,0px) + 4px))}
+  #meter,#pw{justify-self:center;width:min(100%,520px);margin:0}
+  #banner{top:26%}
+  #toast{top:86px}
+  .menu{padding-left:max(18px,calc((100% - 640px)/2),env(safe-area-inset-left,0px));padding-right:max(18px,calc((100% - 640px)/2),env(safe-area-inset-right,0px))}
+  .sheet{width:min(100%,1000px);margin:0 auto;border-left:1px solid var(--line);border-right:1px solid var(--line);
+    padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+  .grid.row{--per:5}
+  .grid.row .card{flex-basis:calc((100% - 32px)/5)}
+  .grid.row .card:nth-child(3n+1){scroll-snap-align:none;scroll-snap-stop:normal}
+  .grid.row .card:nth-child(5n+1){scroll-snap-align:start;scroll-snap-stop:always}
+  #ov{padding:10px 28px}
+  #ov>*{max-height:100%;overflow-y:auto;box-sizing:border-box}
+  #ov .dlg>*{flex-shrink:0}   /* a dialog taller than the screen scrolls; its buttons keep their size */
+  .intro{width:min(calc(100% - 28px),600px);box-sizing:border-box;margin:0 auto 6vh}
+}
+/* a phone on its side: little height, so the sheets may rise further and the play cards draw a little flatter */
+@media (min-aspect-ratio:1/1) and (max-height:500px){
+  .sheet{max-height:calc(100% - 80px);padding-top:8px}   /* up to the scoreboard, never under it */
+  #app:has(#screen .sheet) #mine,#app:has(#screen .sheet) #rp{visibility:hidden}   /* the tags under the scoreboard step aside for a sheet */
+  .intro{padding:9px 12px 8px}
+  .intro .mu b{font-size:19px}
+  .intro p{margin-top:6px}
+  .shd{margin-bottom:6px}
+  .sheet .tabs,.sheet .seg{margin-bottom:6px}
+  .grid.row .card canvas{aspect-ratio:7/4}
+  #pad{max-width:300px}   /* fewer, wider rows: the buttons keep below the middle of a short screen */
+  #banner b{font-size:22px}
+}
+
+/* a computer screen or a big tablet: the scoreboard, the buttons and the play call a size up */
+@media (min-aspect-ratio:1/1) and (min-height:740px) and (min-width:1000px){
+  #hud{width:min(100%,700px);zoom:1.15}
+  #deck{zoom:1.2}
+}
+
+/* what a key or a controller button does, on the buttons beside the field (keyboard and controller only) */
+.pb .hk{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;box-sizing:border-box;padding:0 4px;border-radius:5px;background:#e9eef7;color:#06101f;
+  font:800 10px/17px var(--display);letter-spacing:0;text-transform:none;text-align:center;pointer-events:none;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.pb.big .hk{top:auto;bottom:-6px;right:50%;transform:translateX(50%)}
+.pb.wt .hk{top:-7px;right:-4px}

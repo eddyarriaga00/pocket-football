@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `e14de31`, before landscape and computer layouts and the controller and keyboard upgrades (2026-11-17).
   - `4c07eca`, before more commentary takes, new conversion and long-touchdown calls, and social posts about your events, milestones and deals (2026-11-16 late).
   - `8ce466d`, before the career hub reorganization, league news, contract extensions and incentives, weekly events (2026-11-16 night).
   - `d29ee21`, before white became the default accent (2026-11-16 night).
@@ -3128,6 +3129,25 @@ six were done as the pro game has them; the choices where there was one are mine
   hub's tiles go two by two below 360px wide. Tested: every event post and both deal kinds generated, two full QB
   seasons and a WR season with milestones, the rough player, the audit clean at 320x568 and 440 wide; fingerprint
   unchanged (the new calls do not touch play).
+
+- **2026-11-17: landscape on phones, the whole screen on a computer, a better controller.** Asked for: "make it work
+  fully on landscape on mobile, and fully on pc, optimize controller to be better since a lot of changes have
+  happened". Landscape: the "turn your phone upright" screen is gone; a phone on its side, a tablet or a computer
+  gets the field across the whole screen with a narrower lens (no stretched stands at the edges) and the camera a
+  little closer, the scoreboard and meters in a centered column, the menus in a centered 640px column, the play call
+  five cards a page (pager and controller paging follow it), shorter sheets that stop under the scoreboard, a
+  compact intro card, dialogs that scroll with their buttons whole, and the notch edge kept clear. Turning the phone
+  mid-game redraws at the new size (no pause). The installed app may now rotate (manifest orientation any).
+  Computer: the scoreboard and buttons a size up on big screens; keyboard badges on the buttons beside the field
+  (Space, J, K, Shift...), receivers numbered 1-5 to match the throw keys; the menus and play call work from the
+  keyboard (arrows move a ring, Enter picks, Esc back, Q and E tabs). Controller: the buttons beside the field show
+  which button does what, with shapes on a PlayStation controller (receivers too); it takes over from the keyboard or
+  the screen on any press; the d-pad moves the difficulty slider, opens the folded news weeks and replies, and the
+  right stick scrolls long screens; it rumbles where a phone would buzz. Touch screens look as before. Also: two hub
+  labels shortened (cut at 390 wide), and the audit now treats a card past the edge of a sideways-scrolling row as
+  off screen. Tested: the audit clean at 740x360, 667x375, 1280x800 and 390x844 (menus, exhibition, career, season,
+  camp); the rough player and a career sideways; rotation both ways mid-play; keyboard and a simulated Xbox and
+  PlayStation controller through the play call, a snap, a run and a pass; fingerprint unchanged.
 
 ## Morning hand-off
 
