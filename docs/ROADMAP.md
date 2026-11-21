@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `b7a0514`, before the quicker stride (CADENCE 1.22: shorter steps, faster legs and arms) (2026-11-21).
   - `2beab3b`, before everyone got 7% quicker (QUICK in data.js; the ball and pass protection moved with it) (2026-11-21).
   - `d2df5b0`, before the reworked walk and run (two gaits, hip roll, heel strike, new arms and lean) (2026-11-21).
   - `9cca8a7`, before the 53-man rosters with full names (2026-11-17).
@@ -3294,6 +3295,16 @@ six were done as the pro game has them; the choices where there was one are mine
   completes 92% (88% on the old speeds). The stride at the new top speed still keeps a planted foot within 2.2 cm.
   Fingerprint re-pinned (the old one kept as pg.fingerprint.before-quick); the rough player through two games and a
   career clean.
+
+- **2026-11-21: quicker legs.** The owner on the 7% speed-up: "i meant like how quick they move movement wise increase
+  that cuz it feels like they walk/run too slow": the turnover of the legs and arms, not the speed over the ground.
+  The figures are drawn half as big again as life, so a stride sized for the body turned over slowly. Every step is
+  now 22% shorter (CADENCE in render3d.js; a shuffle's 12%), so at the same speed the legs and arms go 22% quicker:
+  about 1.9 steps a second at a walk (1.6 before), 3.6 at a jog (2.9), 4.3 to 4.7 flat out (3.5 to 3.8), close to what
+  people do. The hips travel a little less far over a planted foot, so a runner is still in the air between steps.
+  Officials, the chain crew and the sideline walkers follow. Drawing only: fingerprint unchanged; a planted foot moves
+  at most 1.9 cm, sinks at most 0.3 cm at the very top speed; strips checked; the rough player clean. The 7% speed over
+  the ground from earlier today is still in; the owner is asked whether to keep it.
 
 ## Morning hand-off
 

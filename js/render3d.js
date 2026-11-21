@@ -1456,7 +1456,13 @@
      open and the feet stay apart instead of crossing. In the air the ankle swings through on an arc that is higher
      the faster he runs. */
   const smooth = x => x * x * (3 - 2 * x);
-  const stepOf = sp => clamp(0.75 + 0.19 * sp, 0.8, 2.5);  // yards covered by one step at this speed, running
+  /* How quick the legs are (the owner's word, 2026-11-21: "it feels like they walk/run too slow"). The figures are drawn
+     half as big again as life, so a stride the right length for the body turned over slowly: 1.5 steps a second at a
+     walk and 3.4 flat out, where people take about 1.9 and 4.5. Every step is this much shorter, so the legs and arms
+     turn over this much quicker at the same speed over the ground. */
+  const CADENCE = 1.22;
+  const stepOf = sp => clamp(0.75 + 0.19 * sp, 0.8, 2.5) / CADENCE;  // yards covered by one step at this speed, running
+  const sideStepOf = sp => (0.5 + 0.06 * sp) / 1.12;  // and in a shuffle
   const LEG = [0, 0, 0, 0, 0, 0], GAIT = { duty: 0.4, tu: 0, tw: 0, c0: 0, h: 1, heel: 0, lift: 0, fu: 0, fw: 0, piv: 0, base: 0, walk: 1, wk: 0, toeUp: 0, inw: 0, sx: 0.85, roll: 0, run: 0, lat: 0 };
   const HEELB = 0.06;  // the heel of the shoe, behind the ankle
 
@@ -1495,7 +1501,7 @@
     g.wk = wk;
     g.run = run;
     g.lat = lat;
-    g.duty = clamp(lerp(lerp(lerp(0.62, 0.8, run), 0.78, wk * fwd), 0.4, lat) / cyc, 0.24, 0.6);
+    g.duty = clamp(lerp(lerp(lerp(0.56, 0.7, run), 0.78, wk * fwd), 0.4, lat) / cyc, 0.24, 0.6);  // the hips travel a little less far over a planted foot now the steps are shorter (0.62 to 0.8 before), so he is still in the air between them
     g.tu = g.duty * cyc * along;  // how far the hips travel over a planted foot: forward,
     g.tw = g.duty * cyc * side;  // and to his right
     g.c0 = f.ph / (2 * Math.PI) + 0.63;
@@ -1525,7 +1531,7 @@
     const sp = Math.hypot(vx, vy);
     if (sp <= 0.25) return null;
     const ch = Math.cos(f.heading), sh = Math.sin(f.heading), along = clamp((vy * ch - vx * sh) / sp, -1, 1), side = clamp((vx * ch + vy * sh) / sp, -1, 1);
-    const stepLen = step || lerp(stepOf(sp), 0.5 + 0.06 * sp, Math.abs(side));  // step: a set length (a quarterback's drop is a counted number of steps)
+    const stepLen = step || lerp(stepOf(sp), sideStepOf(sp), Math.abs(side));  // step: a set length (a quarterback's drop is a counted number of steps)
     f.ph += sp * dt * Math.PI / stepLen;
     return gaitOf(f, sp, Math.min(1, sp / 7.5), along, side, stepLen);
   }
@@ -5208,7 +5214,7 @@
     f.ph = 0;
     f.heading = FACING[o.how] || 0;
     f.gaitT = 0;
-    const lat = o.how === 'side' ? 1 : /diag/.test(o.how || '') ? 0.7 : 0, T2 = speed > 0.01 ? 2 * lerp(stepOf(speed), 0.5 + 0.06 * speed, lat) / speed : 1, steps = Math.round(T2 / n / dt);  // one cycle of two steps
+    const lat = o.how === 'side' ? 1 : /diag/.test(o.how || '') ? 0.7 : 0, T2 = speed > 0.01 ? 2 * lerp(stepOf(speed), sideStepOf(speed), lat) / speed : 1, steps = Math.round(T2 / n / dt);  // one cycle of two steps
     const sim = k => {
       for (let i = 0; i < k; i++) {
         f.root.scale.setScalar(PSCALE);  // the stride is worked out at the size he has on the field
