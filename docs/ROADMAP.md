@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `91e87af`, before gang tackles (joining defenders hit high and beside, a beat apart; the runner feels each) (2026-11-21).
   - `c4547e5`, before the rag doll on the falls (hit size and direction, limp limbs, landing bounce) (2026-11-21).
   - `b7a0514`, before the quicker stride (CADENCE 1.22: shorter steps, faster legs and arms) (2026-11-21).
   - `2beab3b`, before everyone got 7% quicker (QUICK in data.js; the ball and pass protection moved with it) (2026-11-21).
@@ -3320,6 +3321,18 @@ six were done as the pro game has them; the choices where there was one are mine
   cutscenes are left alone. The poses he ends in and the solver that keeps everyone on top of the turf and out of each
   other are as they were (staged tackles from six angles: nothing under the turf, the two bodies clear of each other
   from 0.3 s). Drawing only: fingerprint unchanged; the rough player through three games and a career clean.
+
+- **2026-11-21: gang tackles.** Asked for: "improve more, especially with multiple people tackling the same person".
+  One defender tackled; up to two more near the play lay flat across the runner's chest afterwards, arms out, and
+  with the tackler that made a stack three men high that the runner did not feel. Now the first man in goes high
+  (chest onto the runner's, arms round him) and the second comes in beside him a beat later (0.12 s), short of the
+  others, on the turf at the runner's shoulder with both hands on him. Each hits as he arrives, sized by how fast he
+  was coming: the runner's rag doll takes a second and a third shove from where each man came (ragKick: added to
+  what his limbs are already doing, and if he has landed he is bounced again), the tackler under them feels a share,
+  and each of them has his own landing. Also on every fall: the whole body rocks away from a hit in the side and once
+  more where it lands. A test for it: tackleStrip(angle, { gang: [angle, angle] }) stages one or two more defenders.
+  Two-man tackles from four angles still have nothing under the turf and the bodies clear of each other; fingerprint
+  unchanged (drawing only); the rough player through three games and a career clean.
 
 ## Morning hand-off
 

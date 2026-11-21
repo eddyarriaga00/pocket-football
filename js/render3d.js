@@ -2369,8 +2369,8 @@
      is falling and stiffening as he gets up; where he lands he bounces, and his limbs flop out and settle. The poses
      the fall eases between are still what he ends in (the ball tucked away, the tackler's hands on him: settle keeps
      everyone on top of the turf and out of each other), so this only adds what was missing: weight. */
-  const RAG = [SLX, SLZ, EL, SRX, SRZ, ER, HL, KL, HR, KR, CHRX, CHRY, CHRZ, HEADRX, HEADRY];
-  const RAG_LIM = { [SLX]: 1.3, [SRX]: 1.3, [SLZ]: 1.0, [SRZ]: 1.0, [EL]: 1.0, [ER]: 1.0, [HL]: 0.9, [HR]: 0.9, [KL]: 0.9, [KR]: 0.9, [CHRX]: 0.4, [CHRY]: 0.5, [CHRZ]: 0.35, [HEADRX]: 0.5, [HEADRY]: 0.6 };
+  const RAG = [SLX, SLZ, EL, SRX, SRZ, ER, HL, KL, HR, KR, CHRX, CHRY, CHRZ, HEADRX, HEADRY, PELRZ];
+  const RAG_LIM = { [SLX]: 1.3, [SRX]: 1.3, [SLZ]: 1.0, [SRZ]: 1.0, [EL]: 1.0, [ER]: 1.0, [HL]: 0.9, [HR]: 0.9, [KL]: 0.9, [KR]: 0.9, [CHRX]: 0.4, [CHRY]: 0.5, [CHRZ]: 0.35, [HEADRX]: 0.5, [HEADRY]: 0.6, [PELRZ]: 0.28 };
   const HITS = new WeakMap();  // a play's tackle: how hard, and which way (field x, y), worked out once and felt by both men
 
   function hitOf(s) {
@@ -2414,7 +2414,38 @@
     v[CHRY] = odd * A * 0.22 * (0.4 + Math.abs(R));
     v[HEADRX] = -back * A * 0.5;
     v[HEADRY] = odd * A * 0.2;
+    v[PELRZ] = -R * A * 0.2;  // the whole body rocks away from a hit in the side
     f.spin = -R * imp * part * 2;  // a hit from the side turns him as he goes down (about half a radian for a hard one)
+  }
+
+  /* Another man arrives on one who is already going down or is down (a gang tackle, the pile): the same shove, added
+     to whatever his limbs are doing, and if he has landed he is bounced again. A man the rag doll is not working on
+     (a slide, a staged fall) is left alone. */
+  function ragKick(f, imp, ux, uy, part) {
+    if (!f || !(f.imp > 0)) return;
+    const ch = Math.cos(f.heading), sh = Math.sin(f.heading), F = -ux * sh + uy * ch, R = ux * ch + uy * sh, A = imp * 7 * part, back = -F, v = f.rgv, odd = (f.seed * 9.1) % 1 > 0.5 ? 1 : -1;
+    v[SLX] += back * A * 0.6;
+    v[SRX] += back * A * 0.6;
+    v[SLZ] += -R * A * 0.7 - A * 0.2;
+    v[SRZ] += -R * A * 0.7 + A * 0.2;
+    v[EL] += A * 0.3 * odd;
+    v[ER] -= A * 0.3 * odd;
+    v[HL] += back * A * 0.4 + A * 0.2;
+    v[HR] += back * A * 0.4 - A * 0.15;
+    v[KL] -= A * 0.4;
+    v[KR] -= A * 0.3;
+    v[CHRX] += -back * A * 0.3;
+    v[CHRZ] += R * A * 0.3;
+    v[CHRY] += odd * A * 0.25;
+    v[HEADRX] += -back * A * 0.45 + A * 0.2;
+    v[HEADRY] += R * A * 0.3;
+    v[PELRZ] += -R * A * 0.22;
+    f.spin += -R * imp * part * 1.2;
+    f.imp = Math.max(f.imp, imp * part);
+    if (f.landed) {
+      f.bv = Math.max(f.bv, 0.3 + imp * part * 0.7);  // a man landing on him bounces him on the turf again
+      f.by = Math.max(f.by, 0.001);
+    }
   }
 
   /* the rag doll for this frame, added to the pose in tg: limp while he is down, stiff as he gets up (up, 0 to 1).
@@ -2439,6 +2470,7 @@
       v[KR] -= A * 0.35 * gl;
       v[HEADRX] -= fallDir * A * 0.45;  // on his back the helmet snaps back onto the turf and rebounds; on his face it nods
       v[CHRX] += fallDir * A * 0.15;
+      v[PELRZ] += ((f.seed * 5.7) % 1 > 0.5 ? 1 : -1) * A * 0.18;  // and the body rocks once where it lies
     }
     for (const i of RAG) {
       v[i] += (-w * w * q[i] - 2 * z * w * v[i]) * h;
@@ -2579,9 +2611,19 @@
           const cf = s.figOf ? s.figOf(ps.carrier) : null, vx = cf ? cf.pvx : ps.carrier.vx || 0, vy = cf ? cf.pvy : ps.carrier.vy || 0, vl = Math.hypot(vx, vy);
           ragHit(f, clamp(vl / 8, 0.5, 1.1), vl > 0.5 ? vx / vl : 0, vl > 0.5 ? vy / vl : s.dir, 1);
           f.fallT = 0.24;
-        } else if (pileOn || p.fell) ragHit(f, 0.4, -Math.sin(f.heading), Math.cos(f.heading), 0.5);
+        } else if (pileOn || p.fell) {
+          const vl = Math.hypot(f.pvx, f.pvy);
+          f.pimp = clamp(vl / 9, 0.3, 0.9);  // how hard he arrives, from how fast he was coming
+          ragHit(f, f.pimp, -Math.sin(f.heading), Math.cos(f.heading), 0.5);
+        }
+        /* a gang tackle is not one moment: the second man in is a beat behind the first */
+        f.pileHit = false;
+        f.pileWait = pileOn ? Math.max(0, pileOf(s).indexOf(p)) * 0.12 : 0;
       }
-      f.fall = Math.min(1, f.fall + dt / f.fallT);
+      if (f.pileWait > 0) {
+        f.pileWait -= dt;
+        f.fall = Math.max(f.fall, 0.0001);
+      } else f.fall = Math.min(1, f.fall + dt / f.fallT);
       const e = f.fall * f.fall * (3 - 2 * f.fall), wrap = (p.fell || pileOn) && !p.down && !flat;
       /* After the whistle nobody stays down: up onto a knee, then to his feet. The tackler goes first and the man
          underneath a beat later. */
@@ -2697,10 +2739,28 @@
       let onto = tk && s.figOf ? s.figOf(tk) : null;
       if (pileOn) {
         /* across the pile: drawn in until his chest is over the runner's, and kept on top of everyone already down */
-        const rf = s.figOf(cd), mine = pileOf(s);
+        const rf = s.figOf(cd), mine = pileOf(s), low = mine.indexOf(p) === 1;
         if (rf) {
-          rf.chest.localToWorld(HIPS.set(0, 0.3, 0));
-          const off2 = smooth(Math.min(1, up / 0.6)), dx = HIPS.x - p.x, dy = -HIPS.z - p.y, dl = Math.hypot(dx, dy) || 1, pull = Math.max(0, dl - 0.55) * e * (1 - off2);
+          /* Two men join a tackle differently (2026-11-21: both used to lie flat across the runner's chest, arms out,
+             and he did not feel them, and with the tackler that made a stack three men high). The first goes high:
+             his chest onto the runner's, his arms round him. The second comes in beside him: he lands on the turf at
+             the runner's shoulder, a yard short of the others, and gets both hands on him. Each hits as he arrives:
+             the runner (and the tackler under him, a little) is shoved the way that man came from, on top of whatever
+             the first hit is still doing to him. */
+          rf.chest.localToWorld(HIPS.set(0, low ? 0.45 : 0.3, 0));
+          const off2 = smooth(Math.min(1, up / 0.6)), dx = HIPS.x - p.x, dy = -HIPS.z - p.y, dl = Math.hypot(dx, dy) || 1, pull = Math.max(0, dl - (low ? 1.75 : 0.55)) * e * (1 - off2);  // a man is about 1.6 yards from hips to helmet at the size he is drawn: the second lies short of the others, his hands the only part of him on the runner
+          if (up < 0.3) {
+            const sc = f.root.scale.y, wide = low ? 0.13 : 0.22, hy = HIPS.y + 0.05 * sc;
+            for (let k = 0; k < 2; k++) REACH[k].set(HIPS.x + (-dy * (k ? -1 : 1) * wide + dx * 0.08) / dl * sc, hy, HIPS.z + (-dx * (k ? -1 : 1) * wide - dy * 0.08) / dl * sc);
+            reach = REACH;
+          }
+          if (!f.pileHit && f.fall >= 0.5) {
+            f.pileHit = true;
+            const k = f.pimp || 0.4;
+            ragKick(rf, k, dx / dl, dy / dl, low ? 0.7 : 0.85);
+            ragKick(ps.tackler && s.figOf(ps.tackler), k, dx / dl, dy / dl, 0.35);
+            if (f.landed === false && f.imp > 0) f.bv = 0;  // (his own bounce comes when he lands, in flop)
+          }
           /* getting up he rolls back off the pile, away from its middle (between the runner and the tackler), not through them */
           const tf = ps.tackler && s.figOf(ps.tackler), mx = tf ? (cd.x + ps.tackler.x) / 2 : cd.x, my = tf ? (cd.y + ps.tackler.y) / 2 : cd.y;
           let bx = p.x - mx, by = p.y - my;
@@ -5389,11 +5449,21 @@
      A staged tackle: a runner going up the field at six yards a second is met by a tackler coming from `angle`
      (0 head on, 1.57 from the runner's right, 3.14 from behind), and from the hit on the two are moved exactly as
      the engine moves them. tackleTest() measures where they end up; tackleStrip() draws the fall as a row of frames. */
-  function tackleRun(angle, fa, fb, until, each) {
+  /* gang: more defenders who are on the play when he goes down ([{ f: a figure, angle: where he comes from }]): they
+     arrive a yard and a half from the runner as he is hit, and join the tackle (the pile) */
+  function tackleRun(angle, fa, fb, until, each, gang) {
     const ux = Math.sin(angle), uy = Math.cos(angle), so = Math.abs(angle) > 2 ? 8 : 5, dt = 1 / 120;
     const c = { x: 26, y: 30, vx: 0, vy: 6, role: 'RB', team: 0 }, o = { x: 26, y: 30, vx: -ux * so, vy: -uy * so, role: 'MLB', team: 1, asg: 'rush' };
+    const more = (gang || []).map((g, k) => ({ f: g.f, ux: Math.sin(g.angle), uy: Math.cos(g.angle), p: { x: 26, y: 30, vx: -Math.sin(g.angle) * 7, vy: -Math.cos(g.angle) * 7, role: k ? 'SS' : 'OLB1', team: 1, asg: 'rush' } }));
     const ps = { carrier: c, air: null, mode: 'run', offTeam: 0, runner: c, los: 10, qb: null, tackler: null, after: 0, handoff: true, t: 3, recs: [] };
-    const s = { ps, G: { state: 'live' }, pre: false, live: true, dir: 1, celeb: null, charge: -1, figOf: q => (q === c ? fa : fb) };
+    const s = { ps, G: { state: 'live' }, pre: false, live: true, dir: 1, celeb: null, charge: -1, P: [c, o, ...more.map(m => m.p)], figOf: q => (q === c ? fa : q === o ? fb : (more.find(m => m.p === q) || {}).f) };
+    for (const m of more) {
+      m.f.snap = true;
+      m.f.fall = 0;
+      m.f.gaitT = 0;
+      m.f.ph = 0;
+      m.f.heading = Math.atan2(-m.p.vx, m.p.vy);
+    }
     for (const f of [fa, fb]) {
       f.snap = true;
       f.fall = 0;
@@ -5407,8 +5477,13 @@
         c.y = 30 + c.vy * t;
         o.x = 26 + ux + o.vx * t;
         o.y = 30 + uy + o.vy * t;
+        for (const m of more) {
+          m.p.x = 26 + m.ux * 1.5 + m.p.vx * t;
+          m.p.y = 30 + m.uy * 1.5 + m.p.vy * t;
+        }
       } else {
         if (!c.down) {
+          for (const m of more) m.p.vx = m.p.vy = 0;  // the whistle: the engine stops everyone where he is
           c.slx = o.slx = o.vx * 0.45 + c.vx * 0.3;
           c.sly = o.sly = o.vy * 0.45 + c.vy * 0.3;
           c.sl = o.sl = 0.32;
@@ -5432,6 +5507,10 @@
       fa.root.updateMatrixWorld(true);  // as the game does when it writes a figure out: the next man is posed against where this one really is
       poseFor(fb, o, s, dt);
       fb.root.updateMatrixWorld(true);
+      for (const m of more) {
+        poseFor(m.f, m.p, s, dt);
+        m.f.root.updateMatrixWorld(true);
+      }
       if (each) each(t, c, o, s);
     }
     fa.root.updateMatrixWorld(true);
@@ -5516,8 +5595,16 @@
     x.fillRect(0, 0, cv.width, cv.height);
     dress(ar.a, teams[0], true, 28);
     dress(ar.b, teams[1] || teams[0], false, 52);
+    /* gang: [angle, angle] puts one or two more defenders on the play (see tackleRun) */
+    const gang = (o.gang || []).slice(0, 2).map((angle2, k) => {
+      const m = ar[k ? 'd' : 'c'] || (ar[k ? 'd' : 'c'] = meshed(ar.sc));
+      dress(m, teams[1] || teams[0], false, k ? 31 : 56);
+      setBuild(m.f, k ? BUILD.db : BUILD.big);
+      return { f: m.f, angle: angle2 };
+    });
+    for (const k of ['c', 'd']) if (ar[k]) ar[k].f.root.visible = gang.some(g => g.f === ar[k].f);
     times.forEach((t, i) => {
-      tackleRun(angle || 0, ar.a.f, ar.b.f, t);
+      tackleRun(angle || 0, ar.a.f, ar.b.f, t, null, gang);
       const mx = (ar.a.f.root.position.x + ar.b.f.root.position.x) / 2, mz = (ar.a.f.root.position.z + ar.b.f.root.position.z) / 2;
       ar.floor.position.set(mx, 0, mz);
       if (o.view === 'top') ar.cam.position.set(mx + 0.01, 13, mz + 3.5);
