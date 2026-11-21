@@ -653,6 +653,13 @@
     f.turned = false;  // a defender in coverage who has turned to run instead of shuffling
     f.ox = f.oy = 0;
     f.wind = 0;  // how far a quarterback has wound up for the throw (0 to 1)
+    f.rg = new Float32Array(NPOSE);  // the rag doll: how far each joint has been thrown off its pose, and how fast it is going (see flop)
+    f.rgv = new Float32Array(NPOSE);
+    f.imp = 0;
+    f.fallT = 0.3;
+    f.by = f.bv = f.spin = 0;
+    f.landed = false;
+    f.pvx = f.pvy = 0;  // how fast he was going a frame ago: what a hit is measured from
     f.look = f.tip = f.twist = 0;  // how far the helmet is turned toward what he is watching and tipped up at it, and how far the shoulders have come round to help
     f.sx = f.sy = f.svx = f.svy = 0;  // how far he is drawn from the engine's spot to make room (back from the man he is blocking, or clear of a pile), and how fast that is changing
     return f;
@@ -2353,6 +2360,120 @@
     applyPose(f);
   }
 
+  /* ---------- the rag doll (2026-11-21) ----------
+     A fall used to be one pose eased to another in three tenths of a second, the same for a shoestring tackle and a
+     blind-side hit. Now a hit has a size and a direction, and the body answers it as a body does. The size is how fast
+     the two men were closing (their speeds a frame before the hit); the direction is which way that shoves him, in
+     his own frame. A hard hit puts him down faster and lifts him off his feet; his arms, legs, head and chest are
+     heavy things on springs, so they are left behind when the body is knocked away and whip after it, limp while he
+     is falling and stiffening as he gets up; where he lands he bounces, and his limbs flop out and settle. The poses
+     the fall eases between are still what he ends in (the ball tucked away, the tackler's hands on him: settle keeps
+     everyone on top of the turf and out of each other), so this only adds what was missing: weight. */
+  const RAG = [SLX, SLZ, EL, SRX, SRZ, ER, HL, KL, HR, KR, CHRX, CHRY, CHRZ, HEADRX, HEADRY];
+  const RAG_LIM = { [SLX]: 1.3, [SRX]: 1.3, [SLZ]: 1.0, [SRZ]: 1.0, [EL]: 1.0, [ER]: 1.0, [HL]: 0.9, [HR]: 0.9, [KL]: 0.9, [KR]: 0.9, [CHRX]: 0.4, [CHRY]: 0.5, [CHRZ]: 0.35, [HEADRX]: 0.5, [HEADRY]: 0.6 };
+  const HITS = new WeakMap();  // a play's tackle: how hard, and which way (field x, y), worked out once and felt by both men
+
+  function hitOf(s) {
+    const ps = s.ps, cr = ps.carrier, tq = ps.tackler;
+    if (!cr || !tq || cr === tq) return null;
+    let h = HITS.get(ps);
+    if (h && h.cr === cr && h.tq === tq) return h;
+    const fc = s.figOf ? s.figOf(cr) : null, ft = s.figOf ? s.figOf(tq) : null;
+    const rx = (ft ? ft.pvx : tq.vx || 0) - (fc ? fc.pvx : cr.vx || 0), ry = (ft ? ft.pvy : tq.vy || 0) - (fc ? fc.pvy : cr.vy || 0), rel = Math.hypot(rx, ry);
+    const dx = cr.x - tq.x, dy = cr.y - tq.y, dl = Math.hypot(dx, dy) || 1, k = rel > 1.5 ? 1 / rel : 0;
+    const imp = clamp(rel / 11, 0.25, 1.3);  // closing at eleven yards a second, a runner met head on at full speed, is 1
+    HITS.set(ps, h = { cr, tq, imp, x: k ? rx * k : dx / dl, y: k ? ry * k : dy / dl, T: lerp(0.36, 0.21, clamp((imp - 0.25) / 0.85, 0, 1)) });
+    return h;
+  }
+
+  /* he has just been hit: imp how hard (0 to about 1.3), (ux, uy) the way it shoves him on the field. part: how much
+     of it his limbs feel (the man tackled all of it, the tackler some). */
+  function ragHit(f, imp, ux, uy, part) {
+    const ch = Math.cos(f.heading), sh = Math.sin(f.heading), F = -ux * sh + uy * ch, R = ux * ch + uy * sh;  // shoved forward, and to his right
+    const A = imp * 9 * part, back = -F, gl = 0.8 + ((f.seed * 7.3) % 1) * 0.45, gr = 0.8 + ((f.seed * 3.1) % 1) * 0.45, odd = (f.seed * 5.7) % 1 > 0.5 ? 1 : -1;
+    f.rg.fill(0);
+    f.rgv.fill(0);
+    f.imp = imp * part;
+    f.landed = false;
+    f.by = f.bv = 0;
+    const v = f.rgv;
+    /* knocked backward his arms and legs are left out in front of him and his chin goes to his chest; knocked forward
+       they trail behind; knocked sideways everything is left on the side the hit came from */
+    v[SLX] = back * A * 0.9 * gl;
+    v[SRX] = back * A * 0.9 * gr;
+    v[SLZ] = -R * A * 0.7 - Math.abs(back) * A * 0.25 * gl;  // and fly out from his sides
+    v[SRZ] = -R * A * 0.7 + Math.abs(back) * A * 0.25 * gr;
+    v[EL] = -A * 0.35 * gl;
+    v[ER] = -A * 0.35 * gr;
+    v[HL] = back * A * 0.55 * gl;
+    v[HR] = back * A * 0.55 * gr;
+    v[KL] = -A * 0.45 * gr;  // the knees give
+    v[KR] = -A * 0.45 * gl;
+    v[CHRX] = -back * A * 0.35;
+    v[CHRZ] = R * A * 0.3;
+    v[CHRY] = odd * A * 0.22 * (0.4 + Math.abs(R));
+    v[HEADRX] = -back * A * 0.5;
+    v[HEADRY] = odd * A * 0.2;
+    f.spin = -R * imp * part * 2;  // a hit from the side turns him as he goes down (about half a radian for a hard one)
+  }
+
+  /* the rag doll for this frame, added to the pose in tg: limp while he is down, stiff as he gets up (up, 0 to 1).
+     ballArm: the arm the ball is tucked in keeps most of its hold. Call it before settle. */
+  function flop(f, tg, dt, up, fallDir, ballArm) {
+    if (!(f.imp > 0)) return;
+    const limp = 1 - smooth(clamp(up * 2, 0, 1)), w = lerp(20, f.landed ? 10 : 8, limp), z = lerp(1, f.landed ? 0.42 : 0.3, limp), h = Math.min(dt, 0.034), q = f.rg, v = f.rgv;
+    if (!f.landed && f.fall >= 0.8) {
+      /* he lands: the body bounces once, and everything loose on it is jolted outward */
+      f.landed = true;
+      const A = f.imp * 6, gl = 0.8 + ((f.seed * 7.3) % 1) * 0.45, gr = 0.8 + ((f.seed * 3.1) % 1) * 0.45;
+      f.bv = 0.45 + f.imp * 0.95;
+      v[SLZ] -= A * 0.5 * gl;
+      v[SRZ] += A * 0.5 * gr;
+      v[SLX] += A * 0.3 * gr;
+      v[SRX] += A * 0.3 * gl;
+      v[EL] += A * 0.4 * gl;
+      v[ER] += A * 0.4 * gr;
+      v[HL] += A * 0.35 * gl;
+      v[HR] += A * 0.3 * gr;
+      v[KL] -= A * 0.5 * gr;
+      v[KR] -= A * 0.35 * gl;
+      v[HEADRX] -= fallDir * A * 0.45;  // on his back the helmet snaps back onto the turf and rebounds; on his face it nods
+      v[CHRX] += fallDir * A * 0.15;
+    }
+    for (const i of RAG) {
+      v[i] += (-w * w * q[i] - 2 * z * w * v[i]) * h;
+      q[i] += v[i] * h;
+      const lim = RAG_LIM[i];
+      if (Math.abs(q[i]) > lim) {
+        q[i] = Math.sign(q[i]) * lim;
+        v[i] *= -0.25;
+      }
+      const hold = ballArm && (ballArm === 'R' ? i === SRX || i === SRZ || i === ER : i === SLX || i === SLZ || i === EL) ? 0.2 : 1;
+      tg[i] += q[i] * hold * limp;
+    }
+    /* joints only bend the way joints bend */
+    tg[EL] = clamp(tg[EL], 0.04, 2.5);
+    tg[ER] = clamp(tg[ER], 0.04, 2.5);
+    tg[KL] = clamp(tg[KL], -2.4, -0.04);
+    tg[KR] = clamp(tg[KR], -2.4, -0.04);
+    tg[HEADRX] = clamp(tg[HEADRX], -0.6, 0.8);
+    /* the bounce: up off the turf and down again under his own weight, a second small one, then still */
+    if (f.landed && (f.by > 0 || f.bv > 0)) {
+      f.bv -= 10 * h;
+      f.by += f.bv * h;
+      if (f.by <= 0) {
+        f.by = 0;
+        f.bv = f.bv < -0.5 ? -f.bv * 0.3 : 0;
+      }
+    }
+    tg[PELY] += f.by * limp;
+    if (f.spin) {
+      f.heading += f.spin * h * limp;
+      f.spin *= Math.exp(-h * 4);
+      if (Math.abs(f.spin) < 0.02) f.spin = 0;
+    }
+  }
+
   /* is he busy with the ball or a tackle, so a gesture would look wrong? */
   const carrierHeld = (p, ps) => p.down || p.fell || p.flat > 0 || !!p.eng || !!p.block;
 
@@ -2441,8 +2562,26 @@
         } else if (p.fell || pileOn) f.fallDir = 1;  // the tackler, and anyone piling on, lands forward on his man
         else if (p.slide) f.fallDir = -1;  // a quarterback's slide: onto his back, feet first
         if (p.lying) f.fall = 0.999;  // a cutscene's hurt man: already down when it starts
+        /* the hit, for the rag doll (see flop): the man tackled feels all of it, the tackler and the pile some; a man
+           run over is knocked the way the runner was going; a slide and a staged fall are not hits at all */
+        const hit = hitOf(s), mine = hit && p === hit.cr && p.down && !p.slide;
+        f.imp = 0;
+        f.fallT = 0.3;
+        f.spin = 0;
+        if (p.lying || p.slide) f.rg.fill(0);
+        else if (mine) {
+          ragHit(f, hit.imp, hit.x, hit.y, 1);
+          f.fallT = hit.T;
+        } else if (hit && p === hit.tq) {
+          ragHit(f, hit.imp, -hit.x, -hit.y, 0.45);  // he stops, and the rest of him keeps going
+          f.fallT = hit.T;
+        } else if (flat && ps.carrier && ps.carrier !== p) {
+          const cf = s.figOf ? s.figOf(ps.carrier) : null, vx = cf ? cf.pvx : ps.carrier.vx || 0, vy = cf ? cf.pvy : ps.carrier.vy || 0, vl = Math.hypot(vx, vy);
+          ragHit(f, clamp(vl / 8, 0.5, 1.1), vl > 0.5 ? vx / vl : 0, vl > 0.5 ? vy / vl : s.dir, 1);
+          f.fallT = 0.24;
+        } else if (pileOn || p.fell) ragHit(f, 0.4, -Math.sin(f.heading), Math.cos(f.heading), 0.5);
       }
-      f.fall = Math.min(1, f.fall + dt / 0.3);
+      f.fall = Math.min(1, f.fall + dt / f.fallT);
       const e = f.fall * f.fall * (3 - 2 * f.fall), wrap = (p.fell || pileOn) && !p.down && !flat;
       /* After the whistle nobody stays down: up onto a knee, then to his feet. The tackler goes first and the man
          underneath a beat later. */
@@ -2574,6 +2713,9 @@
         onto = [rf, ps.tackler && s.figOf(ps.tackler), ...mine.slice(0, mine.indexOf(p)).map(q => s.figOf(q))].filter(Boolean);
         if (onto.length < 2) onto.push(rf);  // always the pile rule (helmet and knees too), even with nobody but the runner down
       }
+      /* a hard hit head on takes him off his feet: up and over before he comes down */
+      if (f.imp > 0.8 && f.fallDir < 0 && !f.fallSide && !wrap && !flat) tg[PELY] += Math.sin(Math.PI * Math.min(1, f.fall)) * 0.2 * (f.imp - 0.55);
+      flop(f, tg, dt, up, flat ? -1 : f.fallDir, p.down && ps.carrier === p ? (f.ballL ? 'L' : 'R') : null);
       const sx = pileOn ? f.sx : 0, sy = pileOn ? f.sy : 0;  // where he will really be drawn: a pile man getting up is also being stepped clear
       settle(f, tg, p.x + f.ox + sx, -(p.y + f.oy + sy), reach, onto, pileOn ? smooth(Math.min(1, f.fall * 2.5)) : smooth(clamp((f.fall - 0.45) / 0.55, 0, 1)), pileOn);  // a man diving onto bodies is held off them from early in the dive  // nothing under the turf; a tackler on his man, hands round him
       if (up > 0 && pileOn) {
@@ -3389,6 +3531,10 @@
     easePose(f, tg, f.snap || snap ? (f.snap ? 1 : 1 - Math.exp(-dt * 60)) : 1 - Math.exp(-dt * 28), striding, dt);
     f.snap = false;
     applyPose(f);
+    if (!(p.down || p.fell || flat || pileOn)) {
+      f.pvx = p.vx;  // how fast he is going, kept for the frame he is hit (the engine has stopped him by then)
+      f.pvy = p.vy;
+    }
     f.root.position.set(p.x + f.ox, p.lift || 0, -(p.y + f.oy));  // lift: a cutscene's actor standing on a stage
     f.root.rotation.y = f.heading;
   }

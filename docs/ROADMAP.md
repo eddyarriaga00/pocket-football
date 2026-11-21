@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `c4547e5`, before the rag doll on the falls (hit size and direction, limp limbs, landing bounce) (2026-11-21).
   - `b7a0514`, before the quicker stride (CADENCE 1.22: shorter steps, faster legs and arms) (2026-11-21).
   - `2beab3b`, before everyone got 7% quicker (QUICK in data.js; the ball and pass protection moved with it) (2026-11-21).
   - `d2df5b0`, before the reworked walk and run (two gaits, hip roll, heel strike, new arms and lean) (2026-11-21).
@@ -3305,6 +3306,20 @@ six were done as the pro game has them; the choices where there was one are mine
   Officials, the chain crew and the sideline walkers follow. Drawing only: fingerprint unchanged; a planted foot moves
   at most 1.9 cm, sinks at most 0.3 cm at the very top speed; strips checked; the rough player clean. The 7% speed over
   the ground from earlier today is still in; the owner is asked whether to keep it.
+
+- **2026-11-21: a rag doll on the falls.** Asked for: "what i need now is better rag doll physics and such". A fall
+  was one pose eased to another in 0.3 s, the same for every tackle. Now (render3d.js: hitOf, ragHit, flop) a hit has
+  a size (how fast the two men were closing, from their speeds a frame before the hit) and a direction (which way it
+  shoves him, in his own frame). A hard hit puts him down in 0.21 s and a drag-down from behind in 0.36; a hard one
+  head on lifts him off his feet first. Fifteen joints (shoulders, elbows, hips, knees, chest, helmet) are weights on
+  springs: knocked backward his arms and legs are left out in front and his chin goes to his chest, knocked sideways
+  everything is left on the side the hit came from and he turns as he goes down; limp while he falls, stiffening as
+  he gets up. Where he lands the body bounces (higher the harder the hit, then a second small one) and the limbs are
+  jolted outward and settle. The arm with the ball keeps most of its hold; the tackler and the men who pile on feel a
+  share of it; a man run over is knocked the way the runner was going; a quarterback's slide and the staged falls in
+  cutscenes are left alone. The poses he ends in and the solver that keeps everyone on top of the turf and out of each
+  other are as they were (staged tackles from six angles: nothing under the turf, the two bodies clear of each other
+  from 0.3 s). Drawing only: fingerprint unchanged; the rough player through three games and a career clean.
 
 ## Morning hand-off
 
