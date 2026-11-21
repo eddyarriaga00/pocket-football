@@ -79,6 +79,10 @@
 
   /* top speed in yards per second for an 80-rated player at each position, and the jersey number ranges */
   const BASE = { QB: 7.3, RB: 8.7, FB: 7.5, TE: 8.0, X: 9.0, Z: 9.0, S: 8.9, LT: 5.6, LG: 5.6, C: 5.6, RG: 5.6, RT: 5.6, DE: 7.2, DT: 6.3, OLB: 8.1, MLB: 8.0, CB: 9.0, FS: 8.8, SS: 8.7 };
+  /* Everyone a little quicker (the owner's word, 2026-11-21): every top speed, and how fast a man gets up to it
+     (game.js), are multiplied by this. The figures above are the ones the game was tuned on. */
+  const QUICK = 1.07;
+  for (const k in BASE) BASE[k] = Math.round(BASE[k] * QUICK * 1000) / 1000;
   const NUM = { QB: [1, 19], RB: [20, 39], FB: [40, 49], TE: [80, 89], X: [10, 19], Z: [80, 89], S: [10, 19], DE: [90, 99], DT: [90, 99], OLB: [50, 59], MLB: [50, 59], CB: [20, 39], FS: [20, 39], SS: [20, 39] };
 
   /* formations: where each role lines up, as [yards right of the ball, yards behind the line]. Each has seven men on
@@ -223,5 +227,5 @@
   const LCOL = ['#ff6b6b', '#ff9a3d', '#51e08a', '#4dabf7', '#d59bff'];
   const ORD = ['1st', '2nd', '3rd', '4th'];
 
-  window.PG = { data: { TEAMS, CONF, DIV, SUR, OLR, OLX, OFFR, DEFR, BASE, NUM, FORM, FNAME, ROUTES, RNAME, OFF, DPOS, DEF, STYLES, SCHEME, LCOL, ORD } };
+  window.PG = { data: { TEAMS, CONF, DIV, SUR, OLR, OLX, OFFR, DEFR, BASE, QUICK, NUM, FORM, FNAME, ROUTES, RNAME, OFF, DPOS, DEF, STYLES, SCHEME, LCOL, ORD } };
 })();

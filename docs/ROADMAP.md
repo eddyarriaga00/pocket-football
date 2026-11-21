@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `2beab3b`, before everyone got 7% quicker (QUICK in data.js; the ball and pass protection moved with it) (2026-11-21).
   - `d2df5b0`, before the reworked walk and run (two gaits, hip roll, heel strike, new arms and lean) (2026-11-21).
   - `9cca8a7`, before the 53-man rosters with full names (2026-11-17).
   - `53cc466`, before the motion-capture catch and two-hand secure (2026-11-17).
@@ -3281,6 +3282,18 @@ six were done as the pro game has them; the choices where there was one are mine
   which now follows the heel and the toe separately): a planted foot moves at most 1.1 cm at a walk and 2.2 cm flat
   out, and never sinks more than 0.2 cm; strips checked from the side and the front at a walk, a jog, a sprint and a
   backpedal; fingerprint unchanged, the rough player through two games and a career clean.
+
+- **2026-11-21: everyone a little quicker.** Asked for: "make everyone move a little quicker". One number, QUICK =
+  1.07 in data.js: every position's top speed and every man's acceleration are 7% up (a career player's and a saved
+  season's starters too: Season now works a starter's speed out from his rating each time instead of keeping it).
+  Two things were moved with it so the game plays as it did. The thrown ball is 7% quicker, so a pass meets the
+  coverage as before. Pass protection holds 21% longer, because a free rusher now closes on the quarterback sooner
+  (without it sacks went from 4.3% of dropbacks to 5.6%). Over 48 computer games on the same seeds, old speeds
+  against new: completions 75.6% and 75.0%, interceptions 2.7% and 2.5%, sacks 4.3% and 4.8%, 4.17 and 4.04 yards a
+  carry; about 7% more plays fit in a game, so scores are a few points higher. The human-like test quarterback
+  completes 92% (88% on the old speeds). The stride at the new top speed still keeps a planted foot within 2.2 cm.
+  Fingerprint re-pinned (the old one kept as pg.fingerprint.before-quick); the rough player through two games and a
+  career clean.
 
 ## Morning hand-off
 

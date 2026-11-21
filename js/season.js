@@ -32,6 +32,12 @@
       }
       S.rosterV = 1;
     }
+    /* a starter's speed is worked out from his rating each time, not kept: the saved one is from the speeds of the day it
+       was saved (everyone is a little quicker since 2026-11-21) */
+    for (const role in S.roster) {
+      const p = S.roster[role], g = role === 'S2' ? 'S' : role.replace(/\d/, '');
+      if (PG.BASE[g]) p.spd = PG.BASE[g] * (1 + (p.rt - 80) * 0.004);
+    }
     if (!S.ps) S.ps = {};
   }
 

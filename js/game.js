@@ -933,7 +933,7 @@
 
   function mkP(team, role, x, y) {
     const r = G.ros[team][role], ol = role in OLX;
-    const p = { team, role, x, y, vx: 0, vy: 0, dvx: 0, dvy: 0, spd: r.spd, acc: ol || role[0] === 'D' ? 9 : 13, rt: r.rt, num: r.num, name: r.name, first: r.first || '',
+    const p = { team, role, x, y, vx: 0, vy: 0, dvx: 0, dvy: 0, spd: r.spd, acc: (ol || role[0] === 'D' ? 9 : 13) * (PG.data.QUICK || 1), rt: r.rt, num: r.num, name: r.name, first: r.first || '',
       eng: null, block: null, shed: 0, immune: 0, beat: 0, stun: 0, down: false, tcd: 0, route: null, wp: 0, juke: 0, jcd: 0, dive: 0, anim: rnd(6), rd: 0, isOL: ol, asg: null, man: null,
       callT: 0, manT: 0, bt: null, rx: rnd(0.2, 0.45), thrT: 0, spinT: 0, fell: 0, jog: 0,
       stiff: 0, truck: 0, hurdle: 0, pcd: 0, hcd: 0, hit: 0, strip: 0, dcd: 0, flat: 0, sl: 0 };  // move timers: power, hurdle, hit stick, strip, knocked flat
@@ -1373,7 +1373,10 @@
   function engage(b, d, pro) {
     d.eng = b;
     b.block = d;
-    d.shed = (pro ? rnd(1.5, 3.8) : rnd(1.2, 2.7)) * Math.pow(b.rt / (d.shd ?? d.rt), 2) * (b.isOL ? 1 : 0.45);
+    /* pass protection holds longer since everyone got quicker (2026-11-21): a rusher who is free closes on the
+       quarterback sooner, and the pocket should last as long as it did (tuned over 48 computer games: sacks 4.8% of
+       dropbacks against 4.3% before, where no change left them at 5.6%) */
+    d.shed = (pro ? rnd(1.5, 3.8) * (1 + ((PG.data.QUICK || 1) - 1) * 3) : rnd(1.2, 2.7)) * Math.pow(b.rt / (d.shd ?? d.rt), 2) * (b.isOL ? 1 : 0.45);
   }
 
   function followRoute(p) {
@@ -1750,7 +1753,7 @@
     let tx = r.x, ty = r.y, T = 0.6;
     for (let i = 0; i < 3; i++) {
       const d = hyp(tx - q.x, ty - q.y);
-      T = Math.max(0.3, d / ((d > 25 ? 19 : 22) * pf * sf));
+      T = Math.max(0.3, d / ((d > 25 ? 19 : 22) * pf * sf * (PG.data.QUICK || 1)));  // the ball is quicker by as much as the men are (2026-11-21), so a throw meets the coverage as it did
       [tx, ty] = lead(r, T);
     }
     return [tx, ty, T];
