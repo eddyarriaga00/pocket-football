@@ -124,6 +124,7 @@
   addEventListener('resize', resize);
 
   /* ---------- data (the tables are in data.js) ---------- */
+  const VERSION = window.PG.data.VERSION || '1.0';
   const { TEAMS, SUR, OLR, OLX, OFFR, DEFR, BASE, NUM, FORM, FNAME, ROUTES, RNAME, OFF, DPOS, DEF, SCHEME, LCOL, ORD } = window.PG.data;
 
   /* ---------- state ---------- */
@@ -156,6 +157,21 @@
   }
 
   const hash = x => clamp(x, FW / 2 - 3.1, FW / 2 + 3.1);
+
+  /* The kicking game has its own men: the roster's kicker and punter. On the field they stand where the play's
+     quarterback slot stands (and on a kickoff, where the middle man of the coverage does), wearing their own name and
+     number, and the box score keeps their kicks on their own line. Drawing and bookkeeping only. */
+  const specOf = (team, pos) => (PG.roster && G.tm && PG.roster.spec(G.tm[team], pos)) || null;
+  function asSpec(p, pos) {
+    const k = p && specOf(p.team, pos);
+    if (!k) return p;
+    p.name = k.last;
+    p.first = k.first;
+    p.num = k.num;
+    p.bk = pos;
+    return p;
+  }
+  const kname = team => (specOf(team, 'K') || {}).last || '';
 
   /* Overtime, the way the pro game plays it now: both sides get the ball. The side that received (first) has its
      possession; if it scores, the other side gets one to answer. The game is over as soon as the second side is
@@ -1007,6 +1023,7 @@
     ps = { t: 0, mode: kick ? 'kick' : op.run ? 'run' : 'pass', rpo: !!op.rpo, offTeam: off, qb: o.QB, carrier: o.QB, thrown: false, air: null, caught: false, handoff: false, open: false, turnover: false,
       think: 0, scr: false, runner: null, recs: [], pa: !!op.pa, los, fd: G.fd, bx, drop: { x: clamp(bx + (op.roll || 0) * fl, 4, FW - 4), y: los - dir * (f && f.QB[1] <= -4 ? 7.5 : 6.5) }, kick: null, passer: null, tgt: null, tackler: null };
     if (kick) {
+      if (op.n === 'Punt' || op.n === 'Field Goal') asSpec(o.QB, op.n === 'Punt' ? 'P' : 'K');
       o.QB.y = los - dir * (op.n === 'Punt' ? 13 : 7.5);
       o.RB.x = bx - 2.5;
       o.RB.y = los - dir * 2;
@@ -2481,7 +2498,7 @@
      It feeds the player of the game. */
   function credit(p, k, v) {
     if (QUIET || !p || !G.box) return;
-    const key = p.team + p.role, b = G.box[key] || (G.box[key] = { name: p.name, first: p.first || '', num: p.num, team: p.team, role: p.role });
+    const key = p.team + (p.bk || p.role), b = G.box[key] || (G.box[key] = { name: p.name, first: p.first || '', num: p.num, team: p.team, role: p.bk || p.role });
     b[k] = (b[k] || 0) + v;
   }
 
@@ -2715,7 +2732,7 @@
     if (good) G.score[off]++;
     if (G.lastScore) {
       G.lastScore.score = G.score.slice();
-      G.lastScore.text += good ? ' (kick good)' : ' (kick missed)';
+      G.lastScore.text += good ? ` (${kname(off) ? kname(off) + ' ' : ''}kick good)` : ' (kick missed)';
     }
     if (G.drive) G.drive.done = true;
     kickoff(1 - off);
@@ -2852,6 +2869,10 @@
         const b = best(t, k, 0);
         if (b) rows.push(`<li>${tch(t)}<span><em>${label}</em>${b.name}</span><b>${f(b)}</b></li>`);
       }
+    }
+    for (const t of [0, 1]) {
+      const b = box.find(b => b.team === t && (b.fga || b.xpa));
+      if (b) rows.push(`<li>${tch(t)}<span><em>Kicking</em>${b.name}</span><b>${[b.fga ? `${b.fgm || 0}/${b.fga} FG` : '', b.xpa ? `${b.xpm || 0}/${b.xpa} XP` : ''].filter(Boolean).join(' · ')}</b></li>`);
     }
     return rows.length ? `<h4 class="sumh">Leaders</h4><ul class="evs">${rows.join('')}</ul>` : '';
   }
@@ -2994,7 +3015,8 @@
     const orig = G.ros[c.team][c.role];
     if (!orig) return;
     H.push({ team: c.team, role: c.role, orig, left: 3 + Math.floor(Math.random() * 4) });
-    G.ros[c.team][c.role] = { ...orig, name: freeName(new Set([...namesOf(G.ros[0]), ...namesOf(G.ros[1])]), a => Math.random() * a), num: (orig.num * 7 + 13) % 89 + 1, spd: orig.spd * 0.97, rt: orig.rt - 6 };
+    const bk = PG.roster && PG.roster.backup(G.tm[c.team], c.role, H.filter(h => h.team === c.team).map(h => G.ros[h.team][h.role].num));  // the next man on the depth chart at his position
+    G.ros[c.team][c.role] = { ...orig, ...(bk ? { name: bk.last, first: bk.first, num: bk.num } : { name: freeName(new Set([...namesOf(G.ros[0]), ...namesOf(G.ros[1])]), a => Math.random() * a), num: (orig.num * 7 + 13) % 89 + 1 }), spd: orig.spd * 0.97, rt: orig.rt - 6 };
     c.flat = 4;  // he stays down
     G.deadT += 2.6;
     G.runoff = 0;  // an injury timeout: the clock waits
@@ -3152,7 +3174,7 @@
         const gain = Math.round(((t === 0 ? 100 : 0) - los) * dir), nm = c.name || 'him';
         const how = ps.mode === 'ko' ? `${ps.punt ? 'Punt' : 'Kickoff'} return, ${nm}` : t !== off ? `${ps.fum ? 'Fumble' : 'Interception'} return, ${nm}`
           : ps.caught ? `${gain}-yd pass${ps.passer && ps.passer !== c ? ` from ${ps.passer.name}` : ''} to ${nm}` : `${gain}-yd run, ${nm}`;
-        G.lastScore = logScore(t, 'TD', how + (tryRes ? ` (${{ 'xp.good': 'kick good', 'xp.miss': 'kick missed', 'two.good': 'two-point try good', 'two.miss': 'two-point try failed' }[tryRes]})` : ''), t === off && ps.mode !== 'ko' ? driveNow(off, t === 0 ? 100 : 0) : null);
+        G.lastScore = logScore(t, 'TD', how + (tryRes ? ` (${{ 'xp.good': (kname(t) ? kname(t) + ' ' : '') + 'kick good', 'xp.miss': 'kick missed', 'two.good': 'two-point try good', 'two.miss': 'two-point try failed' }[tryRes]})` : ''), t === off && ps.mode !== 'ko' ? driveNow(off, t === 0 ? 100 : 0) : null);
       }
       score = true;
       if (ps.mode === 'ko') {
@@ -3288,7 +3310,7 @@
         big = 'It’s good!';
         G.sig = 'td';
         sub = `${d}-yard field goal` + (ps.kick.post ? ' · in off the upright' : '');
-        G.lastScore = logScore(off, 'FG', `${d}-yd field goal${ps.kick.post ? ', off the upright' : ''}`, driveNow(off, los));
+        G.lastScore = logScore(off, 'FG', `${kname(off) ? kname(off) + ' ' : ''}${d}-yd field goal${ps.kick.post ? ', off the upright' : ''}`, driveNow(off, los));
         if (!AUTO) driveCard('Field goal drive', G.lastScore.drive);
         score = true;
         kickoff(1 - off);
@@ -4302,6 +4324,8 @@
       T = 1.5 + d * 0.014;
       h = 7 + d * 0.07;
       ps.kick = { type: 'fg', arg: good, dist: d };
+      credit(k, G.patKick != null ? 'xpa' : 'fga', 1);
+      if (good) credit(k, G.patKick != null ? 'xpm' : 'fgm', 1);
       /* Off the upright. A kick made or missed by a hair meets the post on its way: it goes on through, or it comes
          back out. Only where the ball flies changes. Whether the kick is good was settled above, the flight takes as
          long as it always did, and nothing here draws from the game's generator. */
@@ -4489,7 +4513,9 @@
     G.me = null;
     G.sel = null;
     KO_COVER.forEach((r, i) => {
-      mkP(kt, r, 4 + i * (FW - 8) / 10, ky + dir * (i === 5 ? 4 : 1)).asg = 'rush';
+      const m = mkP(kt, r, 4 + i * (FW - 8) / 10, ky + dir * (i === 5 ? 4 : 1));
+      m.asg = 'rush';
+      if (i === 5) asSpec(m, 'K');
     });
     KO_FRONT.forEach((r, i) => mkP(recv, r, 8 + i * (FW - 16) / 4, own + dir * 52));
     const mine = recv === 0 && G.lock && G.kr;  // a career receiver is the man back deep: he and the other receiver swap places
@@ -5207,7 +5233,7 @@
   }
 
   addEventListener('keydown', e => {
-    if (e.target && e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
+    if (e.target && (e.target.tagName === 'TEXTAREA' || (e.target.tagName === 'INPUT' && e.target.type !== 'range'))) return;
     if (!/^(Shift|Control|Alt|Meta)/.test(e.code)) setInput('kb');
     if (kbNav(e)) return;
     keys[e.code] = 1;
@@ -6589,7 +6615,11 @@
   ${chip('spn','Penalties',SET.pen!==false?'On':'Off')}
   </div><h2>League</h2><div class="grp">
   <div class="opt"><span>Team names and colors</span><button class="chip" id="steams">Edit teams</button></div>
+  <div class="opt"><span>Rosters</span><button class="chip" id="sros">53 a team</button></div>
+  </div><h2>Saves</h2><div class="grp">
+  <div class="opt"><span>Back up, restore, erase</span><button class="chip" id="sdat">Open</button></div>
   </div><h2>Help</h2><div class="grp">
+  <div class="opt"><span>About</span><button class="chip" id="sabt">v${VERSION}</button></div>
   ${chip('stp','Control tips',SET.tips&&Object.keys(SET.tips).length?'Show again':'On')}
   ${navigator.vibrate?chip('shp','Vibration',SET.hap!==false?'On':'Off'):''}</div></div>`;
       const on = (id, f) => {
@@ -6602,6 +6632,9 @@
       };
       $('#bk').onclick = showMenu;
       $('#steams').onclick = () => showTeams(0);
+      $('#sros').onclick = () => showRosters(SET.me || 0);
+      $('#sdat').onclick = () => showData();
+      $('#sabt').onclick = showAbout;
       scr.querySelectorAll('#acc button').forEach(b => b.onclick = () => {
         SET.acc = b.dataset.a;
         save('pg.settings', SET);
@@ -6677,6 +6710,173 @@
       });
     };
     draw();
+  }
+
+  /* ---------- rosters ----------
+     Any team's 53, as Season and Career show their own: pick the team along the top. */
+  function showRosters(sel, back) {
+    back = back || showSettings;
+    const t = TEAMS[sel], n = TEAMS.length, to = i => keepScroll(() => showRosters((i + n) % n, back));
+    scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ ${back === showSettings ? 'Settings' : 'Back'}</button><h1 class="sm">Rosters</h1>
+  <div class="row"><button class="nav" id="rpl" aria-label="Previous team">‹</button>${tmBtn(t, sel, false)}<button class="nav" id="rpr" aria-label="Next team">›</button></div>
+  <p class="note">${PG.data.CONF[t.conf]} ${PG.data.DIV[t.div]}</p>
+  ${PG.roster.html(sel)}</div>`;
+    $('#bk').onclick = back;
+    $('#rpl').onclick = () => to(sel - 1);
+    $('#rpr').onclick = () => to(sel + 1);
+    scr.querySelector('.row .tm').onclick = () => to(sel + 1);
+  }
+
+  /* ---------- saves: back up, restore, erase ----------
+     Everything the game keeps lives in this browser (the pg.* keys), and a browser can lose it: site data cleared, a
+     new phone, a phone that tidies up sites not opened for a while. A backup is all of those keys in one small text
+     file; restoring one puts them back, here or on another device. Nothing is sent anywhere. */
+  const saveKeys = () => {
+    const out = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('pg.') && !k.startsWith('pg.fingerprint')) out.push(k);
+      }
+    } catch (_) {}
+    return out.sort();
+  };
+
+  function backupText() {
+    const data = {};
+    for (const k of saveKeys()) data[k] = localStorage.getItem(k);
+    return JSON.stringify({ app: 'PocketFootball', v: 1, version: VERSION, at: new Date().toISOString(), data });
+  }
+
+  /* a backup's text, checked: { at, data } or null. Only this game's own keys, each one a value that reads back. */
+  function readBackup(text) {
+    try {
+      const o = JSON.parse(String(text).trim());
+      if (!o || o.app !== 'PocketFootball' || !o.data || typeof o.data !== 'object' || Array.isArray(o.data)) return null;
+      const data = {};
+      let size = 0;
+      for (const k in o.data) {
+        const v = o.data[k];
+        if (!/^pg\.[\w.-]{1,60}$/.test(k) || k.startsWith('pg.fingerprint') || typeof v !== 'string') continue;
+        JSON.parse(v);
+        size += v.length;
+        data[k] = v;
+      }
+      if (!Object.keys(data).length || size > 8e6) return null;
+      return { at: typeof o.at === 'string' ? o.at : '', data };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function wipeSaves() {
+    for (const k of saveKeys()) try {
+      localStorage.removeItem(k);
+    } catch (_) {}
+  }
+
+  function showData(msg, pend, sure) {
+    const keys = saveKeys(), kb = Math.max(1, Math.round(keys.reduce((a, k) => a + (localStorage.getItem(k) || '').length, 0) / 1024));
+    const cs = PG.career && PG.career.summary(), ss = PG.season && PG.season.summary(), has = keys.some(k => k !== 'pg.settings');
+    const rows = [['Career', cs], ['Season', ss], ['Milestones', PG.milestones ? PG.milestones.summary() : '']].filter(r => r[1]).map(([a, b]) => [a, b.replace(/^(Continue: |Milestones )/, '')]);
+    const when = pend && pend.at ? new Date(pend.at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+    scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ Settings</button><h1 class="sm">Saves</h1>
+  <p class="tag">Kept in this browser only. A backup file keeps them safe and moves them to another device.</p>
+  <div class="grp">${rows.map(([a, b]) => `<div class="opt"><span>${a}</span><b class="dv">${esc(b)}</b></div>`).join('') || '<div class="opt"><span>Nothing saved yet</span></div>'}
+  <div class="opt"><span>Size</span><b class="dv">${kb} KB</b></div></div>
+  ${msg ? `<p class="note dmsg" role="status">${esc(msg)}</p>` : ''}
+  ${pend ? `<div class="offer"><b>Restore this backup?</b><span>${when ? 'From ' + when + ' · ' : ''}${Object.keys(pend.data).length} saved items. It replaces everything saved on this device.</span><div class="row2"><button class="go sm" id="dok">Replace</button><button class="btn2" id="dno">Cancel</button></div></div>` : `
+  <h2>Back up</h2><div class="row2"><button class="go sm" id="dsv">Save file</button><button class="btn2" id="dcp">Copy as text</button></div>
+  <h2>Restore</h2><div class="row2"><button class="btn2" id="dfl">Choose file</button><button class="btn2" id="dps">Use pasted text</button></div>
+  <textarea id="dtx" class="dtx" rows="3" spellcheck="false" autocomplete="off" aria-label="Backup text" placeholder="Paste a backup here"></textarea>
+  <input type="file" id="din" accept=".json,.txt,application/json,text/plain" hidden>
+  <h2>Start over</h2><button class="btn2 warn" id="der"${has ? '' : ' disabled'}>${sure ? 'Sure? Everything is erased' : 'Erase everything'}</button>`}</div>`;
+    $('#bk').onclick = showSettings;
+    if (pend) {
+      $('#dno').onclick = () => showData();
+      $('#dok').onclick = () => {
+        wipeSaves();
+        try {
+          for (const k in pend.data) localStorage.setItem(k, pend.data[k]);
+        } catch (_) {
+          return showData('This device is out of room for that backup.');
+        }
+        location.reload();
+      };
+      return;
+    }
+    const take = text => {
+      const b = readBackup(text);
+      showData(b ? '' : 'That is not a PocketFootball backup.', b);
+    };
+    $('#dsv').onclick = async () => {
+      const text = backupText(), name = `pocketfootball-${new Date().toISOString().slice(0, 10)}.json`;
+      try {
+        const file = new File([text], name, { type: 'application/json' });
+        if (IN.mode === 'touch' && navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: 'PocketFootball backup' });
+          return showData('Backup shared.');
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+      }
+      try {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        showData('Backup saved as ' + name + '.');
+      } catch (_) {
+        showData('This browser would not save a file. Use Copy as text.');
+      }
+    };
+    $('#dcp').onclick = async () => {
+      const text = backupText(), box = $('#dtx');
+      try {
+        await navigator.clipboard.writeText(text);
+        showData('Backup copied. Paste it somewhere safe.');
+      } catch (_) {
+        box.value = text;  // no clipboard here: the text goes in the box, selected, to copy by hand
+        box.focus();
+        box.select();
+      }
+    };
+    $('#dfl').onclick = () => $('#din').click();
+    $('#din').onchange = e => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      if (f.size > 9e6) return showData('That file is too big to be a backup.');
+      const r = new FileReader();
+      r.onload = () => take(r.result);
+      r.onerror = () => showData('That file could not be read.');
+      r.readAsText(f);
+    };
+    $('#dps').onclick = () => take($('#dtx').value);
+    $('#der').onclick = () => {
+      if (!sure) return keepScroll(() => showData('', null, true));
+      wipeSaves();
+      location.reload();
+    };
+  }
+
+  /* ---------- about ---------- */
+  function showAbout() {
+    const alone = window.matchMedia && matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ Settings</button><h1>Pocket<wbr><em>Football</em></h1>
+  <p class="tag">Version ${VERSION} · full 11-on-11 football for phones and computers.</p>
+  ${alone ? '' : `<h2>Install</h2><div class="grp"><div class="opt"><span>${/iPhone|iPad|iPod/.test(navigator.userAgent) ? 'Share, then Add to Home Screen' : 'Browser menu, then Install or Add to Home Screen'}</span><b class="dv">Full screen · offline</b></div></div>`}
+  <h2>The league</h2><p class="note">Every team, player, coach and commentator here is made up. PocketFootball is not connected to any real league, team or player.</p>
+  <h2>Credits</h2><div class="grp">
+  <div class="opt"><span>3D drawing</span><b class="dv">three.js · MIT license</b></div>
+  <div class="opt"><span>Commentary voices</span><b class="dv">Kokoro-82M · Apache 2.0</b></div>
+  <div class="opt"><span>Typeface</span><b class="dv">Archivo · Open Font License</b></div>
+  <div class="opt"><span>Movement study</span><b class="dv">CMU motion capture</b></div></div>
+  <p class="note">Motion data was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217.</p>
+  <h2>Your saves</h2><p class="note">Careers, seasons and settings stay in this browser. Settings › Saves makes a backup.</p></div>`;
+    $('#bk').onclick = showSettings;
   }
 
   /* How to play: every tip is a small card with a picture and a two-word name, and the keyboard and controller are
@@ -6792,6 +6992,7 @@
   ${kitsHtml([[me, true, 'Home'], [opp, false, 'Away']])}
   <h2>Your team</h2><div class="teams" id="tms">${teamGrid(me)}</div>
   <h2>Opponent</h2><div class="row"><button class="nav" id="opl" aria-label="Previous opponent">‹</button>${tmBtn(TEAMS[opp],opp,false)}<button class="nav" id="opr" aria-label="Next opponent">›</button></div>
+  <button class="btn2 sm" id="xro" style="margin-top:10px">Rosters</button>
   <h2>Difficulty</h2>${diffSlider('dif', diff)}
   <h2>Quarter length</h2><div class="seg" id="qls">${[60,120,180,300].map(q=>`<button data-q="${q}" class="${q===ql?'on':''}">${q/60} min</button>`).join('')}</div>
   <h2>Kickoff time</h2><div class="seg pic" id="tod">${[['day','Day'],['dusk','Dusk'],['night','Night']].map(([k,l])=>`<button data-v="${k}" class="${k===tod?'on':''}">${ENV_ICON[k]}${l}</button>`).join('')}</div>
@@ -6809,6 +7010,7 @@
         keepScroll(draw);
       });
       $('#opl').onclick = () => stepO(-1);
+      $('#xro').onclick = () => showRosters(me, draw);
       $('#opr').onclick = () => stepO(1);
       $('#bk').onclick = showMenu;
       scr.querySelectorAll('#qls button').forEach(b => b.onclick = () => {

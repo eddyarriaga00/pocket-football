@@ -443,6 +443,10 @@ tr.me td{color:var(--acc);font-weight:700}
 .gl li.tot{border-bottom:0;font-weight:700;padding-top:9px}
 .gl li.tot b{color:var(--acc);font-size:15px}
 .note{margin:10px 0 0;color:var(--mute);font-size:11.5px;line-height:1.5}
+/* Settings: a value that is read, not pressed (Saves, About), and the box a backup is pasted into */
+.opt .dv{font-weight:600;font-size:12px;color:var(--mute);text-align:right;max-width:62%;overflow-wrap:anywhere}
+.dtx{display:block;width:100%;box-sizing:border-box;margin-top:8px;padding:9px 12px;font:inherit;font-size:16px;line-height:1.35;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:9px;resize:none}
+.dmsg{color:var(--ink);background:var(--panel2);border-radius:9px;padding:8px 12px}
 /* halftime and final: the scoring summary and the leaders */
 .sumh{margin:14px 0 0;text-align:left;color:var(--mute);font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
 .gl.sum{margin-top:4px;text-align:left}
@@ -1201,7 +1205,7 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 .rst>div{display:grid;grid-template-columns:30px minmax(0,1fr) 34px 26px 28px;align-items:center;gap:6px;padding:6px 10px;font-size:12.5px}
 .rst>div+div{border-top:1px solid var(--line)}
 .rst i{font-style:normal;font-family:var(--display);font-weight:800;font-variant-numeric:tabular-nums;color:var(--mute);text-align:right}
-.rst b{font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rst b{font-weight:500;min-width:0;overflow-wrap:anywhere;line-height:1.25}
 .rst b small{display:block;color:var(--mute);font-size:10.5px;font-weight:400;white-space:normal}
 .rst span,.rst em{font-style:normal;color:var(--mute);font-size:11px;font-family:var(--display);font-weight:700;letter-spacing:.04em}
 .rst u{text-decoration:none;font-family:var(--display);font-weight:800;text-align:right;font-variant-numeric:tabular-nums}

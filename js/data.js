@@ -227,5 +227,7 @@
   const LCOL = ['#ff6b6b', '#ff9a3d', '#51e08a', '#4dabf7', '#d59bff'];
   const ORD = ['1st', '2nd', '3rd', '4th'];
 
-  window.PG = { data: { TEAMS, CONF, DIV, SUR, OLR, OLX, OFFR, DEFR, BASE, QUICK, NUM, FORM, FNAME, ROUTES, RNAME, OFF, DPOS, DEF, STYLES, SCHEME, LCOL, ORD } };
+  /* the number Settings › About shows: raise it when a release changes what players see */
+  const VERSION = '1.0';
+  window.PG = { data: { VERSION, TEAMS, CONF, DIV, SUR, OLR, OLX, OFFR, DEFR, BASE, QUICK, NUM, FORM, FNAME, ROUTES, RNAME, OFF, DPOS, DEF, STYLES, SCHEME, LCOL, ORD } };
 })();

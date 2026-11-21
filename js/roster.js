@@ -102,6 +102,16 @@
   /* the man in an engine slot (QB, X, LT, CB2...) */
   const starter = (ti, slot) => team(ti).find(p => p.slot === slot) || null;
   /* the men not starting, for the sideline: [{ num, name, build }] */
+  /* the first man behind the starter in an engine slot: the one who comes on when the starter is hurt. skip: jersey
+     numbers already on the field (a second injury at the position takes the next man). A team carries one fullback,
+     so a running back fills in for him. */
+  const backup = (ti, slot, skip = []) => {
+    const st = starter(ti, slot);
+    if (!st) return null;
+    const at = pos => team(ti).filter(p => p.pos === pos && !p.slot && !skip.includes(p.num)).sort((a, b) => a.depth - b.depth);
+    return at(st.pos)[0] || (st.pos === 'FB' ? at('RB').pop() : null) || null;
+  };
+  const spec = (ti, pos) => team(ti).find(p => p.pos === pos) || null;
   const reserves = ti => team(ti).filter(p => !p.slot).map(p => ({ num: p.num, name: p.last, build: COMP.find(c => c[0] === p.pos)[4] }));
   const rating = (ti, p, ovr) => Math.max(45, Math.min(99, Math.round((ovr ?? TEAMS[ti].ovr) + p.d)));
 
@@ -140,5 +150,5 @@
     }).join('')}</div>`).join('');
   }
 
-  PG.roster = { team, starter, reserves, rating, html, COMP, POS_NAME, FIRST, LAST };
+  PG.roster = { team, starter, backup, spec, reserves, rating, html, COMP, POS_NAME, FIRST, LAST };
 })();

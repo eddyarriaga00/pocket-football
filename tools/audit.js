@@ -367,6 +367,19 @@ window.A = (() => {
       scan('settings');
       click('#bk');
     });
+    await step('rosters', () => {
+      click('#mS');
+      click('#sros');
+      scan('rosters');
+      click('#bk');
+      click('#sdat');
+      scan('saves');
+      click('#bk');
+      click('#sabt');
+      scan('about');
+      click('#bk');
+      click('#bk');
+    });
     await step('how', () => {
       click('#mH');
       scan('how to play');

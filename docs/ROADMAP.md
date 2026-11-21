@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `ab8d814`, before the rounding-out pass (real kickers and punters, roster substitutes for injuries, Settings › Saves, About and Rosters) (2026-11-21).
   - `91e87af`, before gang tackles (joining defenders hit high and beside, a beat apart; the runner feels each) (2026-11-21).
   - `c4547e5`, before the rag doll on the falls (hit size and direction, limp limbs, landing bounce) (2026-11-21).
   - `b7a0514`, before the quicker stride (CADENCE 1.22: shorter steps, faster legs and arms) (2026-11-21).
@@ -3333,6 +3334,34 @@ six were done as the pro game has them; the choices where there was one are mine
   more where it lands. A test for it: tackleStrip(angle, { gang: [angle, angle] }) stages one or two more defenders.
   Two-man tackles from four angles still have nothing under the turf and the bodies clear of each other; fingerprint
   unchanged (drawing only); the rough player through three games and a career clean.
+
+- **2026-11-21: the rounding-out pass.** Asked for: "what is missing to make this a fully rounded and ready to play
+  game, add those details and more". An audit of what a finished game has that this one did not, and what was built:
+  - **Kickers and punters.** Field goals, extra points, punts and kickoffs were performed by the quarterback's (or
+    the middle linebacker's) figure, name and number. Now the roster's K and P do them (`asSpec` in game.js;
+    `PG.roster.spec`): their number on the field, their name in the scoring log ("Thorne 42-yd field goal",
+    "(Thorne kick good)"), and a Kicking line in the leaders (FG and XP made/tried, box key `K`). Drawing and
+    bookkeeping only: the fingerprint is unchanged.
+  - **Injury substitutes.** The man who came on for a shaken-up player was a made-up name and number. Now he is the
+    next man at that position on the 53 (`PG.roster.backup(ti, slot, skip)`: a second injury at the position takes
+    the man after him; the one fullback is covered by a running back). Same slower, six-points-lower sub as before.
+  - **Saves** (Settings › Saves, `showData`): what is saved and its size, Save file (share sheet on phones, a
+    download elsewhere), Copy as text, restore from a file or pasted text (checked: this game's keys only, each one
+    readable; asks before replacing), and Erase everything behind a second tap. Backup format:
+    `{ app: 'PocketFootball', v: 1, version, at, data: { 'pg.*': string } }`. Nothing leaves the device.
+  - **About** (Settings › About, `showAbout`): the version (`VERSION` in data.js, now 1.0: raise it when a release
+    changes what players see), how to install to the home screen, that the league is fictional, and the credits
+    (three.js, Kokoro-82M, Archivo, and the CMU motion capture acknowledgement its licence asks for).
+  - **Rosters** (Settings › League › Rosters, and a Rosters button on the Exhibition screen, `showRosters`): any
+    team's 53, stepped through with the arrows.
+  - Small: a long name in a roster row wraps instead of being cut (the audit found it at 320 px); typing in a text
+    box no longer moves the keyboard focus ring.
+  Already there, so left alone: the first-time training camp offer, coin toss, two-minute warning, kneel and spike.
+  Checked: fingerprint unchanged; X.exh 3, X.career QB 2 and WR 2 clean; the kickoff and a punt show the right man;
+  backup → restore gives back every key byte for byte, erase leaves only fresh settings; the audit is empty at
+  390x844, 320x568, 740x360, 667x375 and 1280x800 (it now walks the three new screens). Build 16,630,628 bytes
+  (about 146 KB under the limit). Still missing, not built without his say-so: head-to-head online, roster changes
+  between seasons (draft, retirements), punting stats, cloud saves across devices.
 
 ## Morning hand-off
 
