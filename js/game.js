@@ -6775,6 +6775,15 @@
     } catch (_) {}
   }
 
+  /* inside another page (the copy published on claude.ai) a page may not hand over a file: there the backup is text */
+  const framed = (() => {
+    try {
+      return window.self !== window.top;
+    } catch (_) {
+      return true;
+    }
+  })();
+
   function showData(msg, pend, sure) {
     const keys = saveKeys(), kb = Math.max(1, Math.round(keys.reduce((a, k) => a + (localStorage.getItem(k) || '').length, 0) / 1024));
     const cs = PG.career && PG.career.summary(), ss = PG.season && PG.season.summary(), has = keys.some(k => k !== 'pg.settings');
@@ -6786,7 +6795,7 @@
   <div class="opt"><span>Size</span><b class="dv">${kb} KB</b></div></div>
   ${msg ? `<p class="note dmsg" role="status">${esc(msg)}</p>` : ''}
   ${pend ? `<div class="offer"><b>Restore this backup?</b><span>${when ? 'From ' + when + ' · ' : ''}${Object.keys(pend.data).length} saved items. It replaces everything saved on this device.</span><div class="row2"><button class="go sm" id="dok">Replace</button><button class="btn2" id="dno">Cancel</button></div></div>` : `
-  <h2>Back up</h2><div class="row2"><button class="go sm" id="dsv">Save file</button><button class="btn2" id="dcp">Copy as text</button></div>
+  <h2>Back up</h2>${framed ? '<button class="go sm" id="dcp">Copy as text</button>' : '<div class="row2"><button class="go sm" id="dsv">Save file</button><button class="btn2" id="dcp">Copy as text</button></div>'}
   <h2>Restore</h2><div class="row2"><button class="btn2" id="dfl">Choose file</button><button class="btn2" id="dps">Use pasted text</button></div>
   <textarea id="dtx" class="dtx" rows="3" spellcheck="false" autocomplete="off" aria-label="Backup text" placeholder="Paste a backup here"></textarea>
   <input type="file" id="din" accept=".json,.txt,application/json,text/plain" hidden>
@@ -6809,7 +6818,7 @@
       const b = readBackup(text);
       showData(b ? '' : 'That is not a PocketFootball backup.', b);
     };
-    $('#dsv').onclick = async () => {
+    if (!framed) $('#dsv').onclick = async () => {
       const text = backupText(), name = `pocketfootball-${new Date().toISOString().slice(0, 10)}.json`;
       try {
         const file = new File([text], name, { type: 'application/json' });

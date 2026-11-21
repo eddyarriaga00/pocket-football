@@ -3349,6 +3349,8 @@ six were done as the pro game has them; the choices where there was one are mine
     download elsewhere), Copy as text, restore from a file or pasted text (checked: this game's keys only, each one
     readable; asks before replacing), and Erase everything behind a second tap. Backup format:
     `{ app: 'PocketFootball', v: 1, version, at, data: { 'pg.*': string } }`. Nothing leaves the device.
+    Inside another page (the copy published on claude.ai, which may not hand over a file) only Copy as text is
+    offered (`framed`).
   - **About** (Settings › About, `showAbout`): the version (`VERSION` in data.js, now 1.0: raise it when a release
     changes what players see), how to install to the home screen, that the league is fictional, and the credits
     (three.js, Kokoro-82M, Archivo, and the CMU motion capture acknowledgement its licence asks for).
