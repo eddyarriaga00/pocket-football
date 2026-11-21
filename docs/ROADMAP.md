@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `d2df5b0`, before the reworked walk and run (two gaits, hip roll, heel strike, new arms and lean) (2026-11-21).
   - `9cca8a7`, before the 53-man rosters with full names (2026-11-17).
   - `53cc466`, before the motion-capture catch and two-hand secure (2026-11-17).
   - `14525cf`, before the motion-capture throw and the tuned juke and running arms (2026-11-17).
@@ -3261,6 +3262,25 @@ six were done as the pro game has them; the choices where there was one are mine
   is where it was (75% completions, 2.1% interceptions, 3.9 a carry); the fingerprint re-pinned (now a team's starters
   are its own, so a matchup decides more), the old one kept as pg.fingerprint.before-rosters. The audit clean at 390,
   the rough player clean.
+
+- **2026-11-21: movement reworked: a walk and a run are now different gaits.** Asked for: "improve running
+  animations, improve walking animations, improve movement entirely". Measured real walks, jogs and runs (CMU
+  captures 07_01, 08_04, 16_35, 35_17, 09_01, 09_03 with the new tools/mocap/gait.py) against the game's stride and
+  rebuilt it on the numbers. Walking (under about 1.7 hip heights a second): a foot is down for more than half the
+  cycle, lands on the heel with the toe up and rolls flat, the hips are highest over the planted foot, the arms hang
+  nearly straight and swing about 0.45 either way, the body is upright (it leaned nearly as far as a jog). Running:
+  the hips sink further under the weight and rise higher between steps (0.03 to 0.07 of their height, from 0.016 to
+  0.05), the heel snaps up sooner and higher behind him, the elbows stay bent past a right angle at every speed (they
+  opened out at a jog), the hands go further back than forward, the lean grows with speed. Both: the hips roll with
+  each step and the shoulders tip the other way (a new chest-roll channel, CHRZ; each leg is solved from where its hip
+  joint really is, so the feet still stay where they land, also under a lean into a cut), the shoulders turn against
+  the hips at a walk too, the helmet stays on where he is going, the feet land nearer his line than straight under
+  the hips, and he leans into a start and back against a stop, the hips sinking as he brakes. A backpedal keeps the
+  chest over the toes and the hips low (it leaned back). Officials, the chain crew and the reserves who pace the
+  sideline walk on the same stride (the pacers' legs were two sine waves and their feet slid). Measured (gaitTest,
+  which now follows the heel and the toe separately): a planted foot moves at most 1.1 cm at a walk and 2.2 cm flat
+  out, and never sinks more than 0.2 cm; strips checked from the side and the front at a walk, a jog, a sprint and a
+  backpedal; fingerprint unchanged, the rough player through two games and a career clean.
 
 ## Morning hand-off
 
