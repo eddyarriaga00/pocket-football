@@ -88,9 +88,9 @@ what is next. Update it after every item.
 - **Technology:** the owner also wrote "use more complex languages and change code and anything if needed".
   Shaders (GLSL), modules and rewrites are welcome where they buy visible quality. The site is still static
   hosting, so everything must end up as files a browser loads directly.
-- **After each item:** test, `python3 tools/bundle.py`, commit, `git push origin main`, republish
-  `pocket-gridiron.html` to the existing artifact (https://claude.ai/artifact/6N1EjYsyKa7uDekXEQTQey),
-  then tick the item below and add a line to the log.
+- **After each item:** test, commit, `git push origin main`, then tick the item below and add a line to the log.
+  Since 2026-11-21 the game ships from GitHub only (the owner: "i don't want the claude copy anymore just the
+  github push to main"): no single-file build, no artifact publish, and its 16 MiB limit no longer applies.
 - **No questions during automatic runs.** Decide, note the decision in the log, keep going.
 - **What the automatic loop is for** (the owner, 14:10 on 2026-11-12: "yes automatic improvement loop yes but make
   major improvements or if not just work on improving ui more and more"): each run takes the biggest improvement it
