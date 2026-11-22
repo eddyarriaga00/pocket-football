@@ -2510,6 +2510,7 @@
   const carrierHeld = (p, ps) => p.down || p.fell || p.flat > 0 || !!p.eng || !!p.block;
 
   function poseFor(f, p, s, dt) {
+    if (p.wkx > 1 && p.jog) dt *= p.wkx;  // the walk between plays is shown fast forward: his own clock runs with it
     const tg = TG, ps = s.ps;
     tg.fill(0);
     f.leap = Math.max(0, (f.leap || 0) - dt / 0.3);  // a jump for the ball comes back down over about a third of a second

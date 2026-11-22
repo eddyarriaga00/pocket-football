@@ -1155,6 +1155,7 @@
         p.x = clamp(bx + Math.cos(a) * r, 1, FW - 1);
         p.y = los + dir * (o ? -8.5 : 6) + Math.sin(a) * r * 0.7;
         p.jog = Math.max(3, hyp(p.sx - p.x, p.sy - p.y) / 1.1);
+        p.wk = true;
       }
     }
     camUpd(0, true);
@@ -1205,7 +1206,7 @@
     const d = P.find(q => q.team !== off && q.asg === 'man' && q.man === p) || null;
     /* a zone slides toward where he is going: the deep men most, the linebackers some, the corners hold */
     const to = -side * (kind === 'zip' ? 0.4 : kind === 'orbit' ? 0.3 : 1);
-    const zs = d ? [] : P.filter(q => q.team !== off && q.asg === 'zone').map(q => ({ q, x0: q.x, zx0: q.zx, k: to * (q.deep ? 2.6 : /LB/.test(q.role) ? 1.3 : /^SS|FS$/.test(q.role) ? 1.8 : 0) })).filter(z => z.k);
+    const zs = d ? [] : P.filter(q => q.team !== off && q.asg === 'zone').map(q => ({ q, x0: q.sx !== undefined ? q.sx : q.x, zx0: q.zx, k: to * (q.deep ? 2.6 : /LB/.test(q.role) ? 1.3 : /^SS|FS$/.test(q.role) ? 1.8 : 0) })).filter(z => z.k);
     ps.mot = { p, kind, side, pts, i: 0, x0: p.sx, v: kind === 'jet' ? Math.min(p.spd * 0.85, 8.5) : kind === 'zip' ? 4.2 : kind === 'orbit' ? 5.8 : 5.4, d, zs, go: false, done: false, ready: false, said: false,
       sweep: ps.mode === 'run' && p === ps.runner };
     return ps.mot;
@@ -1363,6 +1364,7 @@
       }
       const dd = hyp(m.sx - m.x, m.sy - m.y);
       m.jog = dd > 0.3 ? clamp(dd / 3.5, 2.4, 10) : 0;  // a walk for a few yards, a jog for a long way
+      m.wk = true;
     }
   }
 
@@ -1387,6 +1389,7 @@
       p.y = w.y;
       const dd = hyp(p.sx - p.x, p.sy - p.y);
       p.jog = dd > 0.15 ? dd / clamp(dd / 9, 1.1, 2.6) : 0;
+      p.wk = true;
     };
     for (const p of P) {
       const w = take(p, true);
@@ -1397,21 +1400,28 @@
   }
   const stoodNow = () => (tween() ? P.map(p => ({ t: p.team, r: p.role, x: p.x, y: p.y })) : null);
 
+  /* The walk between plays is always shown fast forward (the clocks are not): every step is still taken, three
+     times as quick. A shift or a man in motion before the snap is football, and stays at its own speed. */
+  const WALKFF = 3, WALKMAX = 26;  // no quicker than this many yards a second, or it would read as a jump
   function jogIn(dt) {
+    const ff = SET.wff && watching() ? 1 : WALKFF;  // the fast forward button already runs three steps a frame
     for (const p of P) {
       if (!p.jog) continue;
-      const dx = p.sx - p.x, dy = p.sy - p.y, d = hyp(dx, dy), st = p.jog * dt;
+      const t = p.wk ? dt * clamp(WALKMAX / p.jog, 1, ff) : dt, dx = p.sx - p.x, dy = p.sy - p.y, d = hyp(dx, dy), st = p.jog * t;
       if (d <= st) {
         p.x = p.sx;
         p.y = p.sy;
         p.vx = p.vy = 0;
         p.jog = 0;
+        p.wk = false;
+        p.wkx = 1;
       } else {
         p.vx = dx / d * p.jog;
         p.vy = dy / d * p.jog;
-        p.x += p.vx * dt;
-        p.y += p.vy * dt;
-        p.anim += p.jog * dt;
+        p.x += p.vx * t;
+        p.y += p.vy * t;
+        p.anim += p.jog * t;
+        p.wkx = t / dt;  // the drawing runs his stride at the same rate, so his feet keep their grip
       }
     }
   }
@@ -7137,6 +7147,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.8', 'November 2026', ['The walk between plays is always shown fast forward', 'Fixed: defenders in a zone could jump sideways when a man went in motion']],
     ['1.7', 'November 2026', ['Rosters change every season: players age, the oldest retire and rookies take their places', 'Every in-game sheet has a picture across the top']],
     ['1.6', 'November 2026', ['A playbook picture on the play-call sheet', 'A scoreboard picture on the halftime and final sheets']],
     ['1.5', 'November 2026', ['Each box on the main menu has its own picture']],

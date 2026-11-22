@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `9a00504`, before the walk between plays was always fast forward (2026-11-21).
   - `950edae`, before rosters that change between seasons and a picture on every sheet (2026-11-21).
   - `5b97c8b`, before the pictures on the play-call, halftime and final sheets (2026-11-21).
   - `218e878`, before the pictures in the main menu's five boxes (2026-11-21).
@@ -3468,6 +3469,22 @@ six were done as the pro game has them; the choices where there was one are mine
   The get-up move asked about earlier was already there (`up` in render3d.js: the pile gets off and the runner
   rises during the dead time). Checked: fingerprint; a QB career, two Season years (roster year 2 at the end)
   clean; audit with a played game empty at 320x568, 390x844, 740x360, 1280x800.
+
+### 2026-11-21: the walk between plays, always fast forward (1.8)
+
+The owner: "from play to play, i know they walk to the spot/area but auto fast forward that part always".
+
+- `jogIn` moves a man who is walking between plays (`p.wk`, set in `keepOn`, `walkOn` and the huddle break) at
+  `WALKFF` = 3 times his pace, never past `WALKMAX` = 26 yards a second. The clocks are untouched. A shift, an
+  audible slide or a man in motion keeps its own speed. With the fast forward button on (three steps a frame
+  already) the factor is 1.
+- The drawing runs that man's own clock at the same rate (`p.wkx`, read at the top of `poseFor`), so his stride
+  keeps pace with the ground he covers.
+- Found while measuring: a zone's slide with a man in motion started from where each defender stood when the play
+  was set up, not from his spot, so he jumped back there when the motion began. It now starts from his spot.
+- Checked: fingerprint unchanged; three bot games and a quarterback career clean; three watched games stepped at
+  60 a second: 226 walks, 1.0 s on average, 2.6 s the longest, and no man moved more than 0.6 yards in a step
+  before the snap. Not looked at on screen.
 
 ## Morning hand-off
 
