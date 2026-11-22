@@ -6717,7 +6717,7 @@
     // the hero: your career player if there is one, else your season's team, else your team in the settings
     const cd = cs && PG.career.data, hi = cd ? cd.team : st != null ? st : SET.me || 0;
     const hero = heroHtml(TEAMS[hi], true, cd ? cd.num : 12, cd ? cd.look : null, cd ? `<b>${esc(cd.name)}</b> #${cd.num} · ${cd.pos}` : `<b>${esc(TEAMS[hi].city)}</b> ${esc(TEAMS[hi].name)}`);
-    scr.innerHTML = `<div class="menu home fill"><h1>Pocket<wbr><em>Football</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p>${hero}
+    scr.innerHTML = `<div class="menu home fill"><div class="kv"><h1>Pocket<wbr><em>Football</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p></div>${hero}
   ${offer?'<div class="offer"><b>First time here?</b><span>Training camp teaches passing, running and tackling in three short drills.</span><div class="row2"><button class="go sm" id="oY">Start camp</button><button class="btn2" id="oN">Not now</button></div></div>':''}
   <button class="mode main" id="mC">${menuBadge(ct, 'career')}<b>Career</b><span>${cs||'Create a player, lock in at your position, and build a legacy one season at a time.'}</span><i>›</i></button>
   <button class="mode" id="mSe">${menuBadge(st, 'season')}<b>Season</b><span>${ss||'Take one team through a 17-game season and the playoffs.'}</span><i>›</i></button>
@@ -7136,6 +7136,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.4', 'November 2026', ['A new home-screen icon', 'A title picture on the main menu']],
     ['1.3', 'November 2026', ['Rule book: every rule the game plays by, in Settings and How to play', 'This page', 'Blocked punts', 'A return for a touchdown can be called back for a block in the back', 'An onside kick can be tried any time you are behind']],
     ['1.2', 'November 2026', ['Players stay on the field between plays and walk to the next huddle; nobody is dropped into place', 'Kicking units run on from the sideline', 'Blocked field goals, fouls on returns, offsetting fouls']],
     ['1.1', 'November 2026', ['The league’s current kickoff line-up', 'A free kick from the 20 after a safety', 'Play clock of 40 and 25 seconds', 'Booth review late in each half, and a third challenge for winning one', 'Full stat sheet: first downs, third downs, sacks, penalties, possession, passer rating, defense and punting', 'Standings with division and conference records and streaks']],
@@ -7173,7 +7174,8 @@
   <div class="opt"><span>3D drawing</span><b class="dv">three.js · MIT license</b></div>
   <div class="opt"><span>Commentary voices</span><b class="dv">Kokoro-82M · Apache 2.0</b></div>
   <div class="opt"><span>Typeface</span><b class="dv">Archivo · Open Font License</b></div>
-  <div class="opt"><span>Movement study</span><b class="dv">CMU motion capture</b></div></div>
+  <div class="opt"><span>Movement study</span><b class="dv">CMU motion capture</b></div>
+  <div class="opt"><span>Icon and title picture</span><b class="dv">Made with an AI image tool</b></div></div>
   <p class="note">Motion data was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217.</p>
   <h2>Your saves</h2><p class="note">Careers, seasons and settings stay in this browser. Settings › Saves makes a backup.</p></div>`;
     $('#bk').onclick = showSettings;

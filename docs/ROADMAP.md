@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `05dc9ac`, before the new icon and the title picture on the main menu (2026-11-21).
   - `b029fa0`, before the rule book, What's new, blocked punts, called-back return touchdowns and the onside kick at any time (2026-11-21).
   - `ec200f7`, before players walking between plays (no emptied field, no line-ups dropped in place) and blocked kicks, return fouls, offsetting fouls (2026-11-21).
   - `3d5f88d`, before the closer-to-the-pro-game pass (current kickoff line-up, free kick after a safety, 40/25 play clock, booth review, full stat sheet, standings columns) (2026-11-21).
@@ -3423,6 +3424,16 @@ six were done as the pro game has them; the choices where there was one are mine
   Fixed on the way: the final sheet ran 14 px wide on a 320 px phone when a leader's line was long (it wraps now);
   the menu tagline's contrast over a bright scene. Checked: fingerprint; `X.exh(6)`, `X.career` QB and WR clean;
   audit (now walking the rule book and What's new) empty at all five sizes.
+
+- 2026-11-21: art from an image tool (the owner: "u can use claude on chrome to use chatgpt for any art", then "do
+  the menu and icon"). Version 1.4. Two pictures drawn by ChatGPT's image tool in his Chrome, prompted with no
+  name, no text, no logos and no yellow: a navy helmet with a white stripe and teal mask under floodlights (the
+  home-screen icon: `icons/icon-512/192/180/32.png`; the old drawn `icon.svg` is gone so browsers show the new one)
+  and a quarterback throwing in a night stadium (`art/title.jpg`, 1280 wide, 205 KB), shown behind the name at the
+  top of the main menu (`.home .kv` in `game.css`: the picture and a dark fade on its `::before`, so the name
+  reads on the left and the audit can read the background). Credited in About; listed in What's new. The full-size
+  originals are not in the repo. Checked: fingerprint; audit empty; looked at on 320x568, 390x844, 740x360 and
+  1280x800. An installed home-screen icon may not change until the game is removed and added again.
 
 ## Morning hand-off
 
