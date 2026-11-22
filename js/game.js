@@ -6728,7 +6728,7 @@
     // the hero: your career player if there is one, else your season's team, else your team in the settings
     const cd = cs && PG.career.data, hi = cd ? cd.team : st != null ? st : SET.me || 0;
     const hero = heroHtml(TEAMS[hi], true, cd ? cd.num : 12, cd ? cd.look : null, cd ? `<b>${esc(cd.name)}</b> #${cd.num} · ${cd.pos}` : `<b>${esc(TEAMS[hi].city)}</b> ${esc(TEAMS[hi].name)}`);
-    scr.innerHTML = `<div class="menu home fill"><div class="kv"><h1>Pocket<wbr><em>Football</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p></div>${hero}
+    scr.innerHTML = `<div class="menu home fill"><h1>Pocket<wbr><em>Football</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p>${hero}
   ${offer?'<div class="offer"><b>First time here?</b><span>Training camp teaches passing, running and tackling in three short drills.</span><div class="row2"><button class="go sm" id="oY">Start camp</button><button class="btn2" id="oN">Not now</button></div></div>':''}
   <button class="mode main" id="mC">${menuBadge(ct, 'career')}<b>Career</b><span>${cs||'Create a player, lock in at your position, and build a legacy one season at a time.'}</span><i>›</i></button>
   <button class="mode" id="mSe">${menuBadge(st, 'season')}<b>Season</b><span>${ss||'Take one team through a 17-game season and the playoffs.'}</span><i>›</i></button>
@@ -7147,6 +7147,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.9', 'November 2026', ['The pictures on the menu, the sheets and the icon are gone: the drawn icon and plain panels are back']],
     ['1.8', 'November 2026', ['The walk between plays is always shown fast forward', 'Fixed: defenders in a zone could jump sideways when a man went in motion']],
     ['1.7', 'November 2026', ['Rosters change every season: players age, the oldest retire and rookies take their places', 'Every in-game sheet has a picture across the top']],
     ['1.6', 'November 2026', ['A playbook picture on the play-call sheet', 'A scoreboard picture on the halftime and final sheets']],
@@ -7189,8 +7190,7 @@
   <div class="opt"><span>3D drawing</span><b class="dv">three.js · MIT license</b></div>
   <div class="opt"><span>Commentary voices</span><b class="dv">Kokoro-82M · Apache 2.0</b></div>
   <div class="opt"><span>Typeface</span><b class="dv">Archivo · Open Font License</b></div>
-  <div class="opt"><span>Movement study</span><b class="dv">CMU motion capture</b></div>
-  <div class="opt"><span>Icon and menu pictures</span><b class="dv">Made with an AI image tool</b></div></div>
+  <div class="opt"><span>Movement study</span><b class="dv">CMU motion capture</b></div></div>
   <p class="note">Motion data was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217.</p>
   <h2>Your saves</h2><p class="note">Careers, seasons and settings stay in this browser. Settings › Saves makes a backup.</p></div>`;
     $('#bk').onclick = showSettings;

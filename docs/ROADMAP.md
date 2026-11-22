@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `601eab4`, before the generated pictures and icon were taken out (2026-11-21).
   - `9a00504`, before the walk between plays was always fast forward (2026-11-21).
   - `950edae`, before rosters that change between seasons and a picture on every sheet (2026-11-21).
   - `5b97c8b`, before the pictures on the play-call, halftime and final sheets (2026-11-21).
@@ -3485,6 +3486,17 @@ The owner: "from play to play, i know they walk to the spot/area but auto fast f
 - Checked: fingerprint unchanged; three bot games and a quarterback career clean; three watched games stepped at
   60 a second: 226 walks, 1.0 s on average, 2.6 s the longest, and no man moved more than 0.6 yards in a step
   before the snap. Not looked at on screen.
+
+### 2026-11-21: the generated pictures taken out (1.9)
+
+The owner: "remove the ai images as well".
+
+- `art/` is deleted (title, the five menu boxes, the two sheet pictures) and every style that drew them; the
+  stylesheet's menu and sheet rules are the same as before version 1.4.
+- The home-screen icon is the drawn one again (`icons/icon.svg` and the four PNGs from before 1.4), with its links
+  in index.html and the manifest. The credit line for the pictures is gone from About.
+- Do not add generated pictures again unless he asks.
+- Checked: fingerprint unchanged; audit with a played game empty at 320x568, 390x844, 740x360 and 1280x800.
 
 ## Morning hand-off
 
