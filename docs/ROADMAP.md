@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `b029fa0`, before the rule book, What's new, blocked punts, called-back return touchdowns and the onside kick at any time (2026-11-21).
   - `ec200f7`, before players walking between plays (no emptied field, no line-ups dropped in place) and blocked kicks, return fouls, offsetting fouls (2026-11-21).
   - `3d5f88d`, before the closer-to-the-pro-game pass (current kickoff line-up, free kick after a safety, 40/25 play clock, booth review, full stat sheet, standings columns) (2026-11-21).
   - `ab8d814`, before the rounding-out pass (real kickers and punters, roster substitutes for injuries, Settings › Saves, About and Rosters) (2026-11-21).
@@ -3409,6 +3410,19 @@ six were done as the pro game has them; the choices where there was one are mine
   field with the sheet up and moving to the huddle, and jogging in from there after the call. Not watched on
   screen (the test pane's screenshots lag a frame behind): judge the walk by eye on the phone. Blocked punts and a
   foul that brings back a return touchdown are not in.
+
+- 2026-11-21: the rule book, What's new, and three more rules (the owner: "if it's in the nfl add it ... add a
+  what's new tab for new additions and make sure to somewhere address all the rules in the game"). Version 1.3.
+  Rule book (`RULES`, `showRules` in `game.js`): every rule the game plays by in seven groups (the game, scoring,
+  kicks, overtime, flags, replay, the season), as cards with the How to play pictures; from Settings › Rules and
+  from How to play. Written from the code, so change a rule and its card together. What's new (`NEWS`, `showNews`):
+  versions newest first; from Settings › Help and How to play. Add an entry and raise `VERSION` with every release
+  players can see. Rules: a punt is blocked about one time in 125 (other side's ball behind the line); a kick or
+  punt return for a touchdown is called back about one time in twelve for a block in the back (`ps.callBack`); an
+  onside kick is offered before any of your kickoffs while you trail. All watched games only, off the generator.
+  Fixed on the way: the final sheet ran 14 px wide on a 320 px phone when a leader's line was long (it wraps now);
+  the menu tagline's contrast over a bright scene. Checked: fingerprint; `X.exh(6)`, `X.career` QB and WR clean;
+  audit (now walking the rule book and What's new) empty at all five sizes.
 
 ## Morning hand-off
 

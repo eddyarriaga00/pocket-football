@@ -378,6 +378,12 @@ window.A = (() => {
       click('#sabt');
       scan('about');
       click('#bk');
+      click('#srul');
+      scan('rule book');
+      click('#bk');
+      click('#snew');
+      scan('whats new');
+      click('#bk');
       click('#bk');
     });
     await step('how', () => {

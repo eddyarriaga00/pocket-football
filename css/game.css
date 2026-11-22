@@ -200,6 +200,7 @@ input{font:inherit;font-size:16px;color:var(--ink);background:var(--panel2);bord
 .menu h1.sm{font-size:22px}
 .menu h1 em{font-style:normal;color:var(--acc)}
 .menu .tag{margin:8px 0 0;color:var(--mute);font-size:13px;line-height:1.45}
+.menu.home .tag{color:#b4bfd3}
 .menu h2{margin:18px 0 7px;font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
 .teams{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 /* the team pickers: grouped by conference and division */
@@ -753,6 +754,8 @@ tr.me td{color:var(--acc);font-weight:700}
 .hwj button{height:44px;display:flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:700 10px var(--display);letter-spacing:.06em;text-transform:uppercase}
 .hwj svg,.hw svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .hws{display:grid;gap:6px}
+.nwd{float:right;font:600 10.5px var(--body,inherit);letter-spacing:.04em;color:var(--mute);text-transform:none}
+.nws .opt span{white-space:normal;line-height:1.35}
 .hw{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
 .hw i{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--panel3);color:var(--acc)}
 .hw b{display:block;font:800 11px var(--display);letter-spacing:.08em;text-transform:uppercase;margin:1px 0 3px}
@@ -813,7 +816,8 @@ tr.me td{color:var(--acc);font-weight:700}
 .tch{display:grid;place-items:center;width:34px;height:22px;border-radius:6px;background:var(--c);font:800 10px var(--display);font-style:normal;letter-spacing:.03em}
 .evs em{display:block;font:700 10px var(--display);font-style:normal;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
 .evs small{display:block;color:var(--mute);font-size:11px}
-.evs b{font:800 12px var(--display);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+.evs li{grid-template-columns:34px minmax(0,1fr) minmax(0,auto)}
+.evs b{font:800 12px var(--display);font-variant-numeric:tabular-nums;text-align:right;max-width:52vw;overflow-wrap:anywhere}
 
 /* segmented choices with a small picture over the word */
 .seg.pic button{height:48px;display:grid;justify-items:center;align-content:center;gap:4px}

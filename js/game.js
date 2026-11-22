@@ -3083,6 +3083,15 @@
   function finish(kind, arg) {
     if (G.state !== 'live' && G.state !== 'kicka') return;
     const p0 = ps, s0 = G.score.slice();
+    if (kind === 'td' && ps.mode === 'ko' && ps.carrier && !ps.fum && watched() && Math.random() < 0.08) {
+      /* a return for a touchdown is called back now and then: a block in the back behind the play. He is spotted
+         where the foul was, and the ten yards come off below (see the return's flag in finish0). */
+      const c = ps.carrier;
+      c.y = c.team === 0 ? 28 + Math.random() * 20 : 72 - Math.random() * 20;
+      ps.callBack = true;
+      ps.tackler = null;
+      kind = 'tackle';
+    }
     finish0(kind, arg);
     gesture(p0);
     if (kind === 'tackle' && p0 && p0.carrier && !p0.slid && G.state === 'dead' && (p0.mode === 'pass' || p0.mode === 'run') && !AUTO && !QUIET && !G.drill && Math.random() < 0.008) shaken(p0.tackler && P.includes(p0.tackler) && Math.random() < 0.35 ? p0.tackler : p0.carrier);  // about one time in three it is the tackler who stays down
@@ -3315,13 +3324,13 @@
         setBall(t, ez ? (ps.punt ? (t === 0 ? 20 : 80) : t === 0 ? KTB : 100 - KTB) : y, x);  // a punt downed in the end zone still comes out to the 20
         if (ry >= 30) react(t, 0.8, 2.5);
         if (me && c === me && !ez) retStat(ry, false);
-        if (!ez && ry >= 8 && watched() && Math.random() < 0.07) {
+        if (ps.callBack || (!ez && ry >= 8 && watched() && Math.random() < 0.07)) {
           /* a block in the back on the return: ten yards against the returning side from where he was brought down
              (half the distance near its own goal) */
           const room = t === 0 ? y : 100 - y, yd = Math.max(1, Math.min(10, Math.floor(room / 2)));
           setBall(t, y - (t === 0 ? 1 : -1) * yd, x);
           big = 'Flag';
-          sub = `Illegal block in the back, ${tname(t)} · ${yd} yards off the return`;
+          sub = ps.callBack ? `Touchdown called back · illegal block in the back, ${tname(t)}` : `Illegal block in the back, ${tname(t)} · ${yd} yards off the return`;
           ts(t).pen++;
           ts(t).peny += yd;
           G.adm = true;
@@ -3438,10 +3447,10 @@
       stop = true;
       setBall(off, off === 0 ? 40 : 60, FW / 2);
     } else if (kind === 'punt') {
-      big = 'Punt';
-      sub = arg.tb ? 'Touchback' : `${arg.fair ? 'Fair catch' : arg.down ? `${arg.d} yards, downed` : arg.d + ' yards'} · ${tname(1 - off)} ball at ${spotTxt(arg.y)}`;
+      big = arg.blocked ? 'Blocked!' : 'Punt';
+      sub = arg.blocked ? `Punt blocked · ${tname(1 - off)} ball at ${spotTxt(arg.y)}` : arg.tb ? 'Touchback' : `${arg.fair ? 'Fair catch' : arg.down ? `${arg.d} yards, downed` : arg.d + ' yards'} · ${tname(1 - off)} ball at ${spotTxt(arg.y)}`;
       stop = true;
-      credit(ps.qb, 'punts', 1);
+      if (!arg.blocked) credit(ps.qb, 'punts', 1);
       credit(ps.qb, 'puntyd', arg.d || 0);
       if (!arg.tb && (off === 0 ? arg.y >= 80 : arg.y <= 20)) credit(ps.qb, 'in20', 1);
       setBall(1 - off, arg.y, arg.x);
@@ -4255,10 +4264,10 @@
       const t = G.pendKO, k = 1 - t;  // t receives, k kicks
       const free = !!G.freeK;
       G.freeK = false;
-      /* your call whenever you trail in the fourth quarter or overtime (the league lets a trailing side declare one);
+      /* your call whenever you trail, at any point of the game (the league lets a trailing side declare one);
          the computer tries only when it is late and close */
       const yours = k === 0 && !AUTO && !G.lock;
-      if (!free && !G.drill && (yours ? G.q >= 4 && G.score[k] < G.score[1 - k] : lateAndBehind(k))) return yours ? showOnside(k) : onside(k);
+      if (!free && !G.drill && (yours ? G.score[k] < G.score[1 - k] : lateAndBehind(k))) return yours ? showOnside(k) : onside(k);
       G.pendKO = null;
       if (!AUTO && !G.drill) {
         beginKickoff(t, free);  // in a career, your team's kickoffs are yours too, and theirs when you return kicks
@@ -4534,6 +4543,17 @@
       T = 2.4 + d * 0.02 + (ps.ret ? HANG : 0);  // a punt you can return hangs longer, so the coverage gets there and a fair catch is a real choice
       h = 13;
       ps.kick = { type: 'punt', arg: { y: fy, x, d: Math.round(d), tb, fair: how === 'fair', down: how === 'down' } };
+      if (watched() && Math.random() < 0.008) {
+        /* a blocked punt (about one in 125, watched games only): the ball dies behind the line and the other side
+           has it there */
+        const by = clamp(los - dir * (4 + Math.random() * 6), 2, 98);
+        ps.ret = null;
+        x1 = clamp(ps.bx + (Math.random() - 0.5) * 8, 4, FW - 4);
+        y1 = by;
+        T = 0.7;
+        h = 2.5;
+        ps.kick = { type: 'punt', arg: { y: by, x: x1, d: 0, tb: false, fair: false, down: true, blocked: true } };
+      }
     }
     ps.air = { x0: k.x, y0: k.y, x1, y1, t: 0, T, h, kick: true, x: k.x, y: k.y, z: 0 };
     ps.carrier = null;
@@ -6801,13 +6821,15 @@
   ${chip('san','Commentary',SET.ann!==false?'On':'Off')}
   </div><h2>Rules</h2><div class="grp">
   ${chip('spn','Penalties',SET.pen!==false?'On':'Off')}
+  <div class="opt"><span>Rule book</span><button class="chip" id="srul">Read</button></div>
   </div><h2>League</h2><div class="grp">
   <div class="opt"><span>Team names and colors</span><button class="chip" id="steams">Edit teams</button></div>
   <div class="opt"><span>Rosters</span><button class="chip" id="sros">53 a team</button></div>
   </div><h2>Saves</h2><div class="grp">
   <div class="opt"><span>Back up, restore, erase</span><button class="chip" id="sdat">Open</button></div>
   </div><h2>Help</h2><div class="grp">
-  <div class="opt"><span>About</span><button class="chip" id="sabt">v${VERSION}</button></div>
+  <div class="opt"><span>What’s new</span><button class="chip" id="snew">v${VERSION}</button></div>
+  <div class="opt"><span>About</span><button class="chip" id="sabt">Credits</button></div>
   ${chip('stp','Control tips',SET.tips&&Object.keys(SET.tips).length?'Show again':'On')}
   ${navigator.vibrate?chip('shp','Vibration',SET.hap!==false?'On':'Off'):''}</div></div>`;
       const on = (id, f) => {
@@ -6823,6 +6845,8 @@
       $('#sros').onclick = () => showRosters(SET.me || 0);
       $('#sdat').onclick = () => showData();
       $('#sabt').onclick = showAbout;
+      $('#srul').onclick = () => showRules(showSettings, 'Settings');
+      $('#snew').onclick = () => showNews(showSettings, 'Settings');
       scr.querySelectorAll('#acc button').forEach(b => b.onclick = () => {
         SET.acc = b.dataset.a;
         save('pg.settings', SET);
@@ -7060,6 +7084,85 @@
   }
 
   /* ---------- about ---------- */
+  /* The rule book: every rule the game plays by, in the pro game's own terms. Kept beside the rules themselves so a
+     change to one is a change to the other. */
+  const RULES = [
+    ['The game', 'clock', [
+      ['clock', 'Four quarters', 'Four quarters with a halftime after the second. The teams change ends after the first and third. You set the quarter’s length in Settings (the pro game plays 15 minutes).'],
+      ['two', 'Coin toss', 'A captain calls heads or tails. The winner takes the ball or defers to the second half.'],
+      ['run', 'Downs', 'Four downs to gain ten yards. Make it and the count starts again; fail on fourth down and the other side takes over at that spot.'],
+      ['tag', 'The spot', 'The ball is placed where the runner went down, never wider than the hash marks. A close spot can be given wrong: see Replay.'],
+      ['pause', 'Play clock', '40 seconds after an ordinary play, 25 after anything that stopped the game (a change of possession, a kick, a score, a flag, a timeout). Let it run out: delay of game, 5 yards.'],
+      ['clock', 'When the clock stops', 'On an incomplete pass, a score, a change of possession, a timeout and a flag. A runner out of bounds stops it only until the ball is set, except in the last 2 minutes of the first half and the last 5 of the game, when it waits for the snap.'],
+      ['voice', 'Two-minute warning', 'The clock stops at 2:00 of the second and fourth quarters, and of an overtime period.'],
+      ['clock', 'Timeouts', 'Three a half. One gives back the seconds that ran off after the last play.'],
+      ['post', 'Kneel and spike', 'A kneel loses a yard and runs 40 seconds off. A spike stops the clock and costs the down.']]],
+    ['Scoring', 'star', [
+      ['ball', 'Touchdown · 6', 'The ball across the goal line in a runner’s hands, or caught in the end zone.'],
+      ['post', 'Extra point · 1', 'A kick snapped from the 15: a 33-yard kick.'],
+      ['two', 'Two-point try · 2', 'One play from the 2-yard line in place of the kick. No clock, no flags.'],
+      ['post', 'Field goal · 3', 'A miss gives the other side the ball where it was kicked from (seven yards behind the line), or at its own 20 if that is better for it.'],
+      ['shield', 'Safety · 2', 'The ball carrier is downed in his own end zone. His side then kicks the ball away from its own 20: a free kick.']]],
+    ['Kicks', 'post', [
+      ['post', 'Kickoff', 'From the kicking side’s 35. Its ten cover men line up on the other 40; the receivers stand on their 35 with two men back deep. Nobody but the kicker and the men back deep moves until the ball is fielded.'],
+      ['catch', 'Landing zone', 'The kick must come down between the goal line and the 20. Short of it: receivers’ ball at their 40. Into the end zone in the air: a touchback to the 35.'],
+      ['loose', 'Onside kick', 'A side that is behind may try one before any kickoff. It must say so first, and about one in eight is won back.'],
+      ['catch', 'Punts', 'A fair catch takes the ball where it lands: no return, no hit. A punt into the end zone comes out to the 20. A dropped punt is a live ball for either side.'],
+      ['hit', 'Blocked kicks', 'About one field goal in fifty and one punt in 125 is blocked at the line. The other side takes over there.'],
+      ['shield', 'Turnover in the end zone', 'An interception or fumble downed in the end zone comes out to the 20.']]],
+    ['Overtime', 'clock', [
+      ['clock', 'Regular season', 'One period, two thirds of a quarter long (ten minutes in the pro game). Both sides get the ball. If the second side ends its turn ahead, or the first is ahead after both, the game is over; level after both, the next score wins. Still level at the end: a tie.'],
+      ['star', 'Playoffs', 'The same, but there are no ties: periods are played until somebody wins.']]],
+    ['Flags', 'flag', [
+      ['flag', 'Before the snap · 5 yards', 'False start, offside, illegal formation and delay of game. The down is played again.'],
+      ['arm', 'Holding', 'On the offense: 10 yards and the down again. On the defense: 5 yards and an automatic first down.'],
+      ['eye', 'Pass interference', 'On the defense: the ball at the spot of the foul and an automatic first down (the 1 if it was in the end zone).'],
+      ['hit', '15 yards and a first down', 'Roughing the passer, roughing the kicker, a facemask and unnecessary roughness (a late hit out of bounds).'],
+      ['ball', 'Intentional grounding', 'A throw to nobody from inside the pocket to escape a sack: loss of down and the ball back where he threw it, at least 10 yards.'],
+      ['run', 'Block in the back', 'On a kick or punt return: 10 yards from where the return ended. A return for a touchdown can be called back.'],
+      ['split', 'Half the distance', 'No penalty moves the ball more than half way to the goal line.'],
+      ['flag', 'Offsetting fouls', 'When both sides foul on one play nothing is walked off and the down is played again.'],
+      ['voice', 'Free play', 'A defender who jumps offside as the ball is snapped gives the offense a play with nothing to lose: keep the result or take the 5 yards.']]],
+    ['Replay', 'eye', [
+      ['eye', 'Challenges', 'A spot within half a yard of the line to gain can be challenged by the side it went against. Two a game; win one and you get a third. Lose one and it costs a timeout.'],
+      ['tag', 'Booth review', 'After the two-minute warning of either half and in overtime nobody may challenge: the booth looks itself and puts a wrong spot right for free.']]],
+    ['The season', 'book', [
+      ['book', 'Schedule', '32 teams in two conferences of four divisions. 17 games in 18 weeks with one week off: every division rival twice, the rest spread across both conferences.'],
+      ['star', 'Playoffs', 'Seven from each conference: the four division winners seeded 1 to 4 by record, then the three best of the rest. The top seed sits out the first round, and the better seed plays at home.'],
+      ['split', 'Tie-breaks', 'Level on record: the winner of their meetings, then the record inside the division (for two of the same division), then inside the conference, then points.'],
+      ['man', 'Rosters', '53 men a team wearing numbers allowed for their positions. An injured man is replaced by the next at his position.']]]
+  ];
+
+  /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
+     players see. */
+  const NEWS = [
+    ['1.3', 'November 2026', ['Rule book: every rule the game plays by, in Settings and How to play', 'This page', 'Blocked punts', 'A return for a touchdown can be called back for a block in the back', 'An onside kick can be tried any time you are behind']],
+    ['1.2', 'November 2026', ['Players stay on the field between plays and walk to the next huddle; nobody is dropped into place', 'Kicking units run on from the sideline', 'Blocked field goals, fouls on returns, offsetting fouls']],
+    ['1.1', 'November 2026', ['The league’s current kickoff line-up', 'A free kick from the 20 after a safety', 'Play clock of 40 and 25 seconds', 'Booth review late in each half, and a third challenge for winning one', 'Full stat sheet: first downs, third downs, sacks, penalties, possession, passer rating, defense and punting', 'Standings with division and conference records and streaks']],
+    ['1.0', 'November 2026', ['Each team’s own kicker and punter', 'Injury substitutes from the 53', 'Save backup, restore and erase', 'Rosters for all 32 teams', 'Rag doll falls and gang tackles', 'Walks, jogs and runs drawn from motion capture', '17-game schedule with a week off and seven-team playoffs']]
+  ];
+
+  function showRules(back = showMenu, from = 'Menu') {
+    const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${HOW_ICON[k] || HOW_ICON.tag}</svg>`;
+    scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ ${from}</button><h1 class="sm">Rule book</h1>
+  <div class="hwj">${RULES.map(([t, k], i) => `<button data-j="rl${i}">${ico(k)}<span>${t}</span></button>`).join('')}</div>
+  ${RULES.map(([t, , items], i) => `<h2 id="rl${i}">${t}</h2><div class="hws">${items.map(([k, n, d]) => `<div class="hw"><i>${ico(k)}</i><div><b>${n}</b><p>${d}</p></div></div>`).join('')}</div>`).join('')}
+  <p class="note">Penalties can be switched off in Settings. Blocked kicks, fouls on returns and offsetting fouls happen only in games you watch or play, not in simulated ones.</p></div>`;
+    $('#bk').onclick = () => back();
+    scr.querySelectorAll('.hwj button').forEach(b => b.onclick = () => {
+      const el = $('#' + b.dataset.j);
+      if (el) el.scrollIntoView({ block: 'start' });
+    });
+  }
+
+  function showNews(back = showMenu, from = 'Menu') {
+    scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ ${from}</button><h1 class="sm">What’s new</h1>
+  ${NEWS.map(([v, when, items], i) => `<h2>Version ${v}${i ? '' : ' · now'}<small class="nwd">${when}</small></h2><div class="grp nws">${items.map(t => `<div class="opt"><span>${t}</span></div>`).join('')}</div>`).join('')}</div>`;
+    $('#bk').onclick = () => back();
+    SET.seen = VERSION;
+    save('pg.settings', SET);
+  }
+
   function showAbout() {
     const alone = window.matchMedia && matchMedia('(display-mode: standalone)').matches || navigator.standalone;
     scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ Settings</button><h1>Pocket<wbr><em>Football</em></h1>
@@ -7120,14 +7223,14 @@
       ['book', 'Playbooks', 'Every team has its own offense (air raid, power run, pistol option, spread and more) and nine formations to call from, and coaches do not like to repeat themselves: expect a different look most snaps.'],
       ['post', 'Special', 'The Special tab has punts, field goals (stop the marker in the green), kneel and spike.'],
       ['voice', 'Hard count', 'Hard count, before the snap, barks a fake snap count: now and then a defender jumps offside for five free yards, and once in a while your own lineman flinches instead. One try a play.'],
-      ['two', 'After a touchdown', 'After your touchdown you choose: kick for one point, or one play from the 2-yard line for two. Trailing late, you can try an onside kick.'],
+      ['two', 'After a touchdown', 'After your touchdown you choose: kick for one point, or one play from the 2-yard line for two. Whenever you are behind, you can try an onside kick.'],
       ['clock', 'Time out', 'Time out (three a half) gives back the seconds that ran off after a play. Tap it right after the whistle or on the play-call sheet.']]],
     ['Defense', 'shield', [
       ['shield', 'Coverage', 'Before the snap, Audible steps through the coverage calls. Switch jumps to the defender nearest the ball. Dive makes the tackle.'],
       ['hit', 'Hit and strip', 'Hit is a short, hard lunge that can jar the ball loose but leaves you on the ground if you miss. Strip swipes at the ball: less sure as a tackle, more likely to force a fumble.'],
       ['catch', 'Fair catch', 'On a punt to you, Fair catch takes the ball where it lands with no return and no hit; a dropped punt is a live ball.'],
       ['loose', 'Fumbles', 'A fumble is a live ball: run to it and Dive on it before the other team does.'],
-      ['flag', 'Flags', 'Flags are thrown now and then: false start, offside, holding and pass interference. Settings can turn penalties off.'],
+      ['flag', 'Flags', 'Flags are thrown now and then; the Rule book lists every one. Settings can turn penalties off.'],
       ['rain', 'Weather', 'Rain and snow make the ball harder to catch and easier to fumble, and field goals harder.'],
       ['eye', 'Play the ball', 'Stand where a pass will land to break it up or pick it off.']]],
     ['Career', 'man', [
@@ -7147,6 +7250,7 @@
     const ico = k => `<svg viewBox="0 0 24 24" aria-hidden="true">${HOW_ICON[k]}</svg>`, caps = l => `<div class="kcs">${l.map(([k, a]) => `<span class="kc"><kbd>${k}</kbd>${a}</span>`).join('')}</div>`;
     const secs = HOW.map(([t, , items], i) => `<h2 id="hw${i}">${t}</h2><div class="hws">${items.map(([k, n, d]) => `<div class="hw"><i>${ico(k)}</i><div><b>${n}</b><p>${d}</p></div></div>`).join('')}</div>`).join('');
     scr.innerHTML = `<div class="menu read"><button class="back" id="bk">‹ Menu</button><h1 class="sm">How to play</h1>
+  <div class="row2" style="margin:0 0 8px"><button class="btn2" id="hrl">Rule book</button><button class="btn2" id="hnw">What’s new</button></div>
   <div class="hwj">${HOW.map(([t, k], i) => `<button data-j="hw${i}">${ico(k)}<span>${t}</span></button>`).join('')}<button data-j="hwk">${ico('tag')}<span>Keys</span></button><button data-j="hwp">${ico('drag')}<span>Controller</span></button></div>
   ${secs}
   <h2 id="hwk">Keyboard</h2>${caps(HOW_KEYS)}<p class="note">Hold 1–5 to build throw power, let go to throw. The mouse wheel zooms too. On the menus and the play call: arrows move, Enter picks, Esc goes back, Q and E change tabs.</p>
@@ -7154,6 +7258,8 @@
   ${HOW_PAD.map(([t, l]) => `<h3 class="kch">${t}</h3>${caps(l)}`).join('')}
   <ul class="how" style="margin-top:10px"><li>The buttons beside the field show which controller button does what (on a PlayStation controller, its shapes).</li><li>As a receiver, A calls for the ball.</li><li>On the menus and the play-call sheet the d-pad moves a ring, A picks, B goes back, LB and RB change tabs, LT and RT page through the plays, the right stick scrolls.</li></ul></div>`;
     $('#bk').onclick = showMenu;
+    $('#hrl').onclick = () => showRules(showHow, 'How to play');
+    $('#hnw').onclick = () => showNews(showHow, 'How to play');
     scr.querySelectorAll('.hwj button').forEach(b => b.onclick = () => {
       const el = $('#' + b.dataset.j);
       if (el) el.scrollIntoView({ block: 'start' });
