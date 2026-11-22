@@ -999,7 +999,7 @@
   }
 
   function setupPlay(shift) {
-    const was = shift ? Object.fromEntries(P.map(p => [p.team + p.role, [p.x, p.y]])) : null, selRole = shift && G.sel ? G.sel.role : null;
+    const was = shift ? Object.fromEntries(P.map(p => [p.team + p.role, [p.x, p.y]])) : null, selRole = shift && G.sel ? G.sel.role : null, stood = shift ? null : stoodNow();
     if (!shift) {
       if (!AUTO && !QUIET && G.op.cat !== 'special') healStep();
       G.cadence = false;  // the quarterback has not called it out yet
@@ -1146,7 +1146,8 @@
       }
       return;
     }
-    if (!AUTO && !QUIET && !kick) {
+    if (stood) walkOn(stood);  // from where they stood after the last play (or from the sideline)
+    else if (!AUTO && !QUIET && !kick) {
       // break the huddle: both sides start bunched up and jog to their spots
       let io = 0, id = 0;
       for (const p of P) {
@@ -1336,6 +1337,65 @@
     m.go = true;
     G.pad = null;  // the button goes: one man in motion a play
   }
+
+  /* ---------- between plays: nobody vanishes, and nobody is dropped into place ----------
+     When a play is over the men who were on the field stay on it: they walk (jog, when it is a long way) to where
+     the next huddle forms, and the next line-up takes each man from where he then stands. A man who comes on for the
+     next play (the kicking unit, a substitute) runs on from his own sideline. Not in simulations or drills. */
+  const tween = () => !AUTO && !QUIET && !G.drill;
+  function keepOn() {
+    const old = P;
+    P = [];
+    if (!tween() || !old.length || !G.ros) return;
+    const ko = G.pendKO, off = G.poss, dir = off === 0 ? 1 : -1, n = [0, 0];
+    for (const o of old) {
+      if (!G.ros[o.team] || !G.ros[o.team][o.role]) continue;
+      const m = mkP(o.team, o.role, clamp(o.x, 0.5, FW - 0.5), clamp(o.y, -8, 108)), isO = m.team === off, a = n[m.team]++ / 11 * 6.283, r = isO ? 1.9 : 3.2;
+      for (const k of ['num', 'name', 'first', 'bk', 'look', 'hero', 'capt']) if (o[k] !== undefined) m[k] = o[k];
+      if (ko != null) {
+        // a kickoff is next: each side gathers on its own half of the kick
+        const own = ko === 0 ? 0 : 100, d2 = ko === 0 ? 1 : -1;
+        m.sx = FW / 2 + Math.cos(a) * 7;
+        m.sy = own + d2 * (m.team === ko ? 30 : 66) + Math.sin(a) * 2.5;
+      } else {
+        m.sx = clamp(G.bx + Math.cos(a) * r, 1, FW - 1);
+        m.sy = G.los + dir * (isO ? -8.5 : 6) + Math.sin(a) * r * 0.7;
+      }
+      const dd = hyp(m.sx - m.x, m.sy - m.y);
+      m.jog = dd > 0.3 ? clamp(dd / 3.5, 2.4, 10) : 0;  // a walk for a few yards, a jog for a long way
+    }
+  }
+
+  /* the new line-up starts from where the men stood: the same man if he is still on, else the nearest of his side
+     who went off, else from the sideline. Each jogs to his spot; a long way is covered quicker, never in a blink. */
+  function walkOn(stood) {
+    const left = stood.slice(), todo = [];
+    const take = (p, same) => {
+      let b = -1, bd = 1e9;
+      left.forEach((w, i) => {
+        if (w.t !== p.team || (same && w.r !== p.role)) return;
+        const d = hyp(w.x - p.sx, w.y - p.sy);
+        if (d < bd) {
+          bd = d;
+          b = i;
+        }
+      });
+      return b < 0 ? null : left.splice(b, 1)[0];
+    };
+    const place = (p, w) => {
+      p.x = w.x;
+      p.y = w.y;
+      const dd = hyp(p.sx - p.x, p.sy - p.y);
+      p.jog = dd > 0.15 ? dd / clamp(dd / 9, 1.1, 2.6) : 0;
+    };
+    for (const p of P) {
+      const w = take(p, true);
+      if (w) place(p, w);
+      else todo.push(p);
+    }
+    for (const p of todo) place(p, take(p, false) || { x: p.team === 0 ? 0.6 : FW - 0.6, y: clamp(p.sy, 28, 72) });
+  }
+  const stoodNow = () => (tween() ? P.map(p => ({ t: p.team, r: p.role, x: p.x, y: p.y })) : null);
 
   function jogIn(dt) {
     for (const p of P) {
@@ -3255,6 +3315,18 @@
         setBall(t, ez ? (ps.punt ? (t === 0 ? 20 : 80) : t === 0 ? KTB : 100 - KTB) : y, x);  // a punt downed in the end zone still comes out to the 20
         if (ry >= 30) react(t, 0.8, 2.5);
         if (me && c === me && !ez) retStat(ry, false);
+        if (!ez && ry >= 8 && watched() && Math.random() < 0.07) {
+          /* a block in the back on the return: ten yards against the returning side from where he was brought down
+             (half the distance near its own goal) */
+          const room = t === 0 ? y : 100 - y, yd = Math.max(1, Math.min(10, Math.floor(room / 2)));
+          setBall(t, y - (t === 0 ? 1 : -1) * yd, x);
+          big = 'Flag';
+          sub = `Illegal block in the back, ${tname(t)} · ${yd} yards off the return`;
+          ts(t).pen++;
+          ts(t).peny += yd;
+          G.adm = true;
+          refCall(`Illegal block in the back, receiving team. ${yd} yard penalty.`, t, 0.6, ['ref.yd.' + yd]);
+        }
       } else if (t !== off && ps.fum && ps.fum.scoop) {
         stop = true;
         big = 'Fumble!';
@@ -3348,9 +3420,9 @@
         if (off === 0) snd('chime');
         react(off, 0.9, 3);
       } else {
-        big = 'No good';
+        big = ps.kick.blocked ? 'Blocked!' : 'No good';
         G.sig = 'inc';
-        sub = `${d}-yard attempt` + (ps.kick.post ? ' · off the upright' : '');
+        sub = `${d}-yard attempt` + (ps.kick.blocked ? ' · a hand got up at the line' : ps.kick.post ? ' · off the upright' : '');
         stop = true;
         react(1 - off, 0.7, 2);
         setBall(1 - off, off === 0 ? Math.min(los - 7, 80) : Math.max(los + 7, 20), FW / 2);  // a miss gives the other side the ball at the spot of the kick (seven yards behind the line), or at its own 20 if that is better
@@ -3553,12 +3625,36 @@
     const off = ps.offTeam, dir = off === 0 ? 1 : -1;
     ps.flagged = true;
     G.adm = true;
+    /* Now and then both sides have fouled on the same play: the fouls offset, no yards are walked off and the down is
+       played again from where it started (watched games only, off the game's generator). */
+    const offs = watched() && Math.random() < 0.06;
     ts(team).pen++;
-    ts(team).peny += parseInt(text, 10) || 0;
-    if (first && team !== off) ts(off).fd++;
+    if (offs) ts(1 - team).pen++;
+    else {
+      ts(team).peny += parseInt(text, 10) || 0;
+      if (first && team !== off) ts(off).fd++;
+    }
     for (const p of P) {
       p.eng = null;
       p.block = null;
+    }
+    if (offs) {
+      const other = team === off ? 'Unnecessary roughness' : 'Holding';
+      G.los = clamp(ps.los, 1, 99);
+      G.togo = Math.max(1, (ps.fd - G.los) * dir);
+      G.last = 'Offsetting fouls';
+      G.sig = null;
+      G.rp = false;
+      G.runoff = 0;
+      ps.after = 0;
+      G.state = 'dead';
+      G.deadT = 2.1;
+      banner('Flags', `Offsetting fouls · ${name}, ${tname(team)} · ${other}, ${tname(1 - team)} · replay the down`, 2200);
+      snd('whistle');
+      refCall('Offsetting fouls. Replay the down.', G.home === 0 ? 1 : 0, 0.3, ['ref.rep' + G.down]);
+      hudKey = '';
+      updHud();
+      return;
     }
     if (first) setBall(off, y, x);
     else {
@@ -4138,7 +4234,7 @@
     G.pc = G.adm || G.pcN !== G.possN ? PC_ADM : PC;  // the play clock starts again: 25 seconds after a stoppage or a change of possession, 40 otherwise
     G.adm = false;
     G.pcN = G.possN;
-    P = [];
+    keepOn();
     ps = null;
     G.me = null;
     G.celeb = null;
@@ -4159,7 +4255,10 @@
       const t = G.pendKO, k = 1 - t;  // t receives, k kicks
       const free = !!G.freeK;
       G.freeK = false;
-      if (!free && !G.drill && lateAndBehind(k)) return k === 0 && !AUTO && !G.lock ? showOnside(k) : onside(k);  // your call, or the computer's (it always tries)
+      /* your call whenever you trail in the fourth quarter or overtime (the league lets a trailing side declare one);
+         the computer tries only when it is late and close */
+      const yours = k === 0 && !AUTO && !G.lock;
+      if (!free && !G.drill && (yours ? G.q >= 4 && G.score[k] < G.score[1 - k] : lateAndBehind(k))) return yours ? showOnside(k) : onside(k);
       G.pendKO = null;
       if (!AUTO && !G.drill) {
         beginKickoff(t, free);  // in a career, your team's kickoffs are yours too, and theirs when you return kicks
@@ -4382,7 +4481,7 @@
     if (watched() && G.patKick == null && Math.random() < 0.012) ps.rk = freeSnap();  // a rusher runs into the kicker after the ball is away
     let x1, y1, T, h;
     if (G.op.n === 'Field Goal') {
-      const d = ((off === 0 ? 100 : 0) - los) * dir + 17, thr = clamp(0.22 + Math.max(0, d - 22) * 0.019, 0.22, 0.96), good = acc >= thr + G.wx.kick && d <= 63, sg0 = rnd() < .5 ? -1 : 1, sg = aim === undefined || Math.abs(aim) < 0.01 ? sg0 : (aim > 0) === (off === 0) ? 1 : -1;  // a swipe to the kicker's right misses right
+      const d = ((off === 0 ? 100 : 0) - los) * dir + 17, thr = clamp(0.22 + Math.max(0, d - 22) * 0.019, 0.22, 0.96), blk = watched() && G.patKick == null && Math.random() < 0.02, good = !blk && acc >= thr + G.wx.kick && d <= 63, sg0 = rnd() < .5 ? -1 : 1, sg = aim === undefined || Math.abs(aim) < 0.01 ? sg0 : (aim > 0) === (off === 0) ? 1 : -1;  // a swipe to the kicker's right misses right
       x1 = FW / 2 + sg * (good ? (1 - acc) * 3.5 : 4.4 + rnd(3));
       y1 = (off === 0 ? 110 : -10) + dir * 10;
       T = 1.5 + d * 0.014;
@@ -4397,6 +4496,15 @@
       if (d <= 63 && Math.abs(acc - thr - G.wx.kick) < 0.03 && sp > 0.3 && sp < 0.95) {
         x1 = k.x + (FW / 2 + sg * 3.1 - k.x) / sp;  // aimed so that it is at the upright as it crosses the goal line's back edge
         ps.kick.post = { s: sp, sg, y: py, hit: false };
+      }
+      if (blk) {
+        // a hand gets up at the line (about one field goal in fifty, watched games only): it goes nowhere
+        ps.kick.post = null;
+        ps.kick.blocked = true;
+        x1 = k.x + sg * 3;
+        y1 = los + dir * 3;
+        T = 0.6;
+        h = 2.5;
       }
     } else {
       const toGoal = off === 0 ? 100 - los : los;
@@ -4575,6 +4683,7 @@
 
   function beginKickoff(recv, free) {
     scr.innerHTML = '';
+    const stood = stoodNow();
     /* A kickoff lines up as the pro game does now: the kicker alone at his 35, his ten cover men across the other
        side's 40, at least seven of the receiving side on their 35 with the rest just behind, two men back deep. Nobody
        but the kicker and the men back deep moves until the ball is fielded or lands (see kickTick). A free kick after
@@ -4602,6 +4711,7 @@
     const ly = own + dir * (free ? rnd(12, 26) : rnd(-2, 10)), lx = clamp(FW / 2 + rnd(-12, 12), 6, FW - 6);
     ps = { t: 0, mode: 'ko', offTeam: recv, qb: null, carrier: null, thrown: false, air: null, caught: false, handoff: true, open: true, turnover: true, think: 0, scr: false, runner: null, recs: [], pa: false,
       los: ky, fd: ky, bx: FW / 2, drop: null, kick: null, passer: null, tgt: null, tackler: null, ret, land: ly, ko: { x: lx, y: ly, tb: (ly - own) * dir < 0, dyn, free: !!free } };
+    if (stood) walkOn(stood);
     G.state = 'pre';
     G.preT = 0;
     camUpd(0, true);
@@ -5075,6 +5185,7 @@
           else if (G.me) G.preT = 99;
         } else if (G.poss === 0) snap();
       } else if (G.state === 'kickm') {
+        if (P.some(p => p.jog)) return;  // the unit is still running on
         const pos = 0.5 + 0.5 * Math.sin(G.meter * 4.2);
         doKick(1 - Math.abs(pos - 0.5) * 2);
       }
@@ -5357,6 +5468,7 @@
   const koMine = () => G.state === 'pre' && !!ps && ps.mode === 'ko' && ps.offTeam === 1 && !G.drill;  // your team is kicking off (in a career too)
 
   function kickBySwipe(dx, dy, ms) {
+    if (tween() && P.some(p => p.jog) && (G.state === 'kickm' || G.preT < 6)) return;  // the kick waits for the men to be set
     const H = cv.clientHeight || 600, len = Math.hypot(dx, dy), pw = clamp(0.55 * len / (0.42 * H) + 0.45 * (len / Math.max(60, ms)) / 2.2, 0, 1.15), aim = Math.atan2(dx, -dy);
     if (G.state === 'kickm') {
       const fg = G.op.n === 'Field Goal', d = ((G.poss === 0 ? 100 : 0) - ps.los) * G.dir + 17, need = clamp((d - 12) / 52, 0.15, 1);
@@ -7835,7 +7947,8 @@
       /* the matchup stays up while the play-by-play man welcomes everybody in; a tap still skips it */
       const b = G.introT > 3.8 && G.introT < 7 && PG.audio && PG.audio.booth;
       if (G.introT > 3.8 && !(b && b.now && /^intro\.(?!away|home)/.test(b.now))) endIntro();
-    } else if (st === 'pre') {
+    } else if (st === 'call' || st === 'kickm') jogIn(dt);  // the walk to the huddle, and the kicking unit running on
+    else if (st === 'pre') {
       G.preT += dt;
       jogIn(dt);
       if (ps.mot && !ps.mot.go && G.cadence && G.preT > 0.9 && !P.some(p => p.jog)) ps.mot.go = true;
@@ -7855,12 +7968,13 @@
         if (koMine() && !AUTO) {
           G.meter += dt;
           if (G.preT > 8) kickoffBy(0.82, 0);  // nobody swiped: a standard kick
-        } else if (G.preT > 1.5) kickNow();
+        } else if (G.preT > 1.5 && !(tween() && G.preT < 6 && P.some(p => p.jog))) kickNow();
       } else {
         /* the computer snaps for itself, and for the user when their player is not the quarterback */
         const auto = AUTO || (G.lock ? G.me !== ps.qb : G.poss === 1), wait = AUTO ? 0.3 : G.drill && G.drill.script ? 5 : G.watch && !G.me ? 1.7 : G.lock && ps.mode !== 'kick' ? 3.4 : 2.2;
         const set = ((!ps.mot || ps.mot.ready) && (!ps.sh || ps.sh.ph === 'done')) || G.preT > wait + 8;  // a man in motion: the snap comes when he gets there (a jet, as he passes the ball); a shift: after the second set
-        if ((auto && G.preT > wait && set) || (ps.mot && ps.mot.sweep && ps.mot.ready)) snap();  // a jet sweep is snapped on his timing, whoever is the quarterback
+        const here = AUTO || G.preT > wait + 6 || !P.some(p => p.jog);  // nobody is snapped to his spot: the snap waits for the last man
+        if ((auto && G.preT > wait && set && here) || (ps.mot && ps.mot.sweep && ps.mot.ready)) snap();  // a jet sweep is snapped on his timing, whoever is the quarterback
       }
     } else if (st === 'replay') replayStep(dt);
     else if (st === 'live') {

@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `ec200f7`, before players walking between plays (no emptied field, no line-ups dropped in place) and blocked kicks, return fouls, offsetting fouls (2026-11-21).
   - `3d5f88d`, before the closer-to-the-pro-game pass (current kickoff line-up, free kick after a safety, 40/25 play clock, booth review, full stat sheet, standings columns) (2026-11-21).
   - `ab8d814`, before the rounding-out pass (real kickers and punters, roster substitutes for injuries, Settings › Saves, About and Rosters) (2026-11-21).
   - `91e87af`, before gang tackles (joining defenders hit high and beside, a beat apart; the runner feels each) (2026-11-21).
@@ -3388,6 +3389,26 @@ six were done as the pro game has them; the choices where there was one are mine
   ways; a staged booth review and third challenge; play clock 40 / 25; possession summed to the game's length; audit
   empty at 320x568, 390x844, 740x360, 667x375, 1280x800. Not done: an onside kick may still be tried only late
   (the league now lets a trailing side declare one at any time); blocked kicks; fouls on returns; offsetting fouls.
+
+- 2026-11-21: no teleporting between plays, and the last four rules (the owner: "no teleporting and floating ...
+  play after play they have to walk to the spot not float over"; and "continue" on the four rules left over).
+  Between plays (`keepOn`, `walkOn`, `stoodNow`, `tween` in `game.js`): the field used to be emptied when the
+  play-call sheet opened, and the next line-up appeared in a huddle (or, for kicks and kickoffs, already in place).
+  Now the men who were on the field stay on it and walk (jog, for a long way) to where the next huddle forms while
+  the sheet is up; the next line-up takes each man from where he stands (the same man, else the nearest of his side
+  who went off, else his own sideline) and he jogs to his spot in 1.1 to 2.6 seconds by distance. Kicking units and
+  kickoffs run on the same way. The snap and the kick wait for the last man instead of dropping him on his spot.
+  Watched games only: simulations and drills are as before. A tackled man is simply on his feet when the walk
+  starts (there is no get-up move yet).
+  Rules: your onside kick is offered whenever you trail in the fourth quarter or overtime (was only the last
+  minute or so; the computer still tries only late); a field goal is blocked about one time in fifty
+  (`ps.kick.blocked`); a block in the back on about one return in fourteen of eight yards or more, ten yards from
+  where the returner went down; offsetting fouls on about one after-play flag in seventeen (down replayed). The
+  last three are watched games only and off the game's generator, so the fingerprint is unchanged. Version 1.2.
+  Checked: fingerprint; `X.exh(6)`, `X.career` QB and WR, `X.season(1)` clean; in a staged game 22 men were on the
+  field with the sheet up and moving to the huddle, and jogging in from there after the call. Not watched on
+  screen (the test pane's screenshots lag a frame behind): judge the walk by eye on the phone. Blocked punts and a
+  foul that brings back a return touchdown are not in.
 
 ## Morning hand-off
 
