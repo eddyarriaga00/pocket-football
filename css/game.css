@@ -207,8 +207,8 @@ input{font:inherit;font-size:16px;color:var(--ink);background:var(--panel2);bord
 .home .kv>*{position:relative;max-width:62%}
 /* the in-game sheets carry a picture across the top, fading into the panel: the playbook on the play call, the
    scoreboard at halftime and full time */
-.sheet.call,.sheet.fin{position:relative;isolation:isolate;--pn:13,21,36}
-.sheet.call::before,.sheet.fin::before{content:"";position:absolute;top:0;left:0;right:0;height:150px;z-index:-1;border-radius:16px 16px 0 0;pointer-events:none;
+.sheet{position:relative;isolation:isolate;--pn:13,21,36;--art:url(../art/s-score.jpg)}
+.sheet::before{content:"";position:absolute;top:0;left:0;right:0;height:150px;z-index:-1;border-radius:16px 16px 0 0;pointer-events:none;
   background:linear-gradient(180deg,rgba(var(--pn),0) 0,rgba(var(--pn),.55) 55%,rgb(var(--pn)) 100%),linear-gradient(90deg,rgb(var(--pn)) 0,rgba(var(--pn),.9) 40%,rgba(var(--pn),.3) 100%),var(--art) right top/auto 150px no-repeat}
 .sheet.call{--art:url(../art/s-call.jpg)}
 .sheet.fin{--art:url(../art/s-score.jpg)}

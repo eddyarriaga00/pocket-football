@@ -187,6 +187,7 @@
   };
 
   function hub(tab) {
+    PG.rosterYear = Math.max(0, (S.year || 1) - 1);  // the league's rosters are the ones of this season
     tab = tab || 'table';
     const t = TEAMS[S.team];
     let sure = false;

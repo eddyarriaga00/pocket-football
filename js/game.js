@@ -6710,6 +6710,7 @@
   }
 
   function showMenu() {
+    PG.rosterYear = 0;  // outside a career or a season the rosters are the first year's
     if (G.state === 'menu') G.env = null;  // the stadium behind the menus is always a clear night
     toMenu();
     const cs = PG.career && PG.career.summary(), camp = PG.camp, offer = !!camp && camp.fresh() && !cs && !(PG.season && PG.season.summary());
@@ -7130,12 +7131,13 @@
       ['book', 'Schedule', '32 teams in two conferences of four divisions. 17 games in 18 weeks with one week off: every division rival twice, the rest spread across both conferences.'],
       ['star', 'Playoffs', 'Seven from each conference: the four division winners seeded 1 to 4 by record, then the three best of the rest. The top seed sits out the first round, and the better seed plays at home.'],
       ['split', 'Tie-breaks', 'Level on record: the winner of their meetings, then the record inside the division (for two of the same division), then inside the conference, then points.'],
-      ['man', 'Rosters', '53 men a team wearing numbers allowed for their positions. An injured man is replaced by the next at his position.']]]
+      ['man', 'Rosters', '53 men a team wearing numbers allowed for their positions. An injured man is replaced by the next at his position. Each new season in a career or a season everyone is a year older, the oldest retire, some are let go, and rookies take their places.']]]
   ];
 
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.7', 'November 2026', ['Rosters change every season: players age, the oldest retire and rookies take their places', 'Every in-game sheet has a picture across the top']],
     ['1.6', 'November 2026', ['A playbook picture on the play-call sheet', 'A scoreboard picture on the halftime and final sheets']],
     ['1.5', 'November 2026', ['Each box on the main menu has its own picture']],
     ['1.4', 'November 2026', ['A new home-screen icon', 'A title picture on the main menu']],

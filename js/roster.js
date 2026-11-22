@@ -68,7 +68,20 @@
   /* one team's 53, in depth-chart order within each position: [{ first, last, name, pos, num, age, d, slot, depth }]
      (d: his rating against the team's; slot: the engine slot he starts in, or null) */
   const fulls = new Set();  // every full name in the league, so none is used twice
+  /* The league's year: 0 is the roster as first made. Each year after it every man is a year older, the old and
+     some of the others are gone (retired or let go), and a rookie has each empty place: the draft and the turnover of
+     a real off-season. A mode sets PG.rosterYear (a career's or a season's year, less one); nothing is saved, the same
+     year always gives the same men. */
+  let YEAR = 0;
+  function sync() {
+    const y = Math.max(0, Math.min(40, (PG.rosterYear | 0)));
+    if (y === YEAR) return;
+    YEAR = y;
+    cache.clear();
+    fulls.clear();
+  }
   function team(ti) {
+    sync();
     if (cache.has(ti)) return cache.get(ti);
     if (!cache.size) for (let t = 0; t < TEAMS.length; t++) build(t);  // all built in one order, so the names are the same whichever team is asked for first
     return cache.get(ti) || build(ti);
@@ -94,6 +107,26 @@
       const d = starter ? Math.round(-9 + r() * 16) : Math.round(-6 - r() * 9);
       const age = Math.round(starter ? 24 + r() * 9 : 22 + r() * 7);
       out.push({ first, last, name: last, full: first + ' ' + last, pos, num, age, d, slot, depth: k + 1 });
+    }
+    for (let y = 1; y <= YEAR; y++) {
+      const q = gen(ti * 7919 + 1013 + y * 104729), pk = a => a[Math.floor(q() * a.length)];
+      for (const p of out) {
+        const st = !!p.slot || p.pos === 'K' || p.pos === 'P' || p.pos === 'LS';
+        p.age++;
+        p.rk = false;
+        if (p.age >= 37 || (p.age >= 32 && q() < 0.3) || q() < (st ? 0.05 : 0.14)) {
+          // gone: a rookie has his place and his number
+          lasts.delete(p.last);
+          let last = pk(LAST);
+          for (let tries = 0; lasts.has(last) && tries < 40; tries++) last = pk(LAST);
+          lasts.add(last);
+          let first = pk(FIRST);
+          for (let tries = 0; fulls.has(first + ' ' + last) && tries < 40; tries++) first = pk(FIRST);
+          fulls.add(first + ' ' + last);
+          Object.assign(p, { first, last, name: last, full: first + ' ' + last, age: 21 + Math.floor(q() * 3), d: st ? Math.round(-9 + q() * 12) : Math.round(-7 - q() * 8), rk: true });
+        } else if (p.age <= 26 && q() < 0.5) p.d = Math.min(9, p.d + 1);  // the young get better
+        else if (p.age >= 31 && q() < 0.6) p.d--;  // the old slow down
+      }
     }
     cache.set(ti, out);
     return out;
@@ -146,7 +179,7 @@
     const isStarter = p => !!p.slot || p.pos === 'K' || p.pos === 'P' || p.pos === 'LS';
     return `<p class="note" style="margin-top:0">${list.length} players · starters in bold</p>` + GROUPS.map(([g, ps]) => `<h3 class="rsh">${g}</h3><div class="rst">${list.filter(p => ps.includes(p.pos)).sort((a, b) => ps.indexOf(a.pos) - ps.indexOf(b.pos) || (isStarter(b) - isStarter(a)) || a.depth - b.depth).map(p => {
       const st = p.slot && o.stat ? o.stat(p.slot) : '';
-      return `<div class="${isStarter(p) ? 'st' : ''}${p.me ? ' me' : ''}"><i>${p.num}</i><b>${esc(p.full)}${st ? `<small>${esc(st)}</small>` : ''}</b><span>${p.pos}</span><em>${p.age}</em><u>${rtOf(p)}</u></div>`;
+      return `<div class="${isStarter(p) ? 'st' : ''}${p.me ? ' me' : ''}"><i>${p.num}</i><b>${esc(p.full)}${st || p.rk ? `<small>${esc(st || 'Rookie')}</small>` : ''}</b><span>${p.pos}</span><em>${p.age}</em><u>${rtOf(p)}</u></div>`;
     }).join('')}</div>`).join('');
   }
 

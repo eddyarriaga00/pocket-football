@@ -2169,6 +2169,7 @@
   }
 
   function showHub(tab) {
+    PG.rosterYear = Math.max(0, (C.season || 1) - 1);  // the league's rosters are the ones of this season
     recount();
     const note = C.recountNote;  // said once: on this visit to the hub, with a fanfare
     if (note) {

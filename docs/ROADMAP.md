@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `950edae`, before rosters that change between seasons and a picture on every sheet (2026-11-21).
   - `5b97c8b`, before the pictures on the play-call, halftime and final sheets (2026-11-21).
   - `218e878`, before the pictures in the main menu's five boxes (2026-11-21).
   - `05dc9ac`, before the new icon and the title picture on the main menu (2026-11-21).
@@ -3454,6 +3455,19 @@ six were done as the pro game has them; the choices where there was one are mine
   the sheet's `::before`, 150 and 190 px tall, fading down and left into the panel (`--pn` is the panel colour as
   three numbers). Fingerprint unchanged; audit with a played game empty at 320x568, 390x844, 740x360, 1280x800.
   Also: comments and notes tidied, and commits from here on carry no co-author line (the owner's wish).
+
+- 2026-11-21: rosters change between seasons, and a picture on every sheet. Version 1.7. `js/roster.js` has a
+  league year (`PG.rosterYear`, read by `sync()` on every lookup; 0 outside a career or a season, the mode's year
+  less one inside it, set in `showHub`, `hub` and `showMenu`). For each year past the first every man is a year
+  older; he leaves at 37, often from 32, and otherwise now and then (5% of starters, 14% of backups); a rookie of
+  21 to 23 takes his place and number; the young improve a point, the old lose one. Nothing is saved: the same year
+  gives the same men. Measured on one team: 8, 5, 8 and 10 rookies in years 1, 2, 5 and 10, the average age
+  between 25.7 and 27.5, 53 different numbers and surnames every year, year 0 unchanged. A rookie is marked in the
+  roster table. Not built: a draft screen for the league, trades, rookies of the user's own position competing with
+  him. Sheets: every `.sheet` now carries the scoreboard picture across the top (the play call keeps its playbook).
+  The get-up move asked about earlier was already there (`up` in render3d.js: the pile gets off and the runner
+  rises during the dead time). Checked: fingerprint; a QB career, two Season years (roster year 2 at the end)
+  clean; audit with a played game empty at 320x568, 390x844, 740x360, 1280x800.
 
 ## Morning hand-off
 
