@@ -91,7 +91,7 @@ what is next. Update it after every item.
   Shaders (GLSL), modules and rewrites are welcome where they buy visible quality. The site is still static
   hosting, so everything must end up as files a browser loads directly.
 - **After each item:** test, commit, `git push origin main`, then tick the item below and add a line to the log.
-  Since 2026-11-21 the game ships from GitHub only (the owner: "i don't want the claude copy anymore just the
+  Since 2026-11-21 the game ships from GitHub only (the owner: "i don't want the [single-file] copy anymore just the
   github push to main"): no single-file build, no artifact publish, and its 16 MiB limit no longer applies.
 - **No questions during automatic runs.** Decide, note the decision in the log, keep going.
 - **What the automatic loop is for** (the owner, 14:10 on 2026-11-12: "yes automatic improvement loop yes but make
@@ -115,7 +115,7 @@ what is next. Update it after every item.
 
 ## How to test
 
-1. Preview server: `.claude/launch.json` has a config named `game` that runs `python3 tools/serve.py 48231`
+1. Preview server: the local preview config has an entry named `game` that runs `python3 tools/serve.py 48231`
    (a no-cache server: plain `http.server` let the browser serve stale scripts after edits). The file is
    gitignored; recreate it if missing. Start it with the preview tool, open
    `http://localhost:48231/index.html`, set the mobile viewport (375x812).
@@ -3080,7 +3080,7 @@ six were done as the pro game has them; the choices where there was one are mine
   pocket-football, so the game is at https://eddyarriaga00.github.io/pocket-football/; the old address keeps working
   through a one-page repository named pocket-gridiron that forwards to the new one (keeping any ?query and #hash).
   Saves carry over: they belong to the site (eddyarriaga00.github.io), not the path. The one-file build is now
-  pocketfootball.html (the same Claude artifact), the service worker's cache pocketfootball-v1. Kept on purpose:
+  pocketfootball.html (the same single-file copy), the service worker's cache pocketfootball-v1. Kept on purpose:
   the saved-data keys (pg.*) and the code's PG namespace, which no player sees.
 
 - 2026-11-16 (night, "i dont care about the old links honestly u can remove them etc, anyways lets keep improving the
@@ -3354,7 +3354,7 @@ six were done as the pro game has them; the choices where there was one are mine
     download elsewhere), Copy as text, restore from a file or pasted text (checked: this game's keys only, each one
     readable; asks before replacing), and Erase everything behind a second tap. Backup format:
     `{ app: 'PocketFootball', v: 1, version, at, data: { 'pg.*': string } }`. Nothing leaves the device.
-    Inside another page (the copy published on claude.ai, which may not hand over a file) only Copy as text is
+    Inside another page (the embedded single-file copy, which may not hand over a file) only Copy as text is
     offered (`framed`).
   - **About** (Settings › About, `showAbout`): the version (`VERSION` in data.js, now 1.0: raise it when a release
     changes what players see), how to install to the home screen, that the league is fictional, and the credits
@@ -3426,8 +3426,8 @@ six were done as the pro game has them; the choices where there was one are mine
   the menu tagline's contrast over a bright scene. Checked: fingerprint; `X.exh(6)`, `X.career` QB and WR clean;
   audit (now walking the rule book and What's new) empty at all five sizes.
 
-- 2026-11-21: art from an image tool (the owner: "u can use claude on chrome to use chatgpt for any art", then "do
-  the menu and icon"). Version 1.4. Two pictures drawn by ChatGPT's image tool in his Chrome, prompted with no
+- 2026-11-21: art from an image tool (the owner asked for art from an image tool, then "do
+  the menu and icon"). Version 1.4. Two pictures drawn by an image tool, prompted with no
   name, no text, no logos and no yellow: a navy helmet with a white stripe and teal mask under floodlights (the
   home-screen icon: `icons/icon-512/192/180/32.png`; the old drawn `icon.svg` is gone so browsers show the new one)
   and a quarterback throwing in a night stadium (`art/title.jpg`, 1280 wide, 205 KB), shown behind the name at the
@@ -3436,8 +3436,8 @@ six were done as the pro game has them; the choices where there was one are mine
   originals are not in the repo. Checked: fingerprint; audit empty; looked at on 320x568, 390x844, 740x360 and
   1280x800. An installed home-screen icon may not change until the game is removed and added again.
 
-- 2026-11-21: pictures built into the menu's boxes (the owner: "i'm using the ai chatgpt to make custom boxes or
-  ui that is more integrated with things"). Version 1.5. Five more pictures from ChatGPT's image tool, same recipe
+- 2026-11-21: pictures built into the menu's boxes (the owner: "... make custom boxes or
+  ui that is more integrated with things"). Version 1.5. Five more pictures from the image tool, same recipe
   (subject in the right third, the left dark and empty, no text, no logos, no yellow): a player walking out of the
   tunnel (Career), a silver trophy in confetti (Season), two helmets nose to nose (Exhibition), cones and a sled
   (Training camp), a ball in a web of light (Online); `art/m-*.jpg`, 900 wide, 70 to 90 KB each. Each sits on the

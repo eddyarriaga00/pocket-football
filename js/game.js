@@ -6987,7 +6987,7 @@
     } catch (_) {}
   }
 
-  /* inside another page (the copy published on claude.ai) a page may not hand over a file: there the backup is text */
+  /* inside another page (an embedded copy) a page may not hand over a file: there the backup is text */
   const framed = (() => {
     try {
       return window.self !== window.top;
