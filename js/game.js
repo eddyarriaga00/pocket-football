@@ -5751,7 +5751,8 @@
       }
     } else GP.zoomT = 0;
     if (hit(GB.VIEW)) act('timeout');
-    if (G.pad === 'pass') {
+    const kind = G.pad || padKind();  // the buttons are being drawn again (the controller was just picked up): the press still counts
+    if (kind === 'pass') {
       [GB.A, GB.B, GB.X, GB.Y, GB.RB].forEach((b, i) => {
         if (hit(b)) act('num', i);
         if (rel(b)) endCharge(i);
@@ -5760,7 +5761,7 @@
       if (hit(GB.LT)) act('pump');
       return;
     }
-    const map = GMAP[G.pad] || {};
+    const map = GMAP[kind] || {};
     for (const k in map) if (hit(GB[k])) act(map[k]);
   }
 
@@ -7154,6 +7155,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.12', 'November 2026', ['Fixed: the first button press after picking a controller up in the middle of a play was lost']],
     ['1.11', 'November 2026', ['Fixed: a kick returner slid onto the ball as he caught it', 'Fixed: a deep safety could hop a yard at the snap near the goal line']],
     ['1.10', 'November 2026', ['Fixed: the aiming line on extra points and field goals had stopped moving']],
     ['1.9', 'November 2026', ['The pictures on the menu, the sheets and the icon are gone: the drawn icon and plain panels are back']],
@@ -8302,6 +8304,7 @@
         SEED = n | 0;
       },
       step, render, startCall, resolveChallenge, playScene, endScene, skipDrive, watching, beginKickoff, kickBySwipe,
+      foc: gpFocus, ui: uiLayer, inp: () => inp, input: IN, padKind,  // the ring and the input mode, for tools/inputs.js
       pad: dt => pollPad(dt || 0.016),  // one read of the controller (the test page fakes navigator.getGamepads)
       /* The play lab, for balancing the playbook: one offensive play run n times, headless, from first and ten at the
          35 (o.los, o.down, o.togo to change that) against the computer's defense or o.def, every other snap mirrored.

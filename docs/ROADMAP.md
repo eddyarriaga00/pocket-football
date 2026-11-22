@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `b077b95`, before the controller's first-press fix and the input tests (2026-11-22).
   - `e65774b`, before the returner and deep-safety hop fixes (2026-11-21).
   - `58b4546`, before the fix to the kick's aiming line (2026-11-21).
   - `601eab4`, before the generated pictures and icon were taken out (2026-11-21).
@@ -3528,6 +3529,26 @@ The owner: "bug test full game and such".
   quarters) usually ends level; with ten-minute quarters an overtime game was won 44-37.
 - The replay still rewinds men to where they were, which is what a replay is.
 - Not covered: nothing was looked at on screen or heard; controller and touch input; the online chat.
+
+### 2026-11-22: controller, keyboard and mouse tested (1.12)
+
+The owner: "make sure controller is fully good and keyboard and mouse".
+
+- New tool `tools/inputs.js` (load it after audit.js): `await I.reachAll()` walks every screen the audit walks and
+  checks the ring can get to every button with the d-pad or arrow keys; `I.game('pad'|'kb'|'mouse')` plays a whole
+  exhibition with that device alone (a made-up controller is handed to the game through `navigator.getGamepads`).
+  `I.bad` must stay empty. Test hooks added to `PG.dbg`: `foc`, `ui`, `inp`, `input`, `padKind`.
+- Results: 43 screens with buttons at 390x844 and 1280x800, every button reachable. A full game finished on each
+  device, picking every play with the ring (controller, keyboard) or a click (mouse). Checked one by one:
+  controller throw (hold and release), stick, sprint, right-stick zoom, Start pause, ring in the pause sheet,
+  B to close, View for a time out; keyboard number-key throw, arrows and WASD, Shift, zoom keys, P and Escape,
+  T; mouse press-and-release on a receiver, drag to move, wheel zoom, swipe to kick, the buttons beside the field.
+  Every button beside the field carried its key or controller label.
+- Found and fixed: when a controller was picked up in the middle of a play (or after the keyboard), the buttons
+  beside the field were being redrawn and that first press did nothing. `pollPad` now works out the button set
+  itself when it is not drawn yet.
+- Not covered: a real controller in the hand (rumble, a PlayStation pad's shapes, a non-standard layout), and
+  career, season and camp games by controller (their screens were reached, their games were not played with it).
 
 ## Morning hand-off
 

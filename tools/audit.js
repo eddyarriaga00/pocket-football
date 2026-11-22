@@ -198,6 +198,7 @@ window.A = (() => {
   const HUD = ['.bug', '.sub', '#mine', '#rp', '#toast', '#banner b', '#banner span', '#tip', '#brief', '#ptype', '#meter', '#pw', '#pad .pb', '.sheet', '.intro', '.dlg'];
 
   function check(where) {
+    if (window.A_HOOK) window.A_HOOK(where);  // tools/inputs.js looks at each screen as the audit reaches it
     const A = app().getBoundingClientRect(), found = [], add = (type, what, detail, sev) => {
       note(type, what, detail, where, sev);
       found.push(type + ' ' + what + ' ' + detail);
