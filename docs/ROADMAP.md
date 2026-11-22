@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `58b4546`, before the fix to the kick's aiming line (2026-11-21).
   - `601eab4`, before the generated pictures and icon were taken out (2026-11-21).
   - `9a00504`, before the walk between plays was always fast forward (2026-11-21).
   - `950edae`, before rosters that change between seasons and a picture on every sheet (2026-11-21).
@@ -3497,6 +3498,17 @@ The owner: "remove the ai images as well".
   in index.html and the manifest. The credit line for the pictures is gone from About.
 - Do not add generated pictures again unless he asks.
 - Checked: fingerprint unchanged; audit with a played game empty at 320x568, 390x844, 740x360 and 1280x800.
+
+### 2026-11-21: the kick's aiming line moves again (1.10)
+
+The owner: "extra point / kicks are broken right now it seems, the little line doesn't move left and right".
+
+- Cause: since version 1.2 the loop's `kickm` state was caught by the branch that walks the kicking unit on
+  (`call` or `kickm`: `jogIn`), so the later branch that advanced `G.meter` never ran. The line stood wherever it
+  started. The walk-on branch now advances the meter too, and the dead branch is gone.
+- Checked: fingerprint unchanged; in watched test games the meter gained 1.5 in 1.5 seconds on every user kick
+  and the line's position changed, while the unit was still running on and after.
+- Lesson: when a state is added to an earlier branch of the loop, look for a later branch with the same state.
 
 ## Morning hand-off
 

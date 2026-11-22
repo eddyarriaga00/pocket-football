@@ -7147,6 +7147,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.10', 'November 2026', ['Fixed: the aiming line on extra points and field goals had stopped moving']],
     ['1.9', 'November 2026', ['The pictures on the menu, the sheets and the icon are gone: the drawn icon and plain panels are back']],
     ['1.8', 'November 2026', ['The walk between plays is always shown fast forward', 'Fixed: defenders in a zone could jump sideways when a man went in motion']],
     ['1.7', 'November 2026', ['Rosters change every season: players age, the oldest retire and rookies take their places', 'Every in-game sheet has a picture across the top']],
@@ -8070,7 +8071,10 @@
       /* the matchup stays up while the play-by-play man welcomes everybody in; a tap still skips it */
       const b = G.introT > 3.8 && G.introT < 7 && PG.audio && PG.audio.booth;
       if (G.introT > 3.8 && !(b && b.now && /^intro\.(?!away|home)/.test(b.now))) endIntro();
-    } else if (st === 'call' || st === 'kickm') jogIn(dt);  // the walk to the huddle, and the kicking unit running on
+    } else if (st === 'call' || st === 'kickm') {
+      jogIn(dt);  // the walk to the huddle, and the kicking unit running on
+      if (st === 'kickm') G.meter += dt;  // the kick's aiming line keeps swinging
+    }
     else if (st === 'pre') {
       G.preT += dt;
       jogIn(dt);
@@ -8115,8 +8119,7 @@
       record();
       if (inp.sprint && inp.manual) G.stam = Math.max(0, G.stam - dt / 3.2);
       else G.stam = Math.min(1, G.stam + dt / 6);
-    } else if (st === 'kickm') G.meter += dt;
-    else if (st === 'kicka') {
+    } else if (st === 'kicka') {
       kickTick(dt);
       if (ps && (ps.mode === 'ko' || ps.ret)) record();
     } else if (st === 'dead') {
