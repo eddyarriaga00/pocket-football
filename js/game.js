@@ -7136,6 +7136,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.5', 'November 2026', ['Each box on the main menu has its own picture']],
     ['1.4', 'November 2026', ['A new home-screen icon', 'A title picture on the main menu']],
     ['1.3', 'November 2026', ['Rule book: every rule the game plays by, in Settings and How to play', 'This page', 'Blocked punts', 'A return for a touchdown can be called back for a block in the back', 'An onside kick can be tried any time you are behind']],
     ['1.2', 'November 2026', ['Players stay on the field between plays and walk to the next huddle; nobody is dropped into place', 'Kicking units run on from the sideline', 'Blocked field goals, fouls on returns, offsetting fouls']],
@@ -7175,7 +7176,7 @@
   <div class="opt"><span>Commentary voices</span><b class="dv">Kokoro-82M · Apache 2.0</b></div>
   <div class="opt"><span>Typeface</span><b class="dv">Archivo · Open Font License</b></div>
   <div class="opt"><span>Movement study</span><b class="dv">CMU motion capture</b></div>
-  <div class="opt"><span>Icon and title picture</span><b class="dv">Made with an AI image tool</b></div></div>
+  <div class="opt"><span>Icon and menu pictures</span><b class="dv">Made with an AI image tool</b></div></div>
   <p class="note">Motion data was obtained from mocap.cs.cmu.edu. The database was created with funding from NSF EIA-0196217.</p>
   <h2>Your saves</h2><p class="note">Careers, seasons and settings stay in this browser. Settings › Saves makes a backup.</p></div>`;
     $('#bk').onclick = showSettings;

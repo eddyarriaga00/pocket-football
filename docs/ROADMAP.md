@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `218e878`, before the pictures in the main menu's five boxes (2026-11-21).
   - `05dc9ac`, before the new icon and the title picture on the main menu (2026-11-21).
   - `b029fa0`, before the rule book, What's new, blocked punts, called-back return touchdowns and the onside kick at any time (2026-11-21).
   - `ec200f7`, before players walking between plays (no emptied field, no line-ups dropped in place) and blocked kicks, return fouls, offsetting fouls (2026-11-21).
@@ -3434,6 +3435,17 @@ six were done as the pro game has them; the choices where there was one are mine
   reads on the left and the audit can read the background). Credited in About; listed in What's new. The full-size
   originals are not in the repo. Checked: fingerprint; audit empty; looked at on 320x568, 390x844, 740x360 and
   1280x800. An installed home-screen icon may not change until the game is removed and added again.
+
+- 2026-11-21: pictures built into the menu's boxes (the owner: "i'm using the ai chatgpt to make custom boxes or
+  ui that is more integrated with things"). Version 1.5. Five more pictures from ChatGPT's image tool, same recipe
+  (subject in the right third, the left dark and empty, no text, no logos, no yellow): a player walking out of the
+  tunnel (Career), a silver trophy in confetti (Season), two helmets nose to nose (Exhibition), cones and a sled
+  (Training camp), a ball in a web of light (Online); `art/m-*.jpg`, 900 wide, 70 to 90 KB each. Each sits on the
+  right of its box behind a fade into the panel (`.home .mode::before`, `--art` and `--ay` per box in `game.css`).
+  Chrome stopped saving files from that site after the first, so the rest came across as text on the clipboard
+  (`navigator.clipboard.writeText` of a canvas JPEG after a real click, then `pbpaste | base64 -D`); the clipboard
+  was cleared afterwards. Audit empty at 320x568, 390x844, 740x360, 1280x800. Next places for the same treatment:
+  the play-call sheet, the halftime and final sheets, team cards.
 
 ## Morning hand-off
 
