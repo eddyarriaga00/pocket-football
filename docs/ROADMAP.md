@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `e65774b`, before the returner and deep-safety hop fixes (2026-11-21).
   - `58b4546`, before the fix to the kick's aiming line (2026-11-21).
   - `601eab4`, before the generated pictures and icon were taken out (2026-11-21).
   - `9a00504`, before the walk between plays was always fast forward (2026-11-21).
@@ -3509,6 +3510,24 @@ The owner: "extra point / kicks are broken right now it seems, the little line d
 - Checked: fingerprint unchanged; in watched test games the meter gained 1.5 in 1.5 seconds on every user kick
   and the line's position changed, while the unit was still running on and after.
 - Lesson: when a state is added to an earlier branch of the loop, look for a later branch with the same state.
+
+### 2026-11-21: bug test of full games (1.11)
+
+The owner: "bug test full game and such".
+
+- Run: 18 rough-player exhibitions, 4 quarterback and 3 receiver career games, two Season years and one playoff
+  season, 6 exhibitions with ten-minute quarters; `X.bad` empty, no page errors, fingerprint unchanged.
+- Nine watched games stepped at 60 a second with a checker on every step: no bad numbers, no frozen kick line,
+  no stuck state, score never fell, and any man moving more than 0.6 yards in a step was listed. That found two:
+  - A deep safety lined up more than eleven yards behind the goal line when the ball was near it, and the first
+    step of the play pulled him back a yard. He now lines up at that limit (the same place the play put him, so
+    results are unchanged).
+  - A kick or punt returner was moved onto the landing spot as he caught the ball (up to a yard and a half). In a
+    watched game he now catches it where he stands when he is within three yards of it.
+- Not a bug: the rough test player ties games late on purpose and its overtime (80 seconds with two-minute
+  quarters) usually ends level; with ten-minute quarters an overtime game was won 44-37.
+- The replay still rewinds men to where they were, which is what a replay is.
+- Not covered: nothing was looked at on screen or heard; controller and touch input; the online chat.
 
 ## Morning hand-off
 

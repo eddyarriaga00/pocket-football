@@ -1131,6 +1131,7 @@
     G.me = G.lock && !kick && !(G.watch && G.wd && G.wd.own) ? (P.find(p => p.team === 0 && p.role === G.lock) || null) : ps.ret && ps.ret.hero ? ps.ret : null;
     G.sel = G.lock ? G.me : off === 1 ? (selRole && d[selRole]) || d.MLB : null;
     for (const p of P) {
+      if (!kick) p.y = clamp(p.y, -11, 111);  // a deep safety near the goal line stands where the first step of the play would put him, so he does not hop there at the snap
       p.sx = p.x;
       p.sy = p.y;
     }
@@ -4631,8 +4632,11 @@
           p.eng = null;
           p.block = null;
         }
-        r.x = a.x1;
-        r.y = a.y1;
+        if (!tween() || hyp(r.x - a.x1, r.y - a.y1) > 3) {
+          // a game being watched: he catches it where he stands, a step from the spot, and is not moved onto it
+          r.x = a.x1;
+          r.y = a.y1;
+        }
         /* a punt is easy to drop: more so in rain or snow, and with a tackler in your face. A fair catch is the safe way. */
         const muff = rnd() < (ps.fair ? 0.01 : 0.015 + (near < 2.5 ? 0.035 : 0)) * G.wx.fum * (r.hero && r.cat ? 1.45 - r.cat / 110 : 1);  // a career returner's hands count
         if (ps.fair && !muff) {
@@ -4691,8 +4695,11 @@
           return;
         }
         ps.carrier = r;
-        r.x = a.x1;
-        r.y = a.y1;
+        if (!tween() || hyp(r.x - a.x1, r.y - a.y1) > 3) {
+          // a game being watched: he catches it where he stands, a step from the spot, and is not moved onto it
+          r.x = a.x1;
+          r.y = a.y1;
+        }
         G.state = 'live';
         ps.t = 0;
         snd('catch');
@@ -7147,6 +7154,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.11', 'November 2026', ['Fixed: a kick returner slid onto the ball as he caught it', 'Fixed: a deep safety could hop a yard at the snap near the goal line']],
     ['1.10', 'November 2026', ['Fixed: the aiming line on extra points and field goals had stopped moving']],
     ['1.9', 'November 2026', ['The pictures on the menu, the sheets and the icon are gone: the drawn icon and plain panels are back']],
     ['1.8', 'November 2026', ['The walk between plays is always shown fast forward', 'Fixed: defenders in a zone could jump sideways when a man went in motion']],
