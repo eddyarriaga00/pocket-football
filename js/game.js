@@ -7136,6 +7136,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.6', 'November 2026', ['A playbook picture on the play-call sheet', 'A scoreboard picture on the halftime and final sheets']],
     ['1.5', 'November 2026', ['Each box on the main menu has its own picture']],
     ['1.4', 'November 2026', ['A new home-screen icon', 'A title picture on the main menu']],
     ['1.3', 'November 2026', ['Rule book: every rule the game plays by, in Settings and How to play', 'This page', 'Blocked punts', 'A return for a touchdown can be called back for a block in the back', 'An onside kick can be tried any time you are behind']],

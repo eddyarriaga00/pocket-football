@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `5b97c8b`, before the pictures on the play-call, halftime and final sheets (2026-11-21).
   - `218e878`, before the pictures in the main menu's five boxes (2026-11-21).
   - `05dc9ac`, before the new icon and the title picture on the main menu (2026-11-21).
   - `b029fa0`, before the rule book, What's new, blocked punts, called-back return touchdowns and the onside kick at any time (2026-11-21).
@@ -3446,6 +3447,13 @@ six were done as the pro game has them; the choices where there was one are mine
   (`navigator.clipboard.writeText` of a canvas JPEG after a real click, then `pbpaste | base64 -D`); the clipboard
   was cleared afterwards. Audit empty at 320x568, 390x844, 740x360, 1280x800. Next places for the same treatment:
   the play-call sheet, the halftime and final sheets, team cards.
+
+- 2026-11-21: pictures on the in-game sheets. Version 1.6. Two more from the image tool, same recipe: a playbook
+  board with chalk routes and a whistle (`art/s-call.jpg`) across the top of the play-call sheet, and a stadium
+  scoreboard with a blank screen (`art/s-score.jpg`) across the top of the halftime and final sheets. Both sit on
+  the sheet's `::before`, 150 and 190 px tall, fading down and left into the panel (`--pn` is the panel colour as
+  three numbers). Fingerprint unchanged; audit with a played game empty at 320x568, 390x844, 740x360, 1280x800.
+  Also: comments and notes tidied, and commits from here on carry no co-author line (the owner's wish).
 
 ## Morning hand-off
 
