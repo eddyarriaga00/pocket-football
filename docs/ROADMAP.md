@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `3d5f88d`, before the closer-to-the-pro-game pass (current kickoff line-up, free kick after a safety, 40/25 play clock, booth review, full stat sheet, standings columns) (2026-11-21).
   - `ab8d814`, before the rounding-out pass (real kickers and punters, roster substitutes for injuries, Settings › Saves, About and Rosters) (2026-11-21).
   - `91e87af`, before gang tackles (joining defenders hit high and beside, a beat apart; the runner feels each) (2026-11-21).
   - `c4547e5`, before the rag doll on the falls (hit size and direction, limp limbs, landing bounce) (2026-11-21).
@@ -3364,6 +3365,29 @@ six were done as the pro game has them; the choices where there was one are mine
   390x844, 320x568, 740x360, 667x375 and 1280x800 (it now walks the three new screens). Build 16,630,628 bytes
   (about 146 KB under the limit). Still missing, not built without his say-so: head-to-head online, roster changes
   between seasons (draft, retirements), punting stats, cloud saves across devices.
+
+- 2026-11-21: closer to the pro game (the owner: "make it more close to the nfl as possible"). Read against the
+  current rules first; most were already in (overtime, the touchback spots, the two-minute warning, the clock out of
+  bounds, the flags, the 17-game calendar, numbers by position). What was not, now is:
+  (1) The kickoff lines up as the league's does now: the kicker alone at his 35, ten cover men on the other 40,
+  seven of the receiving side on their 35 and two just behind, two men back deep; nobody but the kicker and the men
+  back deep moves until the ball is fielded (`beginKickoff`, `ps.ko.dyn`, `kickTick`). Measured over 40 kicks each
+  way: returns end at the 23.6 on average, 21.3 with the old running start. `window.PG_KOOLD` brings the old one
+  back for measuring. (2) After a safety the side that gave it up kicks from its own 20 (`G.freeK`,
+  `beginKickoff(t, true)`): the old line-up with a running start, no landing zone, no touchback aimed for. Unwatched
+  games still spot the ball at the 35. (3) Play clock: 40 seconds after an ordinary play, 25 after a stoppage or a
+  change of possession (`PC`, `PC_ADM`, `G.adm`); it was 35 always. (4) Challenges: winning one earns a third
+  (`G.chalWon`); after the two-minute warning of either half and in overtime no coach may challenge, and the booth
+  puts a wrong spot right itself at no cost (`boothTime`, `resolveChallenge(t, true)`). (5) The stat sheet: first
+  downs, third downs, sacks, penalties and yards, time of possession (`ts`, `topTick`, kept out of `G.stats`, which
+  the fingerprint reads); leaders add the passer rating and interceptions, a Defense line and a Punting line
+  (`prating`, `dscore`, box keys punts / puntyd / in20). (6) Standings: your division's table shows division and
+  conference records and the streak (`dw`/`dl`, `cw`/`cl`, `sk` in `league.js`); ties break on head to head, then
+  division record for sides of one division, then conference record, then points. Version 1.1.
+  Checked: fingerprint unchanged; `X.exh(3)`, `X.career` QB and WR, `X.season(1)` clean; a staged free kick both
+  ways; a staged booth review and third challenge; play clock 40 / 25; possession summed to the game's length; audit
+  empty at 320x568, 390x844, 740x360, 667x375, 1280x800. Not done: an onside kick may still be tried only late
+  (the league now lets a trailing side declare one at any time); blocked kicks; fouls on returns; offsetting fouls.
 
 ## Morning hand-off
 

@@ -328,6 +328,10 @@ th{color:var(--mute);font-family:var(--display);font-size:10px;letter-spacing:.1
 table.st td:nth-child(2){color:var(--mute);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em}
 table.lg td:first-child,table.lg th:first-child{text-align:left}
 table.lg small{display:block;color:var(--mute);font-size:11.5px}
+table.lg.wd td,table.lg.wd th{padding-left:2px;padding-right:2px;font-size:12px;font-variant-numeric:tabular-nums}
+table.lg.wd th{font-size:10px;letter-spacing:.02em}
+table.lg.wd .lead{display:none}
+table.lg.wd tr:nth-child(2) td:first-child{font-weight:700}
 tr.me td{color:var(--acc);font-weight:700}
 
 /* career */

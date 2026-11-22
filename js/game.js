@@ -214,6 +214,7 @@
   const kickoff = t => {
     setBall(t, t === 0 ? KTB : 100 - KTB, FW / 2);
     G.pendKO = t;
+    G.freeK = false;
   };  // the ball is spotted for a touchback; a live return can move it
   const ab = t => TEAMS[G.tm[t]].ab, tname = t => TEAMS[G.tm[t]].name;
   const vk = i => (!TEAMS[i] || TEAMS[i].custom ? '-' : TEAMS[i].vo || TEAMS[i].ab);  // the key of a team's recorded calls; a renamed team has none, so the booth leaves its name out (nor a side gone from the list, as the All-Star teams are after their game)
@@ -2502,6 +2503,16 @@
     b[k] = (b[k] || 0) + v;
   }
 
+  /* the rest of a pro stat sheet, kept apart from G.stats (which the seeded test game is pinned on): first downs,
+     flags and their yards, sacks made, and seconds of possession */
+  const ts = t => (G.ts || (G.ts = [0, 1].map(() => ({ fd: 0, pen: 0, peny: 0, sk: 0, top: 0 }))))[t];
+  /* time of possession: the game clock that has run since the last look belongs to the side that had the ball then */
+  function topTick() {
+    const m = G.topM;
+    if (m && !G.drill) ts(m.t).top += Math.max(-60, m.q === G.q ? m.clock - G.clock : m.clock);
+    G.topM = { t: G.poss, q: G.q, clock: G.clock };
+  }
+
   /* only: a side's own best man (the championship game's MVP comes from the winners, as it does in the pro game) */
   function playerOfGame(only) {
     const win = G.score[0] === G.score[1] ? -1 : G.score[0] > G.score[1] ? 0 : 1, n = k => k || 0;
@@ -2861,10 +2872,19 @@
   }
 
   /* the best passer, runner and receiver on each side so far, from the box score of the snaps that were played */
+  /* the pro game's passer rating: four parts, each held between 0 and 2.375, from completions, yards, touchdowns and
+     interceptions per attempt; 158.3 is perfect */
+  function prating(b) {
+    const a = b.att || 0, cl = v => clamp(v, 0, 2.375);
+    if (!a) return '0.0';
+    return ((cl(((b.comp || 0) / a - 0.3) * 5) + cl(((b.pyd || 0) / a - 3) * 0.25) + cl((b.ptd || 0) / a * 20) + cl(2.375 - (b.pint || 0) / a * 25)) / 6 * 100).toFixed(1);
+  }
+  const dscore = b => (b.tkl || 0) + (b.sack || 0) * 2.5 + (b.int || 0) * 4 + (b.ff || 0) * 2 + (b.fr || 0) * 2;
+
   function leadersHtml() {
     const box = Object.values(G.box || {}), rows = [];
     const best = (t, k, min) => box.filter(b => b.team === t && (b[k] || 0) > min).sort((a, b) => (b[k] || 0) - (a[k] || 0))[0];
-    for (const [label, k, f] of [['Passing', 'pyd', b => `${b.comp || 0}/${b.att || 0} · ${b.pyd} yds${b.ptd ? ` · ${b.ptd} TD` : ''}`], ['Rushing', 'ryd', b => `${b.car || 0} car · ${b.ryd} yds`], ['Receiving', 'recyd', b => `${b.rec || 0} rec · ${b.recyd} yds`]]) {
+    for (const [label, k, f] of [['Passing', 'pyd', b => `${b.comp || 0}/${b.att || 0} · ${b.pyd} yds${b.ptd ? ` · ${b.ptd} TD` : ''}${b.pint ? ` · ${b.pint} INT` : ''} · ${prating(b)} rtg`], ['Rushing', 'ryd', b => `${b.car || 0} car · ${b.ryd} yds`], ['Receiving', 'recyd', b => `${b.rec || 0} rec · ${b.recyd} yds`]]) {
       for (const t of [0, 1]) {
         const b = best(t, k, 0);
         if (b) rows.push(`<li>${tch(t)}<span><em>${label}</em>${b.name}</span><b>${f(b)}</b></li>`);
@@ -2873,6 +2893,14 @@
     for (const t of [0, 1]) {
       const b = box.find(b => b.team === t && (b.fga || b.xpa));
       if (b) rows.push(`<li>${tch(t)}<span><em>Kicking</em>${b.name}</span><b>${[b.fga ? `${b.fgm || 0}/${b.fga} FG` : '', b.xpa ? `${b.xpm || 0}/${b.xpa} XP` : ''].filter(Boolean).join(' · ')}</b></li>`);
+    }
+    for (const t of [0, 1]) {
+      const b = box.filter(b => b.team === t && (b.tkl || b.sack || b.int)).sort((a, b) => dscore(b) - dscore(a))[0];
+      if (b) rows.push(`<li>${tch(t)}<span><em>Defense</em>${b.name}</span><b>${[b.tkl ? b.tkl + ' tkl' : '', b.sack ? b.sack + ' sack' + (b.sack > 1 ? 's' : '') : '', b.int ? b.int + ' INT' : '', b.ff ? b.ff + ' FF' : ''].filter(Boolean).join(' · ')}</b></li>`);
+    }
+    for (const t of [0, 1]) {
+      const b = box.find(b => b.team === t && b.punts);
+      if (b) rows.push(`<li>${tch(t)}<span><em>Punting</em>${b.name}</span><b>${b.punts} punt${b.punts > 1 ? 's' : ''} · ${(b.puntyd / b.punts).toFixed(1)} avg${b.in20 ? ` · ${b.in20} in 20` : ''}</b></li>`);
     }
     return rows.length ? `<h4 class="sumh">Leaders</h4><ul class="evs">${rows.join('')}</ul>` : '';
   }
@@ -3256,7 +3284,9 @@
         score = true;
         logScore(1 - off, 'SAF', `${c.name || 'Ball carrier'} downed in the end zone`, null);
         react(1 - off, 1.2, 3);
-        setBall(1 - off, off === 0 ? 65 : 35, FW / 2);
+        setBall(1 - off, off === 0 ? 65 : 35, FW / 2);  // where a free kick from the 20 is brought back to, on the average
+        G.pendKO = 1 - off;  // and in a watched game the side that gave up the safety kicks it from its own 20
+        G.freeK = true;
       } else {
         /* A close spot (within half a yard of the line to gain) can be got wrong: about three in ten are given the
            other side of the line. Whoever the ruling went against may challenge it (see resolveChallenge). The
@@ -3274,6 +3304,7 @@
         rpGain = gi;
         if (sack && me && ps.tackler === me) G.my.sack++;
         if (sack) credit(ps.tackler, 'sack', 1);
+        if (sack) ts(1 - off).sk++;
         sub = `${c.name} #${c.num}${ps.caught?' · catch':''}${kind==='oob'?' · out of bounds':''}${ps.slid?' · slide':''}`;
         if (sack) {
           react(1 - off, 0.9, 2.2);
@@ -3338,6 +3369,9 @@
       big = 'Punt';
       sub = arg.tb ? 'Touchback' : `${arg.fair ? 'Fair catch' : arg.down ? `${arg.d} yards, downed` : arg.d + ' yards'} · ${tname(1 - off)} ball at ${spotTxt(arg.y)}`;
       stop = true;
+      credit(ps.qb, 'punts', 1);
+      credit(ps.qb, 'puntyd', arg.d || 0);
+      if (!arg.tb && (off === 0 ? arg.y >= 80 : arg.y <= 20)) credit(ps.qb, 'in20', 1);
       setBall(1 - off, arg.y, arg.x);
     }
     if (G.poss === off && G.down > 4 && !score) {
@@ -3356,6 +3390,7 @@
     cpuTimeout();
     if (G.ot && score) G.otS ? otCheck() : (G.final = true);  // a game already in overtime when this rule came in keeps the old one
     G.last = sub === 'Turnover on downs' ? sub : big;
+    if (big === 'First down' || (big === 'Touchdown!' && c && c.team === off && ps.mode !== 'ko' && ps.try2 == null && G.try2 == null)) ts(off).fd++;
     if (ps.third != null && !ps.thirdDone) {
       ps.thirdDone = true;
       const t3 = G.third || (G.third = [[0, 0], [0, 0]]);
@@ -3415,6 +3450,8 @@
     G.clock += G.runoff;
     G.runoff = 0;
     G.sig = 'to';  // the officials signal it
+    G.adm = true;
+    if (G.state === 'call') G.pc = PC_ADM;  // called from the sheet: the play clock is reset to 25
     hudKey = '';
     if (!AUTO && !QUIET) {
       snd('whistle');
@@ -3456,6 +3493,7 @@
     if (G.clock + G.runoff > WARN) G.clock = WARN;  // it ran down to 2:00 between plays: stopped right there
     G.runoff = 0;
     G.warnNow = true;
+    G.adm = true;
     if (G.sig !== 'td') G.sig = 'to';  // the officials give the timeout signal
   }
 
@@ -3514,6 +3552,10 @@
   function flagAfter(name, team, y, x, first, text) {
     const off = ps.offTeam, dir = off === 0 ? 1 : -1;
     ps.flagged = true;
+    G.adm = true;
+    ts(team).pen++;
+    ts(team).peny += parseInt(text, 10) || 0;
+    if (first && team !== off) ts(off).fd++;
     for (const p of P) {
       p.eng = null;
       p.block = null;
@@ -3546,6 +3588,10 @@
     const yd = Math.min(5, Math.max(1, Math.floor(room / 2)));
     G.los = clamp(G.los + (onOff ? -dir : dir) * yd, 1, 99);
     G.togo += onOff ? yd : -yd;
+    G.adm = true;
+    ts(team).pen++;
+    ts(team).peny += yd;
+    if (G.togo <= 0) ts(off).fd++;
     if (G.togo <= 0) setBall(off, G.los, G.bx);  // enough for a first down
     G.last = name;
     G.rp = false;
@@ -3999,18 +4045,27 @@
   }
 
   /* ---------- the coach's challenge ----------
-     After a close spot (G.review) the side the ruling went against may challenge: two a game, and a timeout is what
+     After a close spot (G.review) the side the ruling went against may challenge: two a game (a third once one is won), and a timeout is what
      is risked. Wrong on the field: overturned. Right: the ruling stands and the challenger loses a timeout. The
      computer challenges only a spot it can see was wrong, three times in four. */
-  const canChallenge = t => !!G.review && G.review.hurt === t && G.to && G.to[t] > 0 && (G.chal ? G.chal[t] : 2) > 0 && !G.drill;
+  /* As in the pro game: no coach may challenge after the two-minute warning of either half or in overtime (the replay
+     booth looks at those itself and puts a wrong spot right at no cost), and a coach who wins a challenge is given a
+     third. */
+  const boothTime = () => G.q >= 5 || ((G.q === 2 || G.q === 4) && G.clock <= WARN && warnHere());
+  const canChallenge = t => !!G.review && G.review.hurt === t && G.to && G.to[t] > 0 && (G.chal ? G.chal[t] : 2) > 0 && !G.drill && !boothTime();
   const youChallenge = () => canChallenge(0) && !G.lock;  // in a career the coach decides, not you
 
-  function resolveChallenge(t) {
+  function resolveChallenge(t, booth) {
     const r = G.review;
     G.review = null;
     if (!r) return;
-    G.chal = G.chal || [2, 2];
-    G.chal[t]--;
+    G.adm = true;
+    if (!booth) {
+      G.chal = G.chal || [2, 2];
+      G.chal[t]--;
+      G.chalWon = G.chalWon || [0, 0];
+      if (r.wrong && !G.chalWon[t]++) G.chal[t]++;  // the first one he wins earns him a third
+    }
     const dir = r.off === 0 ? 1 : -1;
     if (r.wrong) {
       if (r.made) setBall(r.off, r.trueY, r.x);  // he did get there: first down
@@ -4023,15 +4078,15 @@
         G.togo = (r.fd - G.los) * dir;
         if (G.down > 4) setBall(1 - r.off, G.los, G.bx);  // and that was fourth down
       }
-      banner('Overturned', r.made ? `${tname(r.off)} first down` : G.down > 4 || G.poss !== r.off ? 'Turnover on downs' : `${ORD[G.down - 1] || ''} & ${Math.max(1, Math.round(G.togo))}`, 2000);
+      banner('Overturned', (booth ? 'Booth review · ' : '') + (r.made ? `${tname(r.off)} first down` : G.down > 4 || G.poss !== r.off ? 'Turnover on downs' : `${ORD[G.down - 1] || ''} & ${Math.max(1, Math.round(G.togo))}`), 2000);
     } else {
       G.to[t] = Math.max(0, G.to[t] - 1);
       banner('Ruling stands', `${tname(t)} lose a timeout`, 2000);
     }
     if (!AUTO && !QUIET) {
       snd('whistle');
-      vo('challenge', { pri: 1, ttl: 4 });
-      if (PG.audio) PG.audio.pa(`The ${tname(t)} are challenging the spot. After review, the ruling on the field ` + (r.wrong ? 'is reversed.' : 'stands.'), { wait: 1.6, clips: ['ref.chal.' + tab(t), r.wrong ? 'ref.over' : 'ref.stands'] });
+      if (!booth) vo('challenge', { pri: 1, ttl: 4 });
+      if (PG.audio) PG.audio.pa((booth ? 'The previous play is under review.' : `The ${tname(t)} are challenging the spot.`) + ' After review, the ruling on the field ' + (r.wrong ? 'is reversed.' : 'stands.'), { wait: 1.6, clips: [booth ? null : 'ref.chal.' + tab(t), r.wrong ? 'ref.over' : 'ref.stands'].filter(Boolean) });
       if (r.wrong) setTimeout(() => {
         if (PG.audio && G.ros) PG.audio.crowd[t === 0 ? 'cheer' : 'boo'](0.6, 2);
       }, 3000);
@@ -4041,10 +4096,11 @@
   }
 
   /* ---------- the play clock ----------
-     When the snap is yours (your offense, or your quarterback in a career) you have 35 seconds from the moment the
-     play-call sheet opens to get the ball snapped. The last ten show beside the down and distance; at zero it is delay
+     When the snap is yours (your offense, or your quarterback in a career) you have the pro game's play clock from
+     the moment the play-call sheet opens: 40 seconds after an ordinary play, 25 after anything that stopped the game
+     (a change of possession, a kick, a score, a flag, a timeout, the two-minute warning, a review). The last ten show beside the down and distance; at zero it is delay
      of game: five yards (half the distance near your own goal) and the down again. The computer never runs it out. */
-  const PC = 35;
+  const PC = 40, PC_ADM = 25;
   const pcOn = () => !AUTO && !QUIET && !G.drill && !G.paused && G.ros && G.poss === 0 && G.pendKO == null && G.pat == null && (!G.lock || G.lock === 'QB') &&
     (G.state === 'call' || (G.state === 'pre' && !!ps && (ps.mode === 'pass' || ps.mode === 'run')));
 
@@ -4052,7 +4108,9 @@
     const off = G.poss, dir = off === 0 ? 1 : -1, room = off === 0 ? G.los : 100 - G.los, yd = Math.min(5, Math.max(1, Math.floor(room / 2)));
     G.los = clamp(G.los - dir * yd, 1, 99);
     G.togo += yd;
-    G.pc = PC;
+    G.adm = true;
+    ts(off).pen++;
+    ts(off).peny += yd;
     G.last = 'Delay of game';
     G.rp = false;
     G.runoff = 0;
@@ -4072,10 +4130,14 @@
       G.voCallLate = true;  // behind late in the game you talked about all week
       analyst('call.shaky', 1, { big: true, ttl: 10 });
     }
+    topTick();
     const rv = G.review;  // a coach on the computer's side (or yours, in a career) throws the flag when he can see it was wrong
-    if (rv && rv.wrong && canChallenge(rv.hurt) && (rv.hurt === 1 || G.lock) && Math.random() < 0.75) resolveChallenge(rv.hurt);
+    if (rv && rv.wrong && boothTime() && !G.drill) resolveChallenge(rv.hurt, true);  // late in a half and in overtime the booth puts it right itself
+    else if (rv && rv.wrong && canChallenge(rv.hurt) && (rv.hurt === 1 || G.lock) && Math.random() < 0.75) resolveChallenge(rv.hurt);
     if (G.review && !youChallenge()) G.review = null;
-    G.pc = PC;  // the play clock starts again
+    G.pc = G.adm || G.pcN !== G.possN ? PC_ADM : PC;  // the play clock starts again: 25 seconds after a stoppage or a change of possession, 40 otherwise
+    G.adm = false;
+    G.pcN = G.possN;
     P = [];
     ps = null;
     G.me = null;
@@ -4095,10 +4157,12 @@
     if (!AUTO && !QUIET && !G.drill && PG.audio && Math.random() < 0.3) PG.audio.band();  // the band fills some of the gaps between plays
     if (G.pendKO != null) {
       const t = G.pendKO, k = 1 - t;  // t receives, k kicks
-      if (!G.drill && lateAndBehind(k)) return k === 0 && !AUTO && !G.lock ? showOnside(k) : onside(k);  // your call, or the computer's (it always tries)
+      const free = !!G.freeK;
+      G.freeK = false;
+      if (!free && !G.drill && lateAndBehind(k)) return k === 0 && !AUTO && !G.lock ? showOnside(k) : onside(k);  // your call, or the computer's (it always tries)
       G.pendKO = null;
       if (!AUTO && !G.drill) {
-        beginKickoff(t);  // in a career, your team's kickoffs are yours too, and theirs when you return kicks
+        beginKickoff(t, free);  // in a career, your team's kickoffs are yours too, and theirs when you return kicks
         if (G.lock && k === 1 && !G.me) G.watch = true;  // otherwise their kickoff is watched like their drives: your returner brings it out
         return;
       }
@@ -4468,7 +4532,13 @@
       const dir = G.dir, r = ps.ret;  // everyone runs under the kick
       for (const p of P) {
         if (p === r) seek(p, a.x1, a.y1, 1);
-        else if (p.team === ps.offTeam) seek(p, lerp(p.sx, a.x1, 0.45), a.y1 + dir * clamp((p.sy - a.y1) * dir * 0.45, 6, 24), 0.8);
+        else if (ps.ko.dyn) {
+          /* the current rule: the cover men and the blockers stand until the ball is fielded; the kicker may follow
+             his kick, and the second man back deep gets in front of the returner */
+          if (p.bk === 'K') seek(p, FW / 2, ps.los - dir * 12, 0.5);
+          else if (p.team === ps.offTeam && p.role === 'RB') seek(p, lerp(p.sx, a.x1, 0.6), a.y1 + dir * 7, 0.8);
+          else p.dvx = p.dvy = 0;
+        } else if (p.team === ps.offTeam) seek(p, lerp(p.sx, a.x1, 0.45), a.y1 + dir * clamp((p.sy - a.y1) * dir * 0.45, 6, 24), 0.8);
         else seek(p, lerp(p.sx, a.x1, 0.3), a.y1, 0.96, true);
       }
       integrate(dt);
@@ -4503,33 +4573,39 @@
      career games and simulations take the touchback spot that kickoff() already set. */
   const KO_COVER = ['DE1', 'DT1', 'OLB1', 'CB1', 'SS', 'MLB', 'FS', 'CB2', 'OLB2', 'DT2', 'DE2'], KO_FRONT = ['LT', 'LG', 'C', 'RG', 'RT'], KO_MID = ['TE', 'FB', 'X', 'S'];
 
-  function beginKickoff(recv) {
+  function beginKickoff(recv, free) {
     scr.innerHTML = '';
-    const kt = 1 - recv, dir = recv === 0 ? 1 : -1, own = recv === 0 ? 0 : 100, ky = own + dir * 65;
+    /* A kickoff lines up as the pro game does now: the kicker alone at his 35, his ten cover men across the other
+       side's 40, at least seven of the receiving side on their 35 with the rest just behind, two men back deep. Nobody
+       but the kicker and the men back deep moves until the ball is fielded or lands (see kickTick). A free kick after
+       a safety is the old kind, from the 20 with a running start. */
+    const kt = 1 - recv, dir = recv === 0 ? 1 : -1, own = recv === 0 ? 0 : 100, ky = own + dir * (free ? 80 : 65), dyn = !free && !window.PG_KOOLD;
     G.dir = dir;
     G.op = { n: 'Kickoff', cat: 'special' };
     G.dp = DEF[0];
     P = [];
     G.me = null;
     G.sel = null;
+    let j = 0;
     KO_COVER.forEach((r, i) => {
-      const m = mkP(kt, r, 4 + i * (FW - 8) / 10, ky + dir * (i === 5 ? 4 : 1));
+      const k = i === 5, m = dyn ? mkP(kt, r, k ? FW / 2 : 4 + j++ * (FW - 8) / 9, k ? ky + dir * 3 : own + dir * 40.6) : mkP(kt, r, 4 + i * (FW - 8) / 10, ky + dir * (k ? 4 : 1));
       m.asg = 'rush';
-      if (i === 5) asSpec(m, 'K');
+      if (k) asSpec(m, 'K');
     });
-    KO_FRONT.forEach((r, i) => mkP(recv, r, 8 + i * (FW - 16) / 4, own + dir * 52));
+    const fy = dyn ? 34.4 : free ? 67 : 52, my = dyn ? [34.4, 31.5, 31.5, 34.4] : free ? [46, 46, 46, 46] : [31, 31, 31, 31];
+    KO_FRONT.forEach((r, i) => mkP(recv, r, (dyn ? 11 : 8) + i * (FW - (dyn ? 22 : 16)) / 4, own + dir * fy));
     const mine = recv === 0 && G.lock && G.kr;  // a career receiver is the man back deep: he and the other receiver swap places
-    KO_MID.forEach((r, i) => mkP(recv, mine && r === 'X' ? 'Z' : r, 10 + i * (FW - 20) / 3, own + dir * 31));
-    mkP(recv, 'RB', FW / 2 - 6, own + dir * 14);
-    const ret = mkP(recv, mine ? 'X' : 'Z', FW / 2, own + dir * 4);
+    KO_MID.forEach((r, i) => mkP(recv, mine && r === 'X' ? 'Z' : r, (dyn ? 4 : 10) + i * (FW - (dyn ? 8 : 20)) / 3, own + dir * my[i]));
+    mkP(recv, 'RB', FW / 2 - 7, own + dir * (dyn ? 8 : free ? 28 : 14));
+    const ret = mkP(recv, mine ? 'X' : 'Z', FW / 2 + (dyn ? 5 : 0), own + dir * (free ? 20 : 4));
     if (mine) G.me = G.sel = ret;
-    const ly = own + dir * rnd(-2, 10), lx = clamp(FW / 2 + rnd(-12, 12), 6, FW - 6);
+    const ly = own + dir * (free ? rnd(12, 26) : rnd(-2, 10)), lx = clamp(FW / 2 + rnd(-12, 12), 6, FW - 6);
     ps = { t: 0, mode: 'ko', offTeam: recv, qb: null, carrier: null, thrown: false, air: null, caught: false, handoff: true, open: true, turnover: true, think: 0, scr: false, runner: null, recs: [], pa: false,
-      los: ky, fd: ky, bx: FW / 2, drop: null, kick: null, passer: null, tgt: null, tackler: null, ret, land: ly, ko: { x: lx, y: ly, tb: (ly - own) * dir < 0 } };
+      los: ky, fd: ky, bx: FW / 2, drop: null, kick: null, passer: null, tgt: null, tackler: null, ret, land: ly, ko: { x: lx, y: ly, tb: (ly - own) * dir < 0, dyn, free: !!free } };
     G.state = 'pre';
     G.preT = 0;
     camUpd(0, true);
-    toast(mine ? 'Kickoff · you are back deep' : 'Kickoff');
+    toast(mine ? 'Kickoff · you are back deep' : free ? 'Free kick from the 20' : 'Kickoff');
     snd('roll', { dur: 1.42 });  // the drum line builds to the kick, which comes a second and a half after the teams line up
     if (PG.audio && !AUTO && !QUIET) PG.audio.crowd.kickoff();  // and the crowd's long "ohhh" with it
     updHud();
@@ -5308,11 +5384,11 @@
      machine, so it comes down a couple of yards either side */
   function kickoffTo(deep, aim) {
     const k = ps.ko, own = 100, dir = -1;
-    deep += rnd(-2.5, 2.5);
+    deep += rnd(-2.5, 2.5) + (k.free ? 15 : 0);  // a free kick starts fifteen yards further back
     k.y = clamp(own + dir * deep, 55, 109);
     k.x = clamp(FW / 2 + aim * 40, 6, FW - 6);
     k.tb = (k.y - own) * dir < 0;
-    k.short = (k.y - own) * dir > 20;
+    k.short = !k.free && (k.y - own) * dir > 20;  // a free kick has no landing zone
     ps.land = k.y;
     kickNow();
   }
@@ -7087,11 +7163,13 @@
   function statTable() {
     /* the two teams side by side: each line is one number a team, with a bar between them split by their shares, in
        the teams' colors */
+    topTick();
     const a = G.stats, c = [0, 1].map(i => TEAMS[G.tm[i]].c1), row = (l, f, n) => {
-      const v0 = Math.max(0, n(a[0])), v1 = Math.max(0, n(a[1])), w = v0 + v1 > 0 ? clamp(v0 / (v0 + v1) * 100, 4, 96) : 50;
-      return `<div class="sr"><b>${f(a[0])}</b><span>${l}</span><b>${f(a[1])}</b><i><u style="width:${w.toFixed(0)}%;background:${c[0]}"></u><u style="width:${(100 - w).toFixed(0)}%;background:${c[1]}"></u></i></div>`;
+      const v0 = Math.max(0, n(a[0], 0)), v1 = Math.max(0, n(a[1], 1)), w = v0 + v1 > 0 ? clamp(v0 / (v0 + v1) * 100, 4, 96) : 50;
+      return `<div class="sr"><b>${f(a[0], 0)}</b><span>${l}</span><b>${f(a[1], 1)}</b><i><u style="width:${w.toFixed(0)}%;background:${c[0]}"></u><u style="width:${(100 - w).toFixed(0)}%;background:${c[1]}"></u></i></div>`;
     };
-    return `<div class="stb"><div class="sh"><b style="--c:${c[0]}">${ab(0)}</b><b style="--c:${c[1]}">${ab(1)}</b></div>${row('Total yards', x => x.pass + x.rush, x => x.pass + x.rush)}${row('Pass yards', x => x.pass, x => x.pass)}${row('Rush yards', x => x.rush, x => x.rush)}${row('Comp / att', x => x.comp + ' / ' + x.att, x => x.comp)}${row('Turnovers', x => x.to, x => x.to)}</div>`;
+    const t3 = G.third || [[0, 0], [0, 0]], n1 = (l, f) => row(l, f, f), mmss = v => `${Math.floor(Math.max(0, v) / 60)}:${String(Math.round(Math.max(0, v)) % 60).padStart(2, '0')}`;
+    return `<div class="stb"><div class="sh"><b style="--c:${c[0]}">${ab(0)}</b><b style="--c:${c[1]}">${ab(1)}</b></div>${n1('First downs', (x, i) => ts(i).fd)}${n1('Total yards', x => x.pass + x.rush)}${n1('Pass yards', x => x.pass)}${n1('Rush yards', x => x.rush)}${row('Comp / att', x => x.comp + ' / ' + x.att, x => x.comp)}${row('Third downs', (x, i) => t3[i][1] + ' / ' + t3[i][0], (x, i) => t3[i][1])}${n1('Turnovers', x => x.to)}${n1('Sacks', (x, i) => ts(i).sk)}${row('Penalties', (x, i) => ts(i).pen + ' · ' + ts(i).peny + ' yd', (x, i) => ts(i).peny)}${row('Possession', (x, i) => mmss(ts(i).top), (x, i) => ts(i).top)}</div>`;
   }
 
   /* the top of the halftime and final sheets, as on a scoreboard: both badges with the score under each (the winner's

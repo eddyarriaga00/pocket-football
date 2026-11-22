@@ -155,7 +155,10 @@
       A.t++;
       B.t++;
     }
-    /* for the tie-breaks: who beat whom, and each side's record inside its own division (regular season only) */
+    /* each side's run of results: +3 is three wins in a row, -2 two defeats (a tie ends a run) */
+    if (L.phase === 'reg') for (const [T, d] of [[A, sa - sb], [B, sb - sa]]) T.sk = d > 0 ? Math.max(0, T.sk || 0) + 1 : d < 0 ? Math.min(0, T.sk || 0) - 1 : 0;
+    /* for the tie-breaks: who beat whom, and each side's record inside its own division and its own conference
+       (regular season only) */
     if (L.phase === 'reg' && sa !== sb) {
       const lo = Math.min(a, b), hi = Math.max(a, b), k = lo + '-' + hi, win = sa > sb ? a : b;
       L.h2h = L.h2h || {};
@@ -164,6 +167,11 @@
         const W = L.tab[win], X = L.tab[win === a ? b : a];
         W.dw = (W.dw || 0) + 1;
         X.dl = (X.dl || 0) + 1;
+      }
+      if (TEAMS[a].conf === TEAMS[b].conf) {
+        const W = L.tab[win], X = L.tab[win === a ? b : a];
+        W.cw = (W.cw || 0) + 1;
+        X.cl = (X.cl || 0) + 1;
       }
     }
   }
@@ -188,7 +196,10 @@
     if (rec) return rec;
     const lo = Math.min(a, b), hi = Math.max(a, b), net = (L.h2h && L.h2h[lo + '-' + hi]) || 0;
     if (net) return (net > 0 ? lo : hi) === a ? -1 : 1;
-    return ((B.dw || 0) - (B.dl || 0)) - ((A.dw || 0) - (A.dl || 0)) || (B.pf - B.pa) - (A.pf - A.pa);
+    /* then, as the pro game has it: the record inside the division for two sides of the same division, the record
+       inside the conference, and last the points */
+    const dv = divOf(a) === divOf(b) ? ((B.dw || 0) - (B.dl || 0)) - ((A.dw || 0) - (A.dl || 0)) : 0;
+    return dv || ((B.cw || 0) - (B.cl || 0)) - ((A.cw || 0) - (A.cl || 0)) || (B.pf - B.pa) - (A.pf - A.pa);
   };
   const seeds = L => ids(L).sort(better(L));
   /* a conference's playoff seeds: its four division winners, best record first */
@@ -472,7 +483,8 @@
   /* standings and last week's scores, shared by both hubs. In the full league: the eight divisions, yours first, then
      the rest of your conference, then the other one; a division's leader is marked. */
   function standingsHtml(L) {
-    const full = i => `${TEAMS[i].city} ${TEAMS[i].name}`, row = (i, n, lead) => `<tr class="${i === L.team ? 'me' : ''}"><td>${n}. ${full(i)}${lead ? ' <span class="lead">leads</span>' : ''}</td><td>${recTxt(L, i)}</td><td>${L.tab[i].pf}</td><td>${L.tab[i].pa}</td></tr>`;
+    const wide = full2(L), strk = k => !k ? '-' : (k > 0 ? 'W' : 'L') + Math.abs(k);
+    const full = i => wide ? TEAMS[i].name : `${TEAMS[i].city} ${TEAMS[i].name}`, row = (i, n, lead) => `<tr class="${i === L.team ? 'me' : ''}"><td>${n}. ${full(i)}${lead ? ' <span class="lead">leads</span>' : ''}</td><td>${recTxt(L, i)}</td>${wide ? `<td>${L.tab[i].dw || 0}-${L.tab[i].dl || 0}</td><td>${L.tab[i].cw || 0}-${L.tab[i].cl || 0}</td>` : ''}<td>${L.tab[i].pf}</td><td>${L.tab[i].pa}</td>${wide ? `<td>${strk(L.tab[i].sk)}</td>` : ''}</tr>`;
     /* last week's other scores, folded: a chip a game, the winner's side marked */
     const sc = (t, s, w) => `<span class="${w ? 'w' : ''}"><i style="--c:${TEAMS[t].c1}"></i>${TEAMS[t].ab}<b>${s}</b></span>`;
     const around = L.around.length ? `<h2>Around the league</h2><div class="arl">${L.around.map(([a, sa, b, sb]) =>
@@ -483,7 +495,7 @@
     const played = ids(L).some(i => L.tab[i].w + L.tab[i].l + L.tab[i].t > 0);
     const table = d => {
       const ts = divTeams(d >> 2, d & 3).sort(better(L));
-      return `<h3 class="dvh">${CONF[d >> 2]} ${DIV[d & 3]}</h3><table class="lg"><tr><th>Team</th><th>W-L</th><th>PF</th><th>PA</th></tr>${ts.map((i, n) => row(i, n + 1, played && n === 0)).join('')}</table>`;
+      return `<h3 class="dvh">${CONF[d >> 2]} ${DIV[d & 3]}</h3><table class="lg wd"><tr><th>Team</th><th>W-L</th><th>Div</th><th>Conf</th><th>PF</th><th>PA</th><th>Strk</th></tr>${ts.map((i, n) => row(i, n + 1, played && n === 0)).join('')}</table>`;
     };
     /* your division as a full table; the other seven as small cards, two across, a conference at a time: every team's
        record and points for and against are on the page, in a fraction of the room eight full tables took */
