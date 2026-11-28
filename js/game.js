@@ -55,9 +55,16 @@
     }
   }
 
+  let PG_SAVES = null;  // what an account copies (set where the backup code is)
+
   function save(k, v) {
     try {
       localStorage.setItem(k, JSON.stringify(v));
+      if (!k.startsWith('pg.acct')) {
+        // an account keeps a copy of the save: note when it last changed, and let it know (js/account.js)
+        localStorage.setItem('pg.acct.changed', String(Date.now()));
+        if (window.PG && PG.account) PG.account.saved();
+      }
     } catch (_) {}
   }
 
@@ -6937,6 +6944,14 @@
   /* The title screen (1.27): the first thing on screen when the game opens. The stadium, the name coming in a word at
      a time, and one thing to do. The tap is also what lets a browser start the music. Not shown again after that,
      and not at all when the page is opened for testing (?test), where the menu is wanted at once. */
+  /* the account, top right of the menu: your initials and name once signed in (a dot says whether your save is in it),
+     Sign in until then */
+  function acctChip() {
+    const u = PG.account.user(), st = PG.account.status();
+    return u ? `<button class="tacct in" id="mA" aria-label="Your account"><i data-st="${st}">${esc(PG.account.initials(u.name || u.email))}</i><span>${esc(String(u.name || 'Account').split(/\s+/)[0].slice(0, 12))}</span></button>`
+      : '<button class="tacct" id="mA"><span>Sign in</span></button>';
+  }
+
   let titled = /[?&]test\b/.test(location.search);
 
   function showTitle() {
@@ -6964,7 +6979,7 @@
     const strip = s => String(s || '').replace(/^Continue:\s*/, ''), url = PG.r3d && PG.r3d.portrait ? PG.r3d.portrait(TEAMS[hi], true, cd ? cd.num : 12, cd ? cd.look : null, 600) : null;
     const tile = (id, badge, name, sub) => `<button class="mtile" id="${id}">${badge}<b>${name}</b><span>${sub}</span></button>`;
     const bar = (id, icon, label) => `<button id="${id}">${icon}<span>${label}</span></button>`;
-    scr.innerHTML = `<div class="menu home v2 fill${intro === true ? ' in' : ''}"><header class="mtop"><h1>Pocket<wbr><em>Football</em></h1><small>v${esc(PG.data.VERSION)}</small></header>
+    scr.innerHTML = `<div class="menu home v2 fill${intro === true ? ' in' : ''}"><header class="mtop"><h1>Pocket<wbr><em>Football</em></h1>${PG.account ? acctChip() : `<small>v${esc(PG.data.VERSION)}</small>`}</header>${PG.account ? PG.account.card() : ''}
   ${offer?'<div class="offer"><b>First time here?</b><span>Training camp teaches passing, running and tackling in three short drills.</span><div class="row2"><button class="go sm" id="oY">Start camp</button><button class="btn2" id="oN">Not now</button></div></div>':''}
   <button class="hcard" id="mC" style="--c:${TEAMS[hi].c1}">${url ? `<img src="${url}" alt="">` : ''}<span class="hk">Career</span><b${cd && Math.max(...cd.name.split(/[\s-]/).map(w => w.length)) > 8 ? ' class="long"' : ''}>${cd ? esc(cd.name) : 'Start a career'}</b><span class="hs">${cd ? esc(strip(cs).replace(cd.name + ' · ', '')) : 'Create a quarterback or a receiver and build a legacy.'}</span><span class="hgo">${cd ? 'Continue' : 'Begin'} ›</span></button>
   <div class="mgrid">${tile('mSe', menuBadge(st, 'season'), 'Season', ss ? esc(strip(ss)) : '17 games and the playoffs')}${tile('mE', menuBadge(null, 'exh'), 'Exhibition', 'One game, any two teams')}${camp ? tile('mT', menuBadge(null, 'camp'), 'Training camp', esc(camp.summary().split(' · ').pop())) : ''}${PG.online ? tile('mO', menuBadge(null, 'online'), 'Online', 'Talk with everyone playing') : ''}</div>
@@ -6987,6 +7002,8 @@
     $('#mH').onclick = showHow;
     if (PG.milestones) $('#mM').onclick = PG.milestones.open;
     if ($('#mF')) $('#mF').onclick = go(() => PG.career.hall());
+    if ($('#mA')) $('#mA').onclick = () => PG.account.open(showMenu);
+    if (PG.account) PG.account.wire(showMenu);
   }
 
   /* ---------- the team editor ----------
@@ -7069,7 +7086,7 @@
   <div class="opt"><span>Team names and colors</span><button class="chip" id="steams">Edit teams</button></div>
   <div class="opt"><span>Rosters</span><button class="chip" id="sros">53 a team</button></div>
   </div><h2>Saves</h2><div class="grp">
-  <div class="opt"><span>Back up, restore, erase</span><button class="chip" id="sdat">Open</button></div>
+  ${PG.account ? `<div class="opt"><span>Account</span><button class="chip" id="sacc">${PG.account.user() ? 'Open' : 'Sign in'}</button></div>` : ''}<div class="opt"><span>Back up, restore, erase</span><button class="chip" id="sdat">Open</button></div>
   </div><h2>Help</h2><div class="grp">
   <div class="opt"><span>What’s new</span><button class="chip" id="snew">v${VERSION}</button></div>
   <div class="opt"><span>About</span><button class="chip" id="sabt">Credits</button></div>
@@ -7087,6 +7104,7 @@
       $('#steams').onclick = () => showTeams(0);
       $('#sros').onclick = () => showRosters(SET.me || 0);
       $('#sdat').onclick = () => showData();
+      if ($('#sacc')) $('#sacc').onclick = () => PG.account.open(showSettings);
       $('#sabt').onclick = showAbout;
       $('#srul').onclick = () => showRules(showSettings, 'Settings');
       $('#snew').onclick = () => showNews(showSettings, 'Settings');
@@ -7191,7 +7209,7 @@
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const k = localStorage.key(i);
-        if (k && k.startsWith('pg.') && !k.startsWith('pg.fingerprint')) out.push(k);
+        if (k && k.startsWith('pg.') && !k.startsWith('pg.fingerprint') && !k.startsWith('pg.acct')) out.push(k);  // not the test baseline, and not who is signed in on this device
       }
     } catch (_) {}
     return out.sort();
@@ -7224,9 +7242,59 @@
     }
   }
 
+  /* The save as an account keeps it (js/account.js): every key of the game's but the account's own bookkeeping, checked
+     coming back the way a backup file is. summary() is what a save holds, in words: its careers by name, its season. */
+  const cloudKey = k => !k.startsWith('pg.acct');
+  PG_SAVES = {
+    collect() {
+      const data = {};
+      for (const k of saveKeys()) if (cloudKey(k)) data[k] = localStorage.getItem(k);
+      return data;
+    },
+    check(o) {
+      if (!o || !o.pocketFootball || !o.data) return null;
+      const r = readBackup(JSON.stringify({ app: 'PocketFootball', data: o.data }));
+      if (!r) return null;
+      for (const k of Object.keys(r.data)) if (!cloudKey(k)) delete r.data[k];
+      return Object.keys(r.data).length ? r.data : null;
+    },
+    apply(data) {
+      try {
+        for (const k of saveKeys()) if (cloudKey(k) && !(k in data)) localStorage.removeItem(k);
+        for (const k in data) localStorage.setItem(k, data[k]);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    },
+    summary() {
+      const names = [], rd = k => {
+        try {
+          return JSON.parse(localStorage.getItem(k) || 'null');
+        } catch (_) {
+          return null;
+        }
+      };
+      const c = rd('pg.career.v1');
+      if (c && c.name) names.push(String(c.name));
+      for (const sl of rd('pg.career.slots') || []) if (sl && sl.name && !names.includes(String(sl.name))) names.push(String(sl.name));
+      const careers = names.length, ss = PG.season && PG.season.summary();
+      if (ss) names.push(String(ss).replace(/^Continue:\s*/, '').split(' · ')[0] + ' season');
+      return { players: careers + (ss ? 1 : 0), names: names.slice(0, 4) };
+    },
+    changed() {
+      return +localStorage.getItem('pg.acct.changed') || 0;
+    },
+  };
+
   function wipeSaves() {
     for (const k of saveKeys()) try {
       localStorage.removeItem(k);
+    } catch (_) {}
+    try {
+      // erased, or about to be restored from a file: the copy in an account follows, or it would come straight back down
+      localStorage.setItem('pg.acct.changed', String(Date.now()));
+      if (PG.account) PG.account.saved();
     } catch (_) {}
   }
 
@@ -7379,6 +7447,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.29', 'November 2026', ['Accounts: sign in with your email, Google or GitHub. It is the same account as in PocketBasketball', 'An account keeps a copy of your save, so a cleared browser or a new phone does not lose your career', 'Sign in from the top of the menu or from Settings']],
     ['1.28', 'November 2026', ['The anthem: before a playoff, a primetime or a rival game, and now and then any game, both sides line up hand on heart and the fireworks go up', 'The huddle: your eleven in a ring before the second half, hands in, and they break', 'The walk-off: a game won on its last score ends with the whole bench burying the man who won it', 'Awards night: when an award is yours, you are on the stage with the trophy first']],
     ['1.27', 'November 2026', ['A title screen: the stadium, the name coming in a word at a time, and Tap to start', 'A new start menu: your career on a big card with your player standing in it, the other modes as tiles, a bar of small things along the bottom', 'The stadium now shows behind the top of the menu, and everything rises into place when it opens']],
     ['1.26', 'November 2026', ['200 new comments in the social feed, from fans, the other side, neutrals, analysts and teammates', '80 new league news stories: signings, trades, injuries, coaches and odd things from round the league', '63 new things for your coach to say after a game', "37 new ways to write your game's headline", '20 new weekly events in your inbox']],
@@ -8554,6 +8623,9 @@
     TEAMS, NAMES: SUR, BASE, OFFR, DEFR, SET, CELEBS, LEVELS, lvlOf, diffSlider, bindDiff, rnd, pick, clamp, load, save, scr, $,
     startGame, showMenu, toMenu, banner, toast, snd, playScene, cinema, statTable, finTop, envFor, mkRoster, kitsHtml, watchPotd, keepScroll,
     vk, teamGrid, showTeams, inkOn,
+    get saves() {
+      return PG_SAVES;
+    },
     boot() {
       resize();
       setGfx(SET.gfx !== '2d');

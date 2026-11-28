@@ -366,7 +366,8 @@
   });
 
   PG.online = {
-    profile, setName, plain, dirty, clean, open, libs,
+    profile, setName, plain, dirty, clean, open, libs, config,
+    emu: () => EMU(),
     ready: () => !!config(),
     get chat() {
       return CH;
