@@ -7175,6 +7175,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.21', 'November 2026', ['Three new menu songs in the style of the theme, Two minute drill, Under the lights and Kickoff, and the four play in a random order']],
     ['1.20', 'November 2026', ['The center has a hand on the ball before the snap and fires it back between his legs, on every play and every kick']],
     ['1.19', 'November 2026', ['Field goals and extra points have a holder: the snap comes back, he puts the ball down, and the kicker steps in and kicks it', 'Punts: the snap goes back to the punter, who takes his steps and drops it onto his foot']],
     ['1.18', 'November 2026', ['Kickoffs are kicked: the kicker runs up, plants beside the ball and swings through it', 'Punts and field goals: a backswing, the foot meets the ball, a high finish', 'The ball waits for the foot on every kick, and a punt is dropped from the hands']],

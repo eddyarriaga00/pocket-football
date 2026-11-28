@@ -5,7 +5,7 @@
    
    PG.audio.play(name, opts)   one-shot effects (whistle, hit, catch, horn, ...); opts.x pans by field position
    PG.audio.crowd.*            the stadium: murmur, roar and applause loops that follow the game, oohs, groans, chants
-   PG.audio.music.*            the menu theme: drums, bass, pad and a brass section, sixteen bars
+   PG.audio.music.*            the menu music: four songs (SONGS) for the same band, picked at random
    PG.audio.call(key, opts)    the booth: a play-by-play man and an analyst, one at a time, the crowd dipped under them
    PG.audio.pa(text, opts)     the stadium speakers: the referee and the announcer, recorded
    PG.audio.weather(kind)      a bed of rain (with thunder) or wind under the crowd
@@ -1052,10 +1052,61 @@
   ];
   const BASS = { 0: 0, 3: 0, 6: 0, 8: 12, 10: 0, 12: 0, 14: 7 };  // step in the bar: semitones above the root
 
-  /* everything that happens on one sixteenth-note step of the loop */
-  function musicStep(c, out, i, t) {
+  /* The menu songs (1.21: the owner liked the theme and asked for three more like it, played in a random order). The
+     same band and the same shape, sixteen bars in eight two-bar phrases, each with its own key, tempo, groove and tune.
+     The first is the theme above; the band in the stands and the halftime show keep playing that one. */
+  const SONGS = [
+    { name: 'Theme', bpm: BPM, kick: KICK, snare: SNARE, chords: CHORDS, tune: TUNE, bass: BASS },
+    /* E minor at 112, pushing: Em, C, G, D, then Am, Em, C and B to turn it round */
+    { name: 'Two minute drill', bpm: 112, kick: 'x.....x.x.....x.x.....x...x.x...', snare: '....x...g...x..g....x..g..g.x.gx',
+      chords: [[-5, [-5, -2, 2]], [-9, [-9, -5, -2]], [-14, [-14, -10, -7]], [-7, [-7, -3, 0]], [-12, [-12, -9, -5]], [-5, [-5, -2, 2]], [-9, [-9, -5, -2]], [-10, [-10, -6, -3]]],
+      tune: [
+        [[0, 7, 2], [2, 10, 2], [4, 14, 6], [10, 12, 2], [12, 10, 4], [16, 12, 3], [19, 10, 1], [20, 9, 4], [24, 7, 8]],
+        [[0, 7, 2], [2, 10, 2], [4, 15, 6], [10, 14, 2], [12, 12, 4], [16, 14, 6], [22, 12, 2], [24, 10, 8]],
+        [[0, 14, 2], [2, 17, 2], [4, 19, 6], [10, 17, 2], [12, 14, 4], [16, 17, 3], [19, 14, 1], [20, 12, 4], [24, 10, 8]],
+        [[0, 12, 3], [3, 12, 1], [4, 14, 4], [8, 17, 6], [14, 14, 2], [16, 12, 4], [20, 9, 4], [24, 12, 8]],
+        [[0, 12, 2], [4, 12, 2], [6, 15, 6], [16, 12, 2], [20, 12, 2], [22, 19, 6]],
+        [[0, 14, 2], [4, 14, 2], [6, 10, 6], [16, 7, 4], [20, 10, 4], [24, 14, 6]],
+        [[0, 15, 2], [4, 15, 2], [6, 19, 6], [16, 15, 2], [20, 15, 2], [22, 22, 8]],
+        [[0, 18, 4], [4, 14, 4], [8, 9, 4], [12, 14, 4], [16, 18, 6], [24, 21, 8]],
+      ],
+      bass: { 0: 0, 2: 0, 6: 0, 8: 12, 10: 7, 12: 0, 14: 12 } },
+    /* C minor at 96, heavy and slow: the snare on the third beat only. Cm, Ab, Eb, Bb, then Fm, Cm, Ab and G */
+    { name: 'Under the lights', bpm: 96, kick: 'x.......x.x.....x.......x...x...', snare: '........x.......g.......x.....gg',
+      chords: [[-9, [-9, -6, -2]], [-13, [-13, -9, -6]], [-6, [-6, -2, 1]], [-11, [-11, -7, -4]], [-16, [-16, -13, -9]], [-9, [-9, -6, -2]], [-13, [-13, -9, -6]], [-14, [-14, -10, -7]]],
+      tune: [
+        [[0, 10, 6], [6, 15, 2], [8, 15, 4], [12, 13, 4], [16, 10, 4], [20, 6, 4], [24, 3, 8]],
+        [[0, 11, 6], [6, 15, 2], [8, 18, 6], [14, 15, 2], [16, 11, 8], [24, 8, 8]],
+        [[0, 13, 6], [6, 18, 2], [8, 18, 4], [12, 17, 4], [16, 13, 4], [20, 10, 4], [24, 6, 8]],
+        [[0, 13, 4], [4, 17, 4], [8, 20, 8], [16, 17, 4], [20, 13, 4], [24, 15, 8]],
+        [[0, 15, 2], [2, 15, 2], [4, 20, 4], [8, 18, 4], [12, 15, 4], [16, 11, 4], [20, 15, 4], [24, 8, 8]],
+        [[0, 15, 2], [2, 15, 2], [4, 22, 4], [8, 18, 4], [12, 15, 4], [16, 10, 6], [22, 13, 2], [24, 15, 8]],
+        [[0, 18, 4], [4, 15, 4], [8, 11, 4], [12, 15, 4], [16, 18, 6], [22, 20, 2], [24, 23, 8]],
+        [[0, 14, 4], [4, 17, 4], [8, 22, 6], [14, 20, 2], [16, 17, 4], [20, 14, 4], [24, 10, 8]],
+      ],
+      bass: { 0: 0, 6: 0, 8: 7, 12: 0, 14: 12 } },
+    /* F major at 120, bright and driving: the kick on every beat. F, C, Dm, Bb, then F, Gm, Bb and C */
+    { name: 'Kickoff', bpm: 120, kick: 'x...x...x...x...x...x...x.x.x...', snare: '....x.......x.g.....x.......x.gg',
+      chords: [[-4, [-4, 0, 3]], [-9, [-9, -5, -2]], [-7, [-7, -4, 0]], [-11, [-11, -7, -4]], [-4, [-4, 0, 3]], [-14, [-14, -11, -7]], [-11, [-11, -7, -4]], [-9, [-9, -5, -2]]],
+      tune: [
+        [[0, 8, 2], [2, 12, 2], [4, 15, 4], [8, 20, 4], [12, 19, 2], [14, 17, 2], [16, 15, 6], [22, 12, 2], [24, 15, 8]],
+        [[0, 10, 2], [2, 15, 2], [4, 19, 4], [8, 22, 4], [12, 19, 2], [14, 17, 2], [16, 15, 6], [22, 10, 2], [24, 15, 8]],
+        [[0, 12, 2], [2, 17, 2], [4, 20, 6], [10, 17, 2], [12, 15, 2], [14, 17, 2], [16, 12, 6], [24, 8, 8]],
+        [[0, 13, 2], [2, 17, 2], [4, 20, 6], [10, 17, 2], [12, 13, 4], [16, 15, 3], [19, 17, 1], [20, 15, 4], [24, 10, 8]],
+        [[0, 20, 3], [3, 20, 1], [4, 19, 2], [6, 17, 2], [8, 15, 6], [14, 12, 2], [16, 15, 4], [20, 17, 4], [24, 20, 8]],
+        [[0, 22, 3], [3, 22, 1], [4, 20, 2], [6, 17, 2], [8, 13, 6], [14, 10, 2], [16, 13, 4], [20, 17, 4], [24, 22, 8]],
+        [[0, 20, 2], [2, 17, 2], [4, 13, 4], [8, 17, 2], [10, 20, 2], [12, 22, 4], [16, 20, 8], [24, 17, 8]],
+        [[0, 19, 4], [4, 15, 4], [8, 10, 4], [12, 15, 4], [16, 19, 6], [22, 17, 2], [24, 15, 8]],
+      ],
+      bass: { 0: 0, 2: 12, 4: 0, 6: 12, 8: 0, 10: 12, 12: 7, 14: 12 } },
+  ];
+
+  /* everything that happens on one sixteenth-note step of the loop, for song g (the theme when not given) */
+  function musicStep(c, out, i, t, g) {
+    g = g || SONGS[0];
+    const KICK = g.kick, SNARE = g.snare, BASS = g.bass, TUNE = g.tune, STEP = 60 / g.bpm / 4;
     const s = i % 32, inBar = i % 16, bar = Math.floor(i / 16), phrase = Math.floor(bar / 2) % 8, at = i % 32, fill = bar % 8 === 7;
-    const [root, notes] = CHORDS[phrase];
+    const [root, notes] = g.chords[phrase];
     /* drums */
     if (KICK[s] === 'x' && !(fill && inBar >= 8)) DRUM.kick(c, out, t, 0.8);
     if (fill && inBar >= 8) DRUM.tom(c, out, t, 0.55 + inBar * 0.03, [210, 210, 175, 175, 140, 140, 105, 105][inBar - 8]);  // a run down the toms into the next section
@@ -1165,7 +1216,16 @@
   }
 
   const music = {
-    timer: null, next: 0, step: 0, out: null,
+    timer: null, next: 0, step: 0, out: null, song: null, rounds: 0,
+    /* a song picked at random, never the one just played; each is played twice through, then another follows after a
+       bar's rest */
+    pick() {
+      const was = this.song;
+      let k = 0;
+      do this.song = SONGS[Math.floor(Math.random() * SONGS.length)];
+      while (this.song === was && k++ < 20);
+      this.rounds = 0;
+    },
     start() {
       if (!ctx || !S.mus || this.timer) return;
       this.out = gain(ctx, 0.0001);
@@ -1173,13 +1233,19 @@
       this.out.gain.setTargetAtTime(1, ctx.currentTime, 0.4);
       this.next = ctx.currentTime + 0.08;
       this.step = 0;
+      this.pick();
       this.timer = setInterval(() => {
         if (ctx.state !== 'running') return;
         if (this.next < ctx.currentTime) this.next = ctx.currentTime + 0.05;  // came back from a pause
         while (this.next < ctx.currentTime + 0.14) {
-          musicStep(ctx, this.out, this.step, this.next);
-          this.next += STEP;
+          const st = 60 / this.song.bpm / 4;
+          musicStep(ctx, this.out, this.step, this.next, this.song);
+          this.next += st;
           this.step = (this.step + 1) % (BARS * 16);
+          if (this.step === 0 && ++this.rounds >= 2) {
+            this.next += st * 16;
+            this.pick();
+          }
         }
       }, 30);
     },
@@ -1836,7 +1902,10 @@
     async measure(name, opts, seconds) {
       const sr = 44100, len = seconds || 2.5, Off = window.OfflineAudioContext || window.webkitOfflineAudioContext, c = new Off(2, Math.floor(sr * len), sr), g = buildGraph(c);
       g.out.gain.value = TRIM;
-      if (name === 'music') for (let i = 0; i < Math.floor(len / STEP); i++) musicStep(c, g.music, i % (BARS * 16), 0.02 + i * STEP);
+      if (name === 'music' || name.startsWith('song:')) {
+        const sg = SONGS[name === 'music' ? 0 : +name.slice(5)], st = 60 / sg.bpm / 4;
+        for (let i = 0; i < Math.floor(len / st); i++) musicStep(c, g.music, i % (BARS * 16), 0.02 + i * st, sg);
+      }
       else if (name === 'crowd') {
         const o = opts || {}, raw = o.noStems ? null : await (PG.audio._raw || (PG.audio._raw = renderStems(sr))), st = raw && Object.fromEntries(Object.keys(raw).map(k => [k, toBuffer(c, raw[k])]));
         const n = buildCrowd(c, 0, len, st), m = crowdMix(o.level || 0);
@@ -1884,9 +1953,22 @@
       out['crowd cheering'] = await this.measure('crowd', { level: 0.6, cheer: 1 }, 6);
       out['crowd noise only'] = await this.measure('crowd', { level: 0.3, noStems: true }, 6);
       out.music = await this.measure('music', null, 16 * 16 * STEP);
+      for (let k = 1; k < SONGS.length; k++) out['song ' + SONGS[k].name] = await this.measure('song:' + k, null, 16 * 16 * 15 / SONGS[k].bpm);
       return out;
     },
     names: Object.keys(SFX),
+    songs: SONGS.map(g => g.name),
+    /* test hook: song k rendered off line through the mix, twice through, as a sound buffer (to listen to outside the game) */
+    async renderSong(k, sr) {
+      const g = SONGS[k], st = 60 / g.bpm / 4, n = BARS * 16, Off = window.OfflineAudioContext || window.webkitOfflineAudioContext, rate = sr || 44100, c = new Off(2, Math.floor(rate * (n * st + 2)), rate), b = buildGraph(c);
+      b.out.gain.value = TRIM;
+      for (let i = 0; i < n; i++) musicStep(c, b.music, i, 0.02 + i * st, g);
+      return rendered(c);
+    },
+    /* test hook: what the menu is playing */
+    get song() {
+      return music.song ? music.song.name : null;
+    },
     /* test hook: the level leaving the mix right now, read from an analyser on the output (the last 0.17 s) */
     get meter() {
       if (!ctx || !bus) return null;
