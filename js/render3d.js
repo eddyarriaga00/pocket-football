@@ -1358,8 +1358,9 @@
         v3.set(FW / 2 + 0.3, 3.3, -(50 - 5.2));  // on the handshake
         v3b.set(FW / 2, 3, -49.6);
       } else {
-        v3.set(me.x + 0.4, 3.6, -(me.y - 5.4));  // you with the jersey, the board behind
-        v3b.set(me.x, 3.5, -me.y);
+        const nar = clamp((1 - camera.aspect) / 0.5, 0, 1);  // an upright phone: further back, so the board behind you is not cut off
+        v3.set(me.x + 0.4, 3.6, -(me.y - lerp(5.4, 7.4, nar)));  // you with the jersey, the board behind
+        v3b.set(lerp(me.x, FW / 2, 0.35 * nar), 3.5, -me.y);
       }
     },
     toss(sc, P, v3, v3b) {
@@ -1371,9 +1372,9 @@
         v3.set(ref.x - 2.5, 2, -(ref.y - 6.5));  // low, looking up after the coin
         v3b.set(ref.x, lerp(2.6, 4.6, Math.sin(Math.min(1, (t - 1.4) / 1.6) * Math.PI)), -(ref.y - 0.8));
       } else {
-        const w = sc.win === 0 ? -1 : 1;
-        v3.set(ref.x + w * 0.8, 2.8, -(ref.y - 5.5));  // on the referee's call and the winners
-        v3b.set(ref.x + w * 1.6, 2.3, -ref.y);
+        const w = sc.win === 0 ? -1 : 1, nar = clamp((1 - camera.aspect) / 0.5, 0, 1);  // an upright phone sees less to either side: further back, and aimed between them
+        v3.set(ref.x + w * 0.8, 2.8, -(ref.y - lerp(5.5, 7.6, nar)));  // on the referee's call and the winners
+        v3b.set(ref.x + w * lerp(1.6, 0.85, nar), 2.3, -ref.y);
       }
     },
     trophy(sc, P, v3, v3b) {
@@ -1395,9 +1396,15 @@
       v3b.set(FW / 2, lerp(1.8, 2.5, u), -50);
     },
     half(sc, P, v3, v3b) {
-      const u = Math.min(1, sc.t / 4.4);
-      v3.set(FW / 2 + 22, lerp(9, 16, u), -(50 - lerp(30, 38, u)));  // from high in the corner, pulling up and back as they go
-      v3b.set(FW / 2, 1, -50);
+      const L = P[0];
+      if (sc.t < 2.7 && L) {
+        v3.set(L.x + 2.8, 1.7, -(L.y - 6.5));  // in front of your quarterback as he jogs off, his side behind him
+        v3b.set(L.x, 1.9, -L.y);
+      } else {
+        const u = Math.min(1, (sc.t - 2.7) / 3);
+        v3.set(FW / 2 + 22, lerp(9, 16, u), -(50 - lerp(30, 38, u)));  // then from high in the corner, pulling up and back as both sides go
+        v3b.set(FW / 2, 1, -50);
+      }
     },
     faceoff(sc, P, v3, v3b) {
       const t = sc.t, me = sc.me || P[0], him = sc.him || P[1], mx = (me.x + him.x) / 2, y = me.y;
@@ -1419,8 +1426,8 @@
     walkout(sc, P, v3, v3b) {
       const t = sc.t, L = sc.lead || P[0] || { x: FW / 2, y: 0 };
       if (t < 2.3) {
-        v3.set(TUN_X + 1.7, 1.6, -3.2);  // low on the goal line, looking into the tunnel
-        v3b.set(TUN_X, 1.5, 9);
+        v3.set(TUN_X + 2.6, 1.5, -11.5);  // low at the ten, looking back at the tunnel's mouth: the wall and the stands round it, the smoke in it
+        v3b.set(TUN_X, 2.1, 4);
       } else if (t < 4.5) {
         v3.set(TUN_X + 6, 1.9, -7);  // out on the field, the team pouring out of the mouth toward it
         v3b.set(TUN_X + 1, 1.4, 1);
@@ -1705,7 +1712,7 @@
 
   /* the ball in the throwing hand: where it is, in the forearm's own space */
   const TH_GRIP = [0, -0.36, -0.03];
-  let lastKicker = null;
+  let lastKicker = null, cel = null;
   const shot = { of: null, x: 0, y: 0, z: 0, t: 0 };  // the cutscene shot the camera is in: where it stands, how long it has been there
   const spike = [0, 0, 0];  // where a spiked ball left the scorer's hand
   const kickFrom = [0, 0, 0];
@@ -2905,6 +2912,16 @@
     }
     if (!(p.down || p.fell || flat || pileOn)) f.fall = 0;
     if (!(p.dive > 0) && !(p.stun > 0)) f.dove = false;  // back on his feet after a dive
+    {
+      /* a moment begins (a sack, a takeaway): the men who were down are up by now and are let go to gather or to walk
+         off. Wherever each was being drawn, he starts from there and steps back to his own spot. */
+      const mom = !!(s.celeb && s.celeb.kind);
+      if (mom && !f.mom) {
+        f.sx = f.ox;
+        f.sy = f.oy;
+      }
+      f.mom = mom;
+    }
     f.ox = f.oy = 0;  // how far from the engine's spot he is drawn (a tackler closes up on his man)
     tg[PELY] = HIP;
     tg[EL] = 0.25;
@@ -2919,7 +2936,7 @@
         hx = -Math.sin(p.face);
         hy = Math.cos(p.face);
       }
-    } else if (p.down || p.fell || flat || pileOn) {
+    } else if ((p.down || p.fell || flat || pileOn) && !(s.celeb && s.celeb.kind && (s.celeb.who === p || p !== ps.carrier))) {
       // on the turf (or on the pile)
       eyes = false;
       if (f.fall === 0) {
@@ -2972,7 +2989,8 @@
       const e = f.fall * f.fall * (3 - 2 * f.fall), wrap = (p.fell || pileOn) && !p.down && !flat;
       /* After the whistle nobody stays down: up onto a knee, then to his feet. The tackler goes first and the man
          underneath a beat later. */
-      const up = s.G.state === 'dead' && !flat ? clamp(((ps.after || 0) - (p.down ? 1.05 : pileOn ? 0.45 : 0.85)) / (pileOn ? 0.5 : 0.75), 0, 1) : 0;  // the top of the pile off first, then the tackler, then the man with the ball
+      const lieOn = s.G.moment && s.G.state === 'dead' && p === ps.carrier && s.G.moment.who !== p;  // the man who was sacked, or who lost it, stays down while the other side has its moment: he does not get up into their picture
+      const up = s.G.state === 'dead' && !flat && !lieOn ? clamp(((ps.after || 0) - (p.down ? 1.05 : pileOn ? 0.45 : 0.85)) / (pileOn ? 0.5 : 0.75), 0, 1) : 0;  // the top of the pile off first, then the tackler, then the man with the ball
       const tk = wrap && p === ps.tackler && ps.carrier && ps.carrier.down && ps.carrier !== p ? ps.carrier : null;
       let reach = null;
       if (tk) {
@@ -5350,7 +5368,10 @@
       else if (endsT >= 1.15) turnEnds(endsWant);  // and turn the stadium round at the top of it
     }
     endsT += dt;
-    celebT = G.celeb && G.state === 'dead' ? celebT + dt : 0;
+    /* who the camera and the side are celebrating: a touchdown's scorer (G.celeb), or the man of the moment (G.moment,
+       1.25: the sacker, or whoever came up with a turnover), once he is back on his feet */
+    cel = G.celeb || (G.moment && G.state === 'dead' && ps && (ps.after || 0) >= G.moment.at && P.indexOf(G.moment.who) >= 0 ? G.moment : null);
+    celebT = cel && G.state === 'dead' ? celebT + dt : 0;
     celebBall = 0;
     const msg = G.ros && G.state === 'dead' && !G.celeb && BOARD_SAYS.test(G.last || '') ? G.last : '';  // the board has a word for the big ones
     const bk = G.ros ? [G.score, G.q, Math.ceil(G.clock || 0), s.down, !!G.celeb, msg].join('|') : 'menu';
@@ -5404,7 +5425,7 @@
       }
       lastKicker = kicker;
     } else lastKicker = null;
-    const st = { G, ps, kicker, kickHit, kickAt, kickPunt, kickSnap, holder, pre: G.state === 'pre' || G.state === 'kickm', live: G.state === 'live' || G.state === 'replay', dir: G.dir || 1, celeb: G.celeb || null, charge: s.charge, P, figOf: q => (P.indexOf(q) < 0 ? null : figs[SIDELINE + P.indexOf(q)]) };  // a man who is not on the field has no figure (the slot before the first player's is a reserve on the bench)
+    const st = { G, ps, kicker, kickHit, kickAt, kickPunt, kickSnap, holder, pre: G.state === 'pre' || G.state === 'kickm', live: G.state === 'live' || G.state === 'replay', dir: G.dir || 1, celeb: cel, charge: s.charge, P, figOf: q => (P.indexOf(q) < 0 ? null : figs[SIDELINE + P.indexOf(q)]) };  // a man who is not on the field has no figure (the slot before the first player's is a reserve on the bench)
     let ctl = null;
     for (let i = 0; i < MAXP; i++) {
       const f = figs[SIDELINE + i], p = P[i];
@@ -5574,7 +5595,7 @@
           else if (c === ps.qb && ps.mode === 'run' && ps.runner && ps.runner !== c && !ps.handoff && !c.down) v3.set(0, 0.1, -0.33).applyMatrix4(f.chest.matrixWorld);  // riding in both hands at his belt until he gives it
           else v3.set(f.ballL ? -0.03 : 0.03, -0.24, -0.1).applyMatrix4((f.ballL ? f.elL : f.elR).matrixWorld);  // under the other arm when the right hand is the one fending a man off
           let spinning = 0;
-          const cb = G.celeb && G.state === 'dead' && G.celeb.who === c ? celebBall : 0;
+          const cb = cel && G.state === 'dead' && cel.who === c ? celebBall : 0;
           if (cb === 1 || (cb === 5 && celebT < 0.62)) v3.set(TH_GRIP[0], TH_GRIP[1], TH_GRIP[2]).applyMatrix4(f.elR.matrixWorld);
           else if (cb === 4) v3.set(0.04, 0.32, -0.3).applyMatrix4(f.chest.matrixWorld);
           else if (cb === 2 || cb === 3) {
@@ -5766,14 +5787,14 @@
       const side = cm.fx > FW / 2 ? -1 : 1;
       v3.set(cm.fx + side * 13, 3.4, -(cm.fy - st.dir * 5));
       v3b.set(cm.fx, 1.5, -cm.fy);
-    } else if (G.celeb && G.state === 'dead' && G.celeb.who) {
+    } else if (cel && G.state === 'dead' && cel.who) {
       /* Touchdown, in three shots (1.22; it was one slow circle, with whoever stood in the way). The camera is out
          toward midfield from him, so the stands are behind him and his teammates gather on the far side (coast() in
          game.js leaves that side open). It pushes in low on him, drifts across his front while he celebrates, and for
          the last second and a half rises and pulls back to take in the whole side. */
       if (celebT < dt * 1.5) cm.snap = true;  // a cut to him, then the push in
-      const w = G.celeb.who, t = celebT, mx = FW / 2 - w.x, my = 50 - w.y, ml = Math.hypot(mx, my) || 1, a0 = Math.atan2(my / ml, mx / ml * 0.35);
-      const push = smooth(clamp(t / 0.8, 0, 1)), out = smooth(clamp((t - 3.3) / 1.4, 0, 1)), a = a0 + Math.sin(t * 0.5 - 0.6) * 0.55;
+      const w = cel.who, t = celebT, outAt = cel.kind ? 1.35 : 3.3, mx = FW / 2 - w.x, my = 50 - w.y, ml = Math.hypot(mx, my) || 1, a0 = Math.atan2(my / ml, mx / ml * 0.35);
+      const push = smooth(clamp(t / 0.8, 0, 1)), out = smooth(clamp((t - outAt) / 1.4, 0, 1)), a = a0 + Math.sin(t * 0.5 - 0.6) * 0.55;
       const wide = clamp((camera.aspect - 0.7) / 0.9, 0, 1);  // a wide screen sees less top to bottom: the camera stands further back, or it is all legs
       const R = lerp(lerp(10, 4.9, push), 11.5, out) * lerp(1, 1.8, wide), h = lerp(lerp(2.6, 1.5, push), 5.2, out) + 0.5 * wide;
       v3.set(w.x + Math.cos(a) * R, h, -(w.y + Math.sin(a) * R));

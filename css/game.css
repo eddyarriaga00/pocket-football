@@ -742,6 +742,7 @@ tr.me td{color:var(--acc);font-weight:700}
 @keyframes barT{from{transform:translateY(-100%)}to{transform:none}}
 @keyframes barB{from{transform:translateY(100%)}to{transform:none}}
 @keyframes capIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#app:has(.scene) #banner,#app:has(.scene) #toast{opacity:0}   /* and nothing the game says is shown over a cutscene */
 #dip{position:absolute;inset:0;z-index:60;background:#04070d;opacity:0;pointer-events:none}
 #dip.on{animation:dip .55s ease-out both}
 @keyframes dip{0%{opacity:1}35%{opacity:1}100%{opacity:0}}

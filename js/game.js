@@ -390,6 +390,7 @@
     cam.snap = true;
     $('#hud').hidden = true;
     scr.innerHTML = `<button class="scene" id="scn"><div class="cap">${sc.cap || ''}</div><small>Tap to skip</small></button>`;
+    for (const id of ['#banner', '#toast']) $(id).classList.remove('on');  // nothing from the game is left lying over the picture
     $('#scn').onclick = () => endScene();
   }
 
@@ -677,7 +678,7 @@
 
   /* Halftime: both teams jog off toward their own ends while the band comes on; the score on the caption. */
   SCENES.half = {
-    dur: 4.4,
+    dur: 5.7,
     setup(sc) {
       const A = [];
       for (const t of [0, 1]) ['QB', 'RB', 'X', 'Z', 'TE', 'LT', 'C', 'RG'].forEach((r, k) => {
@@ -3565,8 +3566,18 @@
         takeaway: big === 'Interception!' || (kind === 'td' && !own) || (kind === 'fumble' && arg.team !== off), tkl: ps.userTkl || 0 });
     }
     G.state = 'dead';
-    G.deadT = score ? (!AUTO && !QUIET && G.celeb ? 4.9 : 2.6) : !AUTO && hurry(G.poss) && G.poss === off ? 1.1 : 1.7;
-    banner(big, sub, G.deadT * 1000 - 150);
+    /* The man of the moment (1.25): after a sack the sacker, after an interception or a fumble taken away the man who
+       came up with it. Once he is back on his feet (1.7 s for a tackler, 1.9 s for the man tackled) the camera cuts
+       to him for a short celebration, his side round him: the same shots as a touchdown, quicker. Watched games
+       only, never in a hurry-up, and Settings' Cutscenes switch turns it off. */
+    G.moment = null;
+    if (!score && cutsOn() && !(hurry(0) || hurry(1))) {
+      const who = big === 'Sack!' ? ps.tackler : big === 'Interception!' || (kind === 'fumble' && c && c.team !== off) ? c : null;
+      if (who && P.indexOf(who) >= 0) G.moment = { team: who.team, who, kind: big === 'Sack!' ? 'sack' : 'takeaway', group: 0, at: who.down ? 1.9 : who.fell ? 1.7 : 0.5,
+        style: big === 'Sack!' ? [4, 9, 13, 7, 16, 0, 8][Math.floor(Math.random() * 7)] : [14, 15, 11, 9, 4, 2, 17][Math.floor(Math.random() * 7)] };
+    }
+    G.deadT = score ? (!AUTO && !QUIET && G.celeb ? 4.9 : 2.6) : G.moment ? G.moment.at + 2.7 : !AUTO && hurry(G.poss) && G.poss === off ? 1.1 : 1.7;
+    banner(big, sub, Math.min(2400, G.deadT * 1000 - 150));
     updHud();
   }
 
@@ -7190,6 +7201,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.25', 'November 2026', ['A sack gets its moment: the camera cuts to the sacker celebrating over the quarterback, his side round him', 'So does an interception or a fumble taken away: the man who came up with it celebrates with the ball', 'Halftime opens on your quarterback jogging off, then the wide shot', 'The team now runs out of a tunnel you can see, with its smoke and the stands round it (the first shot was nearly black)', 'Coin toss and draft shots are framed for an upright phone, and nothing from the game is left lying over a cutscene']],
     ['1.24', 'November 2026', ['The banner (Touchdown, Kickoff, First down) sits on its own dark band, so it reads over the stadium scoreboard and the crowd', 'Every button now answers a press', 'Sideways phones: the touchdown camera stands further back so the scorer is in the picture, and the banner no longer sits across the player card', 'Small phones: a long double name on the career card breaks at its hyphen, not in the middle of a word', 'A touchdown that ends a quarter gets its celebration before the teams change ends']],
     ['1.23', 'November 2026', ['Cutscenes are letterboxed, come up out of black and go back through it, with a soft dark edge round the picture', 'A change of shot is now a cut, and within a shot the camera drifts and eases in instead of standing still', 'A touchdown cuts straight to the scorer']],
     ['1.22', 'November 2026', ['Touchdowns are filmed in three shots: a push in on the scorer, a drift across his front while he celebrates, then a pull back over the whole side', 'Seven new celebrations: Phone call, Push-ups, Shimmy, Rock the baby, Statue, Bow and arrow and Ball spin (18 in all, picked at random)', 'Two new team celebrations: everyone poses for a picture, or does the wave', 'The ball takes part: a spike bounces away, and it is spun, cradled or held to the ear', 'The scorer plays to the camera, his teammates gather behind him, and the beaten side walks out of the shot']],
@@ -8205,12 +8217,12 @@
      who are near enough run to him instead and gather round (cosmetic: never in simulations) */
   function coast(dt) {
     if (!ps) return;
-    const k = Math.pow(0.03, dt), b = ps.loose, cel = G.celeb && !AUTO && !QUIET && G.celeb.who && !G.celeb.who.down && ps.after > 0.35 ? G.celeb : null;
+    const k = Math.pow(0.03, dt), b = ps.loose, cel = AUTO || QUIET || !(ps.after > 0.35) ? null : G.celeb && G.celeb.who && !G.celeb.who.down ? G.celeb : G.moment && ps.after >= G.moment.at ? G.moment : null;
     if (b) bounce(b, dt);  // an incomplete pass bounces away
     ps.after = (ps.after || 0) + dt;
     if (ps.after < 0.8) record();
     for (const p of P) {
-      if (p.down || p.fell) {
+      if ((p.down || p.fell) && !(cel && cel.kind && (cel.who === p || p !== ps.carrier))) {  // in a moment everyone is back on his feet and free to move, but the man lying on the ball
         if (p.sl > 0) {
           // the tackle's last yard
           p.sl -= dt;
