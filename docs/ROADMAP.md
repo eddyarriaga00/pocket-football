@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `0289e0c`, before the kicking motions (2026-11-27)
   - `5ea42fa`, before the four line-play stances (2026-11-27)
   - `cf5ec21`, before the hands-to-the-ball catch (2026-11-27)
   - `eeccdbe`, before the pop fixes and the pop detector (2026-11-27)
@@ -316,7 +317,7 @@ Animation
 4. [ ] The ball carrier: cuts, stiff arm, spin and juke looked at again on the new stride; a dive at the goal line.
 5. [~] (1.17: four stances, the punch, the arm over; left: a real shed, a pancake, double teams) The line: pass sets, rush moves, run blocks. Today two men lean on each other.
 6. [ ] Tackles and getting up: wraps, the fall, the rise.
-7. [ ] Kicking: the kicker's approach, the holder, the punter's drop and swing, the returner's catch.
+7. [~] (1.18: the swing, the kickoff run-up, the ball waits for the foot, the punt's drop; left: a holder and a snap on place kicks, the returner's catch on film) Kicking: the kicker's approach, the holder, the punter's drop and swing, the returner's catch.
 8. [ ] Between-play life: huddle, walk, signals, celebrations, officials.
 9. [x] (1.15, `PG.r3d.pops`) A pop detector: a test that lists any joint that jumps in one frame, run over full games, so transitions
    between all of the above are found by a tool and not by eye.
@@ -3618,6 +3619,8 @@ The owner: "make sure controller is fully good and keyboard and mouse".
 - **2026-11-27, the catch (1.16).** Filmed, the receiver held his arms out in a set direction and the ball arrived near them. Now over the last 0.28 s (0.12 s for a ball over the shoulder) both arms are solved onto the ball's own position in the chest's space (armIK, eased at 45 a second), each hand a little to its side; the defender at the catch point does the same with the hand on the ball's side, both hands when he is within 0.9 yards of where it lands. The carry-across from 1.14 takes it from the hands to the tuck. Checked: fingerprint unchanged; two rough exhibitions, a receiver career game and a watched game clean; one catch looked at on film from two sides. Not checked on film: the jump, the toe tap, the over-the-shoulder ball, an interception.
 
 - **2026-11-27, line play (1.17).** Every block was one crouch with the legs pumping. The block branch of poseFor now has four jobs by side and play: pass protection (chest up, seat down, quick short steps, one hand punching while the other stays on him), run block (low, leaning, long leg drive), pass rush (leaning in behind the hands, an arm thrown over for a fifth of every 1.8 s on a seeded side, the chest turning with it), run defense (low and square). A wider base for all four. The carrier and a tackle were filmed too and nothing was changed there. Checked: fingerprint unchanged; pops over 7000 watched steps show nothing new from blocks; two rough exhibitions, a quarterback career game and a watched game clean; the line looked at on film from above (small). Not checked: each job close up.
+
+- **2026-11-27, kicking (1.18).** Filmed: on a kickoff the ball left the tee with the kicker standing three yards behind it (no pose at all in 'ko'); on a punt or field goal the leg swung for 0.45 s after the ball had gone. render() now names the kicker (ps.qb in 'kick'; on a kickoff the man of the kicking side nearest the ball as it starts), when the foot meets the ball (`kickHit`: 0.1 s, 0.45 s on a kickoff) and where he stands for it (`kickAt`: beside the tee). poseFor walks him up to it through the draw offset (he steps, as for a pile), then the swing (`kickV`): a tenth of a second of backswing into the ball, a high finish with a hop, the leg down; higher for a punt. The ball is drawn on the tee, or 0.42 yards in front of a place kicker, or dropping from a punter's hands, until the foot gets there, then joins its flight over 0.3 s (0.55 s on a kickoff). Checked: fingerprint unchanged; two rough exhibitions, a season, a watched game and a keyboard game clean; a kickoff and a field goal on film. Not on film: a punt, a blocked kick, an onside kick, a free kick after a safety. Known and left: a field goal has no holder and no snap (the ball starts at the kicker).
 
 ## Morning hand-off
 

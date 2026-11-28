@@ -7167,6 +7167,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.18', 'November 2026', ['Kickoffs are kicked: the kicker runs up, plants beside the ball and swings through it', 'Punts and field goals: a backswing, the foot meets the ball, a high finish', 'The ball waits for the foot on every kick, and a punt is dropped from the hands']],
     ['1.17', 'November 2026', ['Line play: pass blockers sit back and punch, run blockers drive low, pass rushers lean in and throw an arm over, run defenders hold their ground']],
     ['1.16', 'November 2026', ["The catch: the receiver's hands go to the ball itself as it arrives, at any height", 'A defender at the catch reaches for the ball, with both hands when he is under it']],
     ['1.15', 'November 2026', ['Smoother movement: arms no longer swing right round after the whistle, players get down into their stance instead of dropping into it, nobody spins round in a frame, and hands in a block no longer chatter']],
