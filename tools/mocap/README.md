@@ -11,7 +11,7 @@ from NSF EIA-0196217."
 - `look.py survey <clips>`: length, hip speed, and every fast overhead hand (throws) in each clip.
 - `side.py <clip> <t0> <t1> <n> <out.png>`: stick figures from the mover's own side and from above (PNG, no libraries).
 - `retarget.py <clip> <t0> <t1> <n>`: every channel, frame by frame (legs and chest against the hips).
-- `throwtab2.py <clip> <t0> <t1> <n> <release>`: the throw table in `render3d.js` (THROW): arms fitted with
+- `throwtab2.py <clip> <t0> <t1> <n> <release>`: the throw table once in `render3d.js` (THROW, replaced on 2026-11-27 by the hand-built TK): arms fitted with
   `armfit.py` so the elbow and hand land where the thrower's did, the chest measured against the line of the throw.
 
 Run with the project's Python that has numpy (`.voice/venv/bin/python -I`); only numpy is needed.

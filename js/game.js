@@ -1947,7 +1947,7 @@
       ps.thrOpen = sep(r);
       ps.meOpen = G.me && G.me !== q ? sep(G.me) : 0;
     }
-    q.thrT = 0.32;
+    q.thrT = 0.6;  // drawing only: how long the throw and its finish take (TH_LEN in render3d.js)
     q.thrP = pw;  // the follow-through fits the power (drawing only)
     snd('throw');
     if (r && r === G.me && !QUIET) {
@@ -7155,6 +7155,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.13', 'November 2026', ['The throw is rebuilt: the quarterback turns side-on, steps into it, opens his hips and follows through', 'The ball stays in his hand through the wind-up and leaves at the top of the throw', 'A throw on the run and the pump fake use the same motion']],
     ['1.12', 'November 2026', ['Fixed: the first button press after picking a controller up in the middle of a play was lost']],
     ['1.11', 'November 2026', ['Fixed: a kick returner slid onto the ball as he caught it', 'Fixed: a deep safety could hop a yard at the snap near the goal line']],
     ['1.10', 'November 2026', ['Fixed: the aiming line on extra points and field goals had stopped moving']],

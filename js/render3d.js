@@ -44,32 +44,10 @@
   const PELY = 0, PELRX = 1, PELRZ = 2, CHRX = 3, CHRY = 4, HEADRX = 5, SLX = 6, SLZ = 7, EL = 8, SRX = 9, SRZ = 10, ER = 11, HL = 12, KL = 13, HR = 14, KR = 15, AL = 16, AR = 17, HLZ = 18, HRZ = 19, ALZ = 20, ARZ = 21, ALY = 22, ARY = 23, HEADRY = 24, CHRZ = 25, NPOSE = 26;  // CHRZ (2026-11-21): the chest rolls against the hips as he walks and runs
   const TG = new Float32Array(NPOSE);
 
-  /* A real overhand throw, from motion capture (Carnegie Mellon University's motion capture database, subject 79,
-     trial 91: mocap.cs.cmu.edu; free to use in a game, the data itself not resold), converted to this figure's joints
-     with tools kept outside the repo (2026-11-17): the arms fitted so the elbow and the hand are where the thrower's
-     were (the figure's arm has no twist of its own), the chest's turn and lean measured against the line of the throw.
-     A row every 0.05 s from 0.4 s before the release to 0.3 s after; columns SRX, SRZ, ER, SLX, SLZ, EL, CHRX, CHRY.
-     Row 5 is fully cocked (shoulders closed, the ball behind the ear), row 7 the whip, row 8 the release, then the
-     follow-through across the body. */
-  const THROW = [[0.49, 1.07, 1.27, 1.24, -0.33, 0.51, 0.42, -1.24], [0.81, 1.39, 1.12, 1.02, -0.61, 0.52, 0.51, -1.32], [1.23, 1.57, 1.28, 0.69, -0.87, 0.56, 0.55, -1.38], [1.45, 1.66, 1.54, 0.19, -1.08, 0.56, 0.56, -1.42],
-    [1.54, 1.74, 1.78, -0.36, -1.10, 0.49, 0.55, -1.42], [1.63, 1.83, 1.96, -0.79, -0.94, 0.56, 0.50, -1.34], [1.83, 1.81, 2.11, -0.99, -0.69, 0.87, 0.38, -1.09], [2.10, 1.75, 2.22, -0.81, -0.58, 1.14, 0.22, -0.59],
-    [1.96, 1.43, 1.87, -0.32, -0.77, 1.35, 0.10, 0.03], [1.61, 1.16, 0.84, -0.42, -0.71, 1.58, 0.15, 0.41], [1.19, 1.06, 0.75, -0.70, -0.59, 1.56, 0.16, 0.71], [0.99, 1.15, 0.60, -0.82, -0.56, 1.48, 0.16, 1.03],
-    [0.90, 1.18, 0.55, -0.88, -0.51, 1.41, 0.11, 1.19], [0.89, 1.17, 0.55, -0.85, -0.46, 1.31, 0.07, 1.26], [0.92, 1.13, 0.56, -0.79, -0.39, 1.21, 0.04, 1.28]], TH_CH = [SRX, SRZ, ER, SLX, SLZ, EL, CHRX, CHRY];
   /* The catch secured (CMU capture 34_01, 2.72 to 2.96 s): rows of SRX, SRZ, ER, SLX, SLZ, EL, CHRX from the ball in
      both hands at the chest to the ball held at the belly. */
   const SECURE = [[0.89, 0, 1.39, 0.87, 0.2, 1.27, -0.02], [0.39, -0.02, 1.93, 0.45, 0.22, 1.68, -0.07], [0.16, 0.03, 2.03, 0.24, 0.13, 1.81, -0.09],
     [0.13, 0.1, 2.02, 0.23, 0.11, 1.81, -0.08], [0.19, 0.14, 1.87, 0.25, 0.13, 1.79, -0.08]], SECURE_CH = [SRX, SRZ, ER, SLX, SLZ, EL, CHRX];
-  /* the throw at row x (fractional), blended over the pose so far by k; the head turns back against the chest, so his
-     eyes stay on the man he is throwing to */
-  function throwPose(tg, x, k) {
-    const i = clamp(Math.floor(x), 0, THROW.length - 2), a = clamp(x - i, 0, 1);
-    for (let c = 0; c < TH_CH.length; c++) {
-      const v = lerp(THROW[i][c], THROW[i + 1][c], a) * (c === 7 ? 0.8 : 1);  // the chest turns a little less than the thrower's: the figure's hips stay square to the target
-      tg[TH_CH[c]] = lerp(tg[TH_CH[c]], v, k);
-    }
-    tg[HEADRY] = lerp(tg[HEADRY], clamp(-tg[CHRY] * 0.9, -1.2, 1.2), k);
-  }
-
   /* two poses a fallen player passes through on his way up: one knee down with the other foot planted, then standing */
   const KNEEL = new Float32Array(NPOSE), STAND = new Float32Array(NPOSE);
 
@@ -1623,6 +1601,111 @@
     ARM[2] = bend;
   }
 
+  /* ---------- the throw ----------
+     The whole body throws (2026-11-27; before, only the arms and chest moved over a fixed pair of legs, and the ball
+     left his chest while the arm was still going back). Six moments, each a row of TK, in the frame of the throw: `a`
+     is toward the target and `b` to the thrower's right as he faces it, in figure units from the spot he stands on.
+       0    the carry: side-on, both hands on the ball at the back number, feet under him
+       1    cocked: shoulders closed past the hips, the ball up behind the ear with the elbow high, the front hand
+            off the ball and pointing, the weight on the back leg and the front foot coming off the turf
+       1.5  the stride has landed and the hips are opening; the elbow leads the ball
+       2    the release: hips and chest square, the arm long and high in front, the back heel up
+       2.4  the arm carries on out at the target, the back foot leaving the turf
+       3    the finish: the hand down by the far hip, the chest over the front knee, the back foot brought up level
+     Columns: the moment; how far the hips are turned to his right of the target; the hips along `a` and their
+     height; the front (left) foot a, b, lift and heel pitch; the back foot the same; the chest's lean, turn against
+     the hips and tilt; the throwing hand from its shoulder in the chest's own space (right, up, behind); the front
+     hand the same. */
+  const TK = [
+    [0, 0.45, 0, 0.935, 0.24, -0.106, 0, 0, -0.204, 0.123, 0, 0, -0.05, 0, 0, -0.17, -0.2, -0.2, 0.44, -0.21, -0.21],
+    [1, 1.2, -0.07, 0.915, 0.3, -0.1, 0.06, -0.15, -0.204, 0.123, 0, 0, 0.06, -0.3, -0.07, 0.13, 0.2, 0.17, -0.12, -0.08, -0.25],
+    [1.5, 0.75, 0.07, 0.92, 0.5, -0.08, 0, 0, -0.204, 0.123, 0, 0.25, -0.02, -0.08, 0.08, 0.2, 0.33, 0.02, -0.05, -0.2, -0.2],
+    [2, 0.2, 0.2, 0.94, 0.5, -0.08, 0, 0, -0.204, 0.123, 0, 0.6, -0.18, 0.3, 0.16, 0.1, 0.38, -0.4, 0.05, -0.27, -0.12],
+    [2.4, 0, 0.24, 0.935, 0.5, -0.08, 0, 0, -0.1, 0.15, 0.05, 0.9, -0.28, 0.42, -0.05, -0.12, 0.06, -0.5, 0.04, -0.29, -0.06],
+    [3, -0.15, 0.27, 0.93, 0.5, -0.08, 0, 0, 0.08, 0.2, 0, 0.35, -0.36, 0.5, -0.2, -0.4, -0.33, -0.2, 0.02, -0.3, -0.02]];
+  const THV = new Float32Array(21), TH_LEN = 0.6, TH_WHIP = 0.085, TH_COCK = 0.1, TH_FIN = 0.2;
+
+  /* the row for moment x: the feet go from key to key and stop (a planted foot must not drift), everything else runs
+     through the keys without stopping, so the whip has no pause in it */
+  function throwAt(x) {
+    x = clamp(x, 0, 3);
+    let i = 0;
+    while (i < TK.length - 2 && x > TK[i + 1][0]) i++;
+    const A = TK[i], B = TK[i + 1], h = B[0] - A[0], t = (x - A[0]) / h, P0 = TK[Math.max(0, i - 1)], P3 = TK[Math.min(TK.length - 1, i + 2)];
+    const t2 = t * t, t3 = t2 * t, st = t2 * (3 - 2 * t);
+    for (let c = 1; c < 21; c++) {
+      if (c >= 4 && c <= 11) THV[c] = A[c] + (B[c] - A[c]) * st;
+      else {
+        const m0 = (B[c] - P0[c]) / (B[0] - P0[0]) * h, m1 = (P3[c] - A[c]) / (P3[0] - A[0]) * h;
+        THV[c] = (2 * t3 - 3 * t2 + 1) * A[c] + (t3 - 2 * t2 + t) * m0 + (3 * t2 - 2 * t3) * B[c] + (t3 - t2) * m1;
+      }
+    }
+  }
+
+  /* how far into the throw he is `age` seconds after letting go of the button: `wind` is how far the wind-up had taken
+     him already (0 to 1), `rel` when the ball leaves his hand */
+  function throwX(age, wind, rel) {
+    const cock = Math.max(0, rel - TH_WHIP);
+    if (age < cock) return lerp(wind, 1, age / cock);
+    if (age < rel) return 1 + Math.pow((age - cock) / (rel - cock), 1.25);
+    return 2 + (1 - Math.pow(1 - Math.min(1, (age - rel) / TH_FIN), 2));
+  }
+  const throwRel = (wind, T) => Math.min(TH_COCK * (1 - wind) + TH_WHIP, 0.4 * (T || 9));
+
+  /* The pose at moment x into tg. With `legs`, the hips and feet too (a set throw); without, the chest and arms over
+     whatever the legs are doing (a throw on the run). Returns how far his hips are turned to his right of the target;
+     TH_OFF is how far forward of his spot they are, in figure units. */
+  let TH_OFF = 0;
+
+  function throwBody(f, tg, x, legs) {
+    throwAt(x);
+    const v = THV, psi = v[1];
+    tg[CHRX] = v[12];
+    tg[CHRY] = v[13];
+    tg[CHRZ] = v[14];
+    armIK(v[15], v[16], v[17]);
+    tg[SRX] = ARM[0];
+    tg[SRZ] = ARM[1];
+    tg[ER] = ARM[2];
+    armIK(v[18], v[19], v[20]);
+    tg[SLX] = ARM[0];
+    tg[SLZ] = ARM[1];
+    tg[EL] = ARM[2];
+    tg[HEADRX] = -v[12] * 0.6;
+    TH_OFF = legs ? v[2] : 0;
+    if (legs) {
+      const c = Math.cos(psi), sn = Math.sin(psi);
+      tg[PELY] = v[3];
+      tg[PELRX] = tg[PELRZ] = 0;
+      for (let k = 0; k < 2; k++) {
+        const o = k ? 8 : 4, a = v[o] - v[2], b = v[o + 1], pitch = Math.max(0, v[o + 3]), toeUp = Math.min(0, v[o + 3]);
+        legIK(-a * sn + b * c - (k ? f.hipR : f.hipL).position.x, a * c + b * sn + TOE * (1 - Math.cos(pitch)) + SOLE * Math.sin(pitch), v[o + 2] + SOLE * Math.cos(pitch) + TOE * Math.sin(pitch), v[3], pitch + toeUp);
+        tg[k ? HR : HL] = LEG[0];
+        tg[k ? KR : KL] = LEG[1];
+        tg[k ? AR : AL] = LEG[2];
+        tg[k ? HRZ : HLZ] = LEG[3];
+        tg[k ? ARZ : ALZ] = LEG[4];
+        tg[k ? ARY : ALY] = LEG[5] + (k ? clamp(psi - 1.1, -0.5, 0.2) : clamp(psi - 0.3, -0.45, 0.9));  // the front toe stays nearly on the target and the back foot square to it, whatever the hips are doing
+      }
+    }
+    return psi;
+  }
+
+  /* the chest and arms of the throw at moment x, blended over the pose so far by k (a throw on the run, a pump fake):
+     with no hips to turn, the chest does part of their turning */
+  const TH_UP = [CHRX, CHRY, CHRZ, SRX, SRZ, ER, SLX, SLZ, EL, HEADRX], TH_KEEP = new Float32Array(10);
+
+  function throwUpper(f, tg, x, k) {
+    for (let i = 0; i < 10; i++) TH_KEEP[i] = tg[TH_UP[i]];
+    const psi = throwBody(f, tg, x, false);
+    tg[CHRY] -= (psi - 0.2) * 0.6;
+    for (let i = 0; i < 10; i++) tg[TH_UP[i]] = lerp(TH_KEEP[i], tg[TH_UP[i]], k);
+    return psi;
+  }
+
+  /* the ball in the throwing hand: where it is, in the forearm's own space */
+  const TH_GRIP = [0, -0.36, -0.03];
+
   /* the shortest distance between two segments (a0 to a1, b0 to b1), without making anything new */
   const SD1 = new T.Vector3(), SD2 = new T.Vector3(), SR = new T.Vector3();
 
@@ -2536,7 +2619,8 @@
     const dropping = pocketLive && !winding && ps.t < 1.8 && p.vy * s.dir < -1, qbSet = pocketLive && sp < 0.6 && ps.t > 0.25;
     const gait = stridePhase(f, p.vx + f.svx, p.vy + f.svy, dt, dropping ? f.dropStep : 0), sn = Math.sin(f.ph);  // being moved clear of a pile is ground covered too: he steps there, he does not slide
     if (gait && dropping) gait.base *= 0.3;  // his feet cross as he goes back: it is not a shuffle
-    let hx = null, hy = 0, snap = false, eyes = true, wantX = 0, wantY = 0;  // eyes: his helmet is free to turn to what he is watching; wantX, wantY: how far from the engine's spot a block, or a pile, wants him drawn
+    let hx = null, hy = 0, snap = false, eyes = true, wantX = 0, wantY = 0, thLegs = false, thHead = null, turnRate = 13, inHand = 0;  // thLegs: the throw has placed his feet; thHead: where the throw wants his helmet turned; inHand: the ball is in his throwing hand, not held at his chest
+    const thSet = sp < 2;  // a set throw: slow enough to plant and step into it  // eyes: his helmet is free to turn to what he is watching; wantX, wantY: how far from the engine's spot a block, or a pile, wants him drawn
     const flat = p.flat > 0 && !p.down && !p.fell;  // run over: on his back for a moment
     const cd = ps.carrier, settled = s.G.state === 'dead' || s.G.state === 'replay';
     const pileOn = !!cd && cd.down && cd !== p && !p.down && !p.fell && !flat && !!s.figOf && settled && pileOf(s).includes(p);  // diving onto the pile (see pileOf)
@@ -2944,24 +3028,34 @@
       tg[ER] = 0.1;
       tg[HEADRX] = 0.1;
       tg[CHRX] = 0.04;
-    } else if (p.thrT > 0) {
-      /* The throw: cock, then whip through. A quarterback who wound up while the power bar filled is cocked already
-         and goes straight to the whip. The finish fits the power: a bullet snaps down across the body with the
-         weight over the front foot, a lob is pushed up and out and finishes high. */
-      const u = 1 - p.thrT / 0.32, pw = p.thrP === undefined ? 0.5 : p.thrP, cock = 0.45 * (1 - (f.wind || 0));
-      eyes = false;  // on the man he is throwing to, and he faces him
-      /* the real throw (THROW): from wherever the wind-up left him through the cock to the whip, then the release and
-         the follow-through, which take 0.35 s in the capture against the game's 0.32. A lob finishes higher, a
-         bullet lower with the weight over the front foot. */
-      const x = u < cock ? lerp(lerp(1, 5, f.wind || 0), 7, u / cock) : lerp(7, 14, smooth((u - cock) / (1 - cock))), fin = smooth(clamp((x - 8) / 6, 0, 1));
-      throwPose(tg, x, 1);
-      tg[SRX] += (0.5 - pw) * 0.6 * fin;
-      tg[CHRX] -= pw * 0.25 * fin;
-      tg[HL] = 0.4;
-      tg[KL] = -0.3;
-      tg[HR] = -0.3;
-      tg[KR] = -0.2;
-      plant(tg);
+    } else if (p.thrT > 0 && thSet) {
+      /* The throw (see TK): from wherever the wind-up left him through the cock, the stride and the whip to the
+         release, then the finish. A quarterback who wound up while the power bar filled is cocked already and goes
+         straight to the whip. The finish fits the power: a bullet snaps down with the chest over the front knee, a
+         lob is pushed up and out and finishes high. */
+      const a = ps.air, pw = p.thrP === undefined ? 0.5 : p.thrP;
+      if (a && !a.kick && (a.x1 !== p.x || a.y1 !== p.y)) {
+        f.thx = a.x1 - p.x;
+        f.thy = a.y1 - p.y;
+        f.thRel = throwRel(f.wind || 0, a.T);
+      }
+      if (f.thx === undefined || !(f.thRel > 0)) {
+        f.thx = -Math.sin(f.heading);
+        f.thy = Math.cos(f.heading);
+        f.thRel = throwRel(f.wind || 0, 9);
+      }
+      const age = TH_LEN - p.thrT, x = throwX(age, f.wind || 0, f.thRel), psi = throwBody(f, tg, x, true), fin = smooth(clamp(x - 2, 0, 1)), th = Math.atan2(-f.thx, f.thy) - psi, far = Math.hypot(f.thx, f.thy) || 1, off = TH_OFF * f.root.scale.y;
+      eyes = false;  // on the man he is throwing to
+      tg[SRX] += (0.5 - pw) * 0.5 * fin;
+      tg[CHRX] -= (pw - 0.5) * 0.2 * fin;
+      thHead = psi - tg[CHRY];
+      hx = -Math.sin(th);
+      hy = Math.cos(th);
+      turnRate = 60;
+      wantX = f.thx / far * off;
+      wantY = f.thy / far * off;
+      thLegs = true;
+      inHand = age < f.thRel ? 1 : 0;
       snap = true;
     } else if (ps.mode === 'kick' && p === ps.qb && ps.air && ps.air.t < 0.45) {
       // the kicker swings through the ball
@@ -3203,25 +3297,60 @@
       if (p.pump > 0 && !winding && inPocket) {
         /* the pump fake: the ball goes back by his ear, the arm starts forward, and he pulls it down again */
         const e = Math.sin(clamp(1 - p.pump / 0.42, 0, 1) * Math.PI);
-        tg[SRX] = lerp(tg[SRX], 2.9, e);
-        tg[ER] = lerp(tg[ER], 1.3, e);
-        tg[SRZ] = lerp(tg[SRZ], 0.1, e);
-        tg[SLX] = lerp(tg[SLX], 1.2, e);
-        tg[EL] = lerp(tg[EL], 0.7, e);
-        tg[CHRY] = lerp(tg[CHRY], 0.45, e);
+        throwUpper(f, tg, 1.4 * e, Math.min(1, e * 3));
+        inHand = Math.min(1, e * 3);
         snap = true;
       }
       if (winding) {
-        /* winding up as the power bar fills: the ball goes back behind the ear, the front arm comes off it and
-           points, the shoulders open, and he turns to the man he is throwing to */
+        /* winding up as the power bar fills: he turns side-on to the man he has picked, the ball goes back behind
+           the ear with the elbow high, the front hand comes off it, and his weight settles on the back leg */
         const e = smooth(s.charge), r = s.G.chg && ps.recs ? ps.recs[s.G.chg.i] : null;
         eyes = false;  // on the man he has picked
-        throwPose(tg, lerp(1, 5, e), Math.min(1, e * 1.6));  // into the real thrower's cock as the bar fills (THROW)
-        f.wind = s.charge;
+        f.wind = e;
+        inHand = Math.min(1, e * 4);
         if (r) {
-          hx = r.x - p.x;
-          hy = r.y - p.y;
+          f.thx = r.x - p.x;
+          f.thy = r.y - p.y;
+        } else if (f.thx === undefined) {
+          f.thx = 0;
+          f.thy = s.dir;
         }
+        if (thSet) {
+          const psi = throwBody(f, tg, e, true), th = Math.atan2(-f.thx, f.thy) - psi, far = Math.hypot(f.thx, f.thy) || 1, off = TH_OFF * f.root.scale.y;
+          thHead = psi - tg[CHRY];
+          hx = -Math.sin(th);
+          hy = Math.cos(th);
+          turnRate = 22;
+          wantX = f.thx / far * off;
+          wantY = f.thy / far * off;
+          thLegs = true;
+        } else {
+          throwUpper(f, tg, e, Math.min(1, e * 2.5));
+          hx = f.thx;
+          hy = f.thy;
+        }
+      } else if (p.thrT > 0) {
+        /* a throw on the run: the legs keep going, the chest and arm do the throwing */
+        const a = ps.air;
+        if (a && !a.kick && (a.x1 !== p.x || a.y1 !== p.y)) {
+          f.thx = a.x1 - p.x;
+          f.thy = a.y1 - p.y;
+          f.thRel = throwRel(f.wind || 0, a.T);
+        }
+        if (f.thx === undefined || !(f.thRel > 0)) {
+          f.thx = -Math.sin(f.heading);
+          f.thy = Math.cos(f.heading);
+          f.thRel = throwRel(f.wind || 0, 9);
+        }
+        const age = TH_LEN - p.thrT;
+        throwUpper(f, tg, throwX(age, f.wind || 0, f.thRel), 1);
+        eyes = false;
+        thHead = -tg[CHRY];
+        hx = f.thx;
+        hy = f.thy;
+        turnRate = 30;
+        inHand = age < f.thRel ? 1 : 0;
+        snap = true;
       }
       if (ps.air && !ps.air.kick && ps.air.T - ps.air.t < 0.5) {
         const a = ps.air, bx = a.x - p.x, by = a.y - p.y;
@@ -3491,7 +3620,8 @@
         tg[HR] = 0.2 * up;
         tg[KR] = -0.75 * up;
         snap = true;
-      } else if (gait) {
+      } else if (thLegs) striding = false;
+      else if (gait) {
         /* last, so the legs reach the turf from wherever the hips have ended up (lower when he drops a shoulder) */
         strideLegs(tg, gait, tg[PELY]);
         striding = true;
@@ -3556,7 +3686,7 @@
       const want = Math.atan2(-hx, hy);
       let d = want - f.heading;
       d = Math.atan2(Math.sin(d), Math.cos(d));
-      f.heading += f.snap ? d : d * (1 - Math.exp(-dt * 13));
+      f.heading += f.snap ? d : d * (1 - Math.exp(-dt * turnRate));
       f.lean += ((f.snap ? 0 : clamp(d * 0.9 * run, -0.32, 0.32)) - f.lean) * (1 - Math.exp(-dt * 9));
     } else f.lean *= Math.exp(-dt * 9);
     if (p.spinT > 0) f.heading += dt * Math.PI * 2 / 0.5;
@@ -3578,6 +3708,7 @@
     f.tip += (tip - f.tip) * turn;
     f.twist += (twist - f.twist) * turn;
     tg[HEADRY] += f.look;
+    if (thHead !== null) tg[HEADRY] = clamp(thHead, -1.3, 1.3);
     tg[HEADRX] += f.tip;
     tg[CHRY] += f.twist;
     /* standing room (at a block, beside a pile) comes and goes over a few tenths of a second, so nobody jumps */
@@ -3586,9 +3717,17 @@
     f.sy += my;
     f.svx = f.snap || !(dt > 0) ? 0 : mx / dt;
     f.svy = f.snap || !(dt > 0) ? 0 : my / dt;
+    if (thLegs) {
+      // the throw moves his hips over his feet itself: followed exactly, and the easing takes him back afterward
+      f.sx = wantX;
+      f.sy = wantY;
+      f.svx = f.svy = 0;
+    }
+    f.hand = inHand;
     f.ox += f.sx;
     f.oy += f.sy;
     if (!(p.thrT > 0) && !winding) f.wind = 0;
+    if (!(p.thrT > 0)) f.thB = null;
     easePose(f, tg, f.snap || snap ? (f.snap ? 1 : 1 - Math.exp(-dt * 60)) : 1 - Math.exp(-dt * 28), striding, dt);
     f.snap = false;
     applyPose(f);
@@ -4926,7 +5065,24 @@
         dirV.set((a.x1 - a.x0) / a.T, vz, -(a.y1 - a.y0) / a.T).normalize();
         ball.quaternion.setFromUnitVectors(zAxis, dirV);
         if (a.kick) ball.rotateX(time * 14);
-        else ball.rotateZ(time * 22);
+        else {
+          /* a pass stays in the thrower's hand until his arm lets it go, then catches up with its flight over the
+             next few tenths of a second (the engine has had it in the air since the button was let go) */
+          const qi = P.findIndex(q => q.thrT > 0), fq = qi >= 0 ? figs[SIDELINE + qi] : null, age = fq ? TH_LEN - P[qi].thrT : 9;
+          if (fq && fq.thRel > 0 && age < fq.thRel) {
+            v3.set(TH_GRIP[0], TH_GRIP[1], TH_GRIP[2]).applyMatrix4(fq.elR.matrixWorld);
+            fq.thB = fq.thB || [0, 0, 0];
+            bx = fq.thB[0] = v3.x;
+            by = fq.thB[1] = -v3.z;
+            bz = fq.thB[2] = v3.y;
+          } else if (fq && fq.thB && fq.thRel > 0) {
+            const k = smooth(clamp((age - fq.thRel) / Math.min(0.3, a.T * 0.5), 0, 1));
+            bx = lerp(fq.thB[0], bx, k);
+            by = lerp(fq.thB[1], by, k);
+            bz = lerp(fq.thB[2], bz, k);
+            ball.rotateZ(time * 22);
+          } else ball.rotateZ(time * 22);
+        }
       } else if (ps.loose) {
         bx = ps.loose.x;
         by = ps.loose.y;
@@ -4937,7 +5093,10 @@
         const f = figs[SIDELINE + P.indexOf(c)];
         if (f) {
           const pocket = c === ps.qb && ps.mode === 'pass' && !ps.thrown && !ps.open && !c.down;
-          if (pocket) v3.set(0.06, 0.4, -0.27).applyMatrix4(f.chest.matrixWorld);
+          if (pocket) {
+            v3.set(0.06, 0.4, -0.27).applyMatrix4(f.chest.matrixWorld);
+            if (f.hand > 0) v3.lerp(v3b.set(TH_GRIP[0], TH_GRIP[1], TH_GRIP[2]).applyMatrix4(f.elR.matrixWorld), f.hand);  // winding up, or pumping: it goes back with his hand
+          }
           else v3.set(f.ballL ? -0.03 : 0.03, -0.24, -0.1).applyMatrix4((f.ballL ? f.elL : f.elR).matrixWorld);  // under the other arm when the right hand is the one fending a man off
           bx = v3.x;
           by = -v3.z;
@@ -5314,7 +5473,7 @@
     return cv.toDataURL('image/png');
   }
 
-  /* test hook: the quarterback through the throw (THROW), one view a row of the table from x0 to x1, seen from angle a
+  /* test hook: the quarterback through the throw (TK), one view a moment from x0 to x1 (0 to 3), seen from angle a
      (0: from in front, pi/2: from his left) */
   function throwStrip(x0, x1, n, a, cell) {
     if (!renderer) return null;
@@ -5326,16 +5485,17 @@
     x.fillRect(0, 0, cv.width, cv.height);
     st.f.root.rotation.y = a || 0;
     for (let k = 0; k < n; k++) {
-      const c = st.f.cur;
+      const c = st.f.cur, rp = st.f.root.position, px = rp.x, pz = rp.z;
       c.fill(0);
-      c[PELY] = HIP;
-      c[HL] = 0.4;
-      c[KL] = -0.3;
-      c[HR] = -0.3;
-      c[KR] = -0.2;
-      throwPose(c, x0 + (x1 - x0) * k / Math.max(1, n - 1), 1);
+      const psi = throwBody(st.f, c, x0 + (x1 - x0) * k / Math.max(1, n - 1), true), ang = a || 0, off = TH_OFF * st.f.root.scale.y;
+      c[HEADRY] = clamp(psi - c[CHRY], -1.3, 1.3);
       applyPose(st.f);
+      st.f.root.rotation.y = ang - psi;
+      rp.x = px - Math.sin(ang) * off;
+      rp.z = pz - Math.cos(ang) * off;
       shoot(st, x, k * w, 0, w);
+      rp.x = px;
+      rp.z = pz;
     }
     st.f.root.rotation.y = keep;
     return cv.toDataURL('image/png');

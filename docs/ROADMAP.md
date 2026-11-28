@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `2f097d2`, before the rebuilt throw (2026-11-27)
   - `b077b95`, before the controller's first-press fix and the input tests (2026-11-22).
   - `e65774b`, before the returner and deep-safety hop fixes (2026-11-21).
   - `58b4546`, before the fix to the kick's aiming line (2026-11-21).
@@ -295,6 +296,35 @@ what is next. Update it after every item.
 - [x] Offline play: `sw.js` is network first with the cache as a fallback, so a new push is never hidden by an old copy.
       Registered only on https. Not tested offline on a phone.
 - [x] The game watches its own frame rate and drops the glow pass, then sharpness, then shadows if a device cannot keep up
+
+## Overhaul plan (2026-11-27)
+
+The owner asked for the animations to be overhauled, starting with the throw, and for a plan of what else needs
+work. This is the list, in the order proposed; he decides the order. Each item is checked with a filmed strip
+(`film()` in the log entry of 2026-11-27, or the strips in `PG.r3d`) before it ships.
+
+Animation
+1. [x] The throw (1.13): full body, ball in the hand, run throw, pump fake.
+2. [ ] The quarterback around the throw: the snap into his hands (shotgun and under center), the drop's footwork,
+   the hand-off and the pitch (the ball changing hands), a throw-away, taking a sack.
+3. [ ] The catch: hands to the ball at every height, the jump, over the shoulder, the toe tap, the turn up the field
+   afterwards; the defender's swat and the interception.
+4. [ ] The ball carrier: cuts, stiff arm, spin and juke looked at again on the new stride; a dive at the goal line.
+5. [ ] The line: pass sets, rush moves, run blocks. Today two men lean on each other.
+6. [ ] Tackles and getting up: wraps, the fall, the rise.
+7. [ ] Kicking: the kicker's approach, the holder, the punter's drop and swing, the returner's catch.
+8. [ ] Between-play life: huddle, walk, signals, celebrations, officials.
+9. [ ] A pop detector: a test that lists any joint that jumps in one frame, run over full games, so transitions
+   between all of the above are found by a tool and not by eye.
+
+Beyond animation (proposed, not asked for yet)
+- The look of the players in play. The owner said on 2026-11-22 that the models "feel severely downgraded". The
+  model code has not changed since 2026-11-16; the suspect is watchSpeed() in game.js, which turns off close-up
+  models, the color pass, sharpness and shadows for good when the frame rate dips (a phone in Low Power Mode is held
+  to 30). Not confirmed on his phone. Fix: do not save the step-down, undo a step that did not help, restore once.
+- The ball: its size next to the players, the spiral, the arc.
+- The camera: framing by situation.
+- Still offered and not built: head-to-head online, cloud saves, team logos, a draft screen and trades.
 
 ## Log
 
@@ -3549,6 +3579,21 @@ The owner: "make sure controller is fully good and keyboard and mouse".
   itself when it is not drawn yet.
 - Not covered: a real controller in the hand (rumble, a PlayStation pad's shapes, a non-standard layout), and
   career, season and camp games by controller (their screens were reached, their games were not played with it).
+
+- **2026-11-27, the throw rebuilt (1.13).** The owner: "improve animations entirely, an overhaul, starting with the
+  throwing animation". Before: arms and chest from a capture over a fixed pair of legs, 0.32 s, and the ball drawn at
+  the chest through the wind-up and already in flight while the arm went back. Now `TK` in render3d.js holds six
+  moments of a whole-body throw in the frame of the target (hips' turn, hips' place and height, both feet, chest,
+  both hands); `throwBody` solves legs and arms from it, `throwX` times it (a wound-up throw goes straight to the
+  whip), and the heading carries the hips' turn. The ball is in the throwing hand through the wind-up and the pump
+  fake, leaves at the release and joins its flight over up to 0.3 s. A throw at 2 yards a second or more keeps the
+  stride and throws with the chest and arm. `thrT` is 0.6 s (drawing only). The old `THROW` table is gone. Checked:
+  fingerprint unchanged; three rough exhibitions, a quarterback and a receiver career game, a watched game and a
+  keyboard-only game clean; the motion looked at as filmed frames from the side and from behind (a held throw and a
+  tap). Filming a throw in the test pane: start an exhibition with `H_WATCH = 1`, step until `PG.dbg.G.chg`, then
+  set `PG.r3d.debugCam = { pos, look }` beside the quarterback and copy `#gl` after each `PG.dbg.render()`. Not
+  checked: how it reads at game-camera distance in motion, a left-handed thrower (there is none), feet measured for
+  slide. The plan for the rest is under "Overhaul plan".
 
 ## Morning hand-off
 
