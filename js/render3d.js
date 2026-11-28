@@ -1706,6 +1706,7 @@
   /* the ball in the throwing hand: where it is, in the forearm's own space */
   const TH_GRIP = [0, -0.36, -0.03];
   let lastKicker = null;
+  const shot = { of: null, x: 0, y: 0, z: 0, t: 0 };  // the cutscene shot the camera is in: where it stands, how long it has been there
   const spike = [0, 0, 0];  // where a spiked ball left the scorer's hand
   const kickFrom = [0, 0, 0];
   const held = { who: null, on: false, x: 0, y: 0, z: 0, fx: 0, fy: 0, fz: 0, t: 0 };  // who had the ball on the last frame and where it was drawn, for the hand-over
@@ -5726,6 +5727,21 @@
       }
     } else if (G.state === 'scene' && s.scene && SCENECAM[s.scene.kind]) {
       SCENECAM[s.scene.kind](s.scene, P, v3, v3b);
+      /* A change of shot is a cut (1.23: the camera used to glide from one shot's place to the next over half a
+         second, through whatever was in between). And within a shot it is never quite still: it eases in on what it
+         is looking at by a fifteenth over four seconds, and sways a few inches, the way a held camera does. */
+      if (s.scene !== shot.of || Math.hypot(v3.x - shot.x, v3.y - shot.y, v3.z - shot.z) > 2.5) {
+        cm.snap = true;
+        shot.t = 0;
+        shot.of = s.scene;
+      }
+      shot.x = v3.x;
+      shot.y = v3.y;
+      shot.z = v3.z;
+      shot.t += dt;
+      v3.lerp(v3b, 0.07 * smooth(Math.min(1, shot.t / 4)));
+      v3.x += Math.sin(time * 0.9) * 0.07;
+      v3.y += Math.sin(time * 1.3 + 1) * 0.04;
     } else if (endsT < 2.6 && G.state !== 'live' && G.state !== 'replay' && G.state !== 'intro' && G.state !== 'scene') {
       // the teams change ends: a crane up over midfield and down again, the stadium turning round at the top
       const u = endsT / 2.6, a = -0.4 + u * 1.6, h = Math.sin(Math.PI * u);
@@ -5753,6 +5769,7 @@
          toward midfield from him, so the stands are behind him and his teammates gather on the far side (coast() in
          game.js leaves that side open). It pushes in low on him, drifts across his front while he celebrates, and for
          the last second and a half rises and pulls back to take in the whole side. */
+      if (celebT < dt * 1.5) cm.snap = true;  // a cut to him, then the push in
       const w = G.celeb.who, t = celebT, mx = FW / 2 - w.x, my = 50 - w.y, ml = Math.hypot(mx, my) || 1, a0 = Math.atan2(my / ml, mx / ml * 0.35);
       const push = smooth(clamp(t / 0.8, 0, 1)), out = smooth(clamp((t - 3.3) / 1.4, 0, 1)), a = a0 + Math.sin(t * 0.5 - 0.6) * 0.55;
       const R = lerp(lerp(10, 4.9, push), 11.5, out), h = lerp(lerp(2.6, 1.5, push), 5.2, out);

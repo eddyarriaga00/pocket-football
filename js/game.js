@@ -365,9 +365,23 @@
     return { x: FW / 2, y: 50, vx: 0, vy: 0, team, role, num: r ? r.num : 10 + k, name: r ? r.name : 'Player', act: null };
   }
 
+  /* a cut through black: the screen is dark for a moment and comes up on what is next (into and out of a cutscene) */
+  function dip() {
+    let e = $('#dip');
+    if (!e) {
+      e = document.createElement('i');
+      e.id = 'dip';
+      scr.parentNode.appendChild(e);
+    }
+    e.classList.remove('on');
+    void e.offsetWidth;  // so the animation starts again
+    e.classList.add('on');
+  }
+
   function playScene(kind, o, then) {
     const S = SCENES[kind];
     if (!S || !cutsOn()) return then();
+    dip();
     const sc = { kind, t: 0, dur: S.dur, then, cues: (S.cues || []).slice(), o: o || {}, prev: G.state === 'over' ? 'over' : 'dead' };
     G.scene = sc;
     G.state = 'scene';
@@ -428,6 +442,7 @@
     P = [];
     ps = null;
     G.state = sc.prev;
+    dip();
     scr.innerHTML = '';
     $('#hud').hidden = sc.prev === 'over';
     cam.snap = true;
@@ -7175,6 +7190,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.23', 'November 2026', ['Cutscenes are letterboxed, come up out of black and go back through it, with a soft dark edge round the picture', 'A change of shot is now a cut, and within a shot the camera drifts and eases in instead of standing still', 'A touchdown cuts straight to the scorer']],
     ['1.22', 'November 2026', ['Touchdowns are filmed in three shots: a push in on the scorer, a drift across his front while he celebrates, then a pull back over the whole side', 'Seven new celebrations: Phone call, Push-ups, Shimmy, Rock the baby, Statue, Bow and arrow and Ball spin (18 in all, picked at random)', 'Two new team celebrations: everyone poses for a picture, or does the wave', 'The ball takes part: a spike bounces away, and it is spun, cradled or held to the ear', 'The scorer plays to the camera, his teammates gather behind him, and the beaten side walks out of the shot']],
     ['1.21', 'November 2026', ['Three new menu songs in the style of the theme, Two minute drill, Under the lights and Kickoff, and the four play in a random order']],
     ['1.20', 'November 2026', ['The center has a hand on the ball before the snap and fires it back between his legs, on every play and every kick']],
