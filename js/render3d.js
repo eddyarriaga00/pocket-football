@@ -1845,10 +1845,21 @@
 
   /* Ease a figure toward the pose in tg at rate k. A stride that has settled is followed almost exactly: easing it
      would round off the very positions that keep the feet planted. */
-  function easePose(f, tg, k, striding, dt) {
+  function easePose(f, tg, k, striding, dt, kArm) {
     f.gaitT = striding ? f.gaitT + dt : 0;
     const kLeg = lerp(k, Math.max(k, 1 - Math.exp(-dt * 150)), clamp(f.gaitT / 0.2, 0, 1));
-    for (let i = 0; i < NPOSE; i++) f.cur[i] += (tg[i] - f.cur[i]) * (i === PELY || i === PELRZ || i >= HL ? kLeg : k);  // the hips' roll too: the legs are solved for it
+    for (let i = 0; i < NPOSE; i++) {
+      let d = tg[i] - f.cur[i];
+      if (i === SLX || i === SRX) {
+        /* a shoulder goes round the short way: an arm asked to go from straight up and a little behind (3.0) to
+           straight up and a little in front (-3.0, the same place to the eye) used to swing down through his hips */
+        if (d > Math.PI) d -= 2 * Math.PI;
+        else if (d < -Math.PI) d += 2 * Math.PI;
+      }
+      f.cur[i] += d * (i === PELY || i === PELRZ || i >= HL ? kLeg : kArm !== undefined && i >= SLX && i <= ER ? kArm : k);  // the hips' roll too: the legs are solved for it
+    }
+    for (const i of [SLX, SRX]) if (f.cur[i] > Math.PI) f.cur[i] -= 2 * Math.PI;
+    else if (f.cur[i] < -Math.PI) f.cur[i] += 2 * Math.PI;
   }
 
   /* Stand a set pose on the turf: both soles flat, the hips moved up or down until the lower foot rests exactly on
@@ -2593,6 +2604,54 @@
   /* is he busy with the ball or a tackle, so a gesture would look wrong? */
   const carrierHeld = (p, ps) => p.down || p.fell || p.flat > 0 || !!p.eng || !!p.block;
 
+  /* test hook: pops. With PG.r3d.pops(true) every player's pose is compared with the frame before, and a joint that
+     turns more than POP_A in one sixtieth of a second, a heading that swings more than POP_H or a figure drawn more
+     than POP_D yards from where it was (beyond what the engine moved him) is counted, under what he was doing.
+     PG.r3d.pops() returns the counts, largest first. A figure placed on purpose (f.snap) is not counted. */
+  let POPS = null;
+  const POP_A = 0.6, POP_H = 0.6, POP_D = 0.3, JN = ['PELY', 'PELRX', 'PELRZ', 'CHRX', 'CHRY', 'HEADRX', 'SLX', 'SLZ', 'EL', 'SRX', 'SRZ', 'ER', 'HL', 'KL', 'HR', 'KR', 'AL', 'AR', 'HLZ', 'HRZ', 'ALZ', 'ARZ', 'ALY', 'ARY', 'HEADRY', 'CHRZ'];
+
+  function popCheck(f, p, s, dt, jumped) {
+    const ps = s.ps, k = (1 / 60) / Math.max(dt, 1e-4), c = f.cur, was = f.popWas || (f.popWas = new Float32Array(NPOSE + 4));
+    const fresh = f.popP !== p || f.popSt !== s.G.state || jumped || !(dt > 0);
+    if (!fresh) {
+      const what = (p.down ? 'down ' : p.fell ? 'fell ' : p.flat > 0 ? 'flat ' : '') + (p.thrT > 0 ? 'throwing ' : '') + (ps.carrier === p ? 'carrier ' : '') + (ps.air && ps.air.target === p ? 'target ' : '') + (p.eng ? 'engaged ' : '') + (p.block ? 'blocking ' : '') + (p.jog ? 'walk ' : '') + s.G.state + ' ' + (p.team === ps.offTeam ? 'off' : 'def');
+      const hit = (name, d) => {
+        const key = name + ' | ' + what, e = POPS[key] || (POPS[key] = { n: 0, max: 0, role: p.role, t: +(ps.t || 0).toFixed(2) });
+        e.n++;
+        if (d > e.max) {
+          e.max = +d.toFixed(2);
+          e.role = p.role;
+          e.t = +(ps.t || 0).toFixed(2);
+        }
+      };
+      let worst = 0, wi = -1;
+      for (let i = 1; i < NPOSE; i++) {
+        let d = Math.abs(c[i] - was[i]);
+        if ((i === SLX || i === SRX) && d > Math.PI) d = 2 * Math.PI - d;
+        d *= k;
+        if (d > worst) {
+          worst = d;
+          wi = i;
+        }
+      }
+      if (worst > POP_A) hit(JN[wi], worst);
+      let dh = f.heading - was[NPOSE];
+      dh = Math.abs(Math.atan2(Math.sin(dh), Math.cos(dh))) * k;
+      if (dh > POP_H && !(p.spinT > 0)) hit('heading', dh);
+      const dd = Math.hypot(f.ox - was[NPOSE + 1], f.oy - was[NPOSE + 2]) * k;
+      if (dd > POP_D) hit('offset', dd);
+      const dy = Math.abs(c[PELY] - was[0]) * k;
+      if (dy > 0.12) hit('hips height', dy);
+    }
+    was.set(c);
+    was[NPOSE] = f.heading;
+    was[NPOSE + 1] = f.ox;
+    was[NPOSE + 2] = f.oy;
+    f.popP = p;
+    f.popSt = s.G.state;
+  }
+
   function poseFor(f, p, s, dt) {
     if (p.wkx > 1 && p.jog) dt *= p.wkx;  // the walk between plays is shown fast forward: his own clock runs with it
     const tg = TG, ps = s.ps;
@@ -2620,7 +2679,7 @@
     const dropping = pocketLive && !winding && ps.t < 1.8 && p.vy * s.dir < -1, qbSet = pocketLive && sp < 0.6 && ps.t > 0.25;
     const gait = stridePhase(f, p.vx + f.svx, p.vy + f.svy, dt, dropping ? f.dropStep : 0), sn = Math.sin(f.ph);  // being moved clear of a pile is ground covered too: he steps there, he does not slide
     if (gait && dropping) gait.base *= 0.3;  // his feet cross as he goes back: it is not a shuffle
-    let hx = null, hy = 0, snap = false, eyes = true, wantX = 0, wantY = 0, thLegs = false, thHead = null, turnRate = 13, inHand = 0;  // thLegs: the throw has placed his feet; thHead: where the throw wants his helmet turned; inHand: the ball is in his throwing hand, not held at his chest
+    let hx = null, hy = 0, snap = false, eyes = true, wantX = 0, wantY = 0, thLegs = false, thHead = null, turnRate = 13, inHand = 0, poseRate = 0, armRate = 0, setNow = false;  // thLegs: the throw has placed his feet; thHead: where the throw wants his helmet turned; inHand: the ball is in his throwing hand, not held at his chest
     const thSet = sp < 2;  // a set throw: slow enough to plant and step into it  // eyes: his helmet is free to turn to what he is watching; wantX, wantY: how far from the engine's spot a block, or a pile, wants him drawn
     const flat = p.flat > 0 && !p.down && !p.fell;  // run over: on his back for a moment
     const cd = ps.carrier, settled = s.G.state === 'dead' || s.G.state === 'replay';
@@ -3022,6 +3081,7 @@
       plant(tg);
       /* hands on him: the blocker's inside, on the chest plate; the defender's wider and higher, on the shoulder pads */
       if (of && of !== f) handsOn(f, tg, p.x + f.sx, -(p.y + f.sy), of, !p.block, w * 0.012);
+      armRate = 12;  // the hands are solved onto a man who is moving: followed a little softly, they do not chatter
     } else if (p.fc) {
       // fair catch: one arm straight up, waving, eyes on the ball
       tg[SRX] = 3.05;
@@ -3074,8 +3134,11 @@
       tg[PELY] = HIP + 0.04;
       snap = true;
     } else if (s.pre && sp < 0.4) {
-      // set before the snap
+      // set before the snap: he gets down into it over half a second, he does not drop into it
       const st = stanceOf(p, s);
+      setNow = true;
+      f.stT = (f.stT || 0) + dt;
+      poseRate = lerp(7, 60, smooth(clamp(f.stT / 0.5, 0, 1)));
       if (st === 'line') {
         eyes = false;  // a lineman in his stance looks at the man across from him
         tg[PELY] = 0.56;
@@ -3690,7 +3753,7 @@
       const want = Math.atan2(-hx, hy);
       let d = want - f.heading;
       d = Math.atan2(Math.sin(d), Math.cos(d));
-      f.heading += f.snap ? d : d * (1 - Math.exp(-dt * turnRate));
+      f.heading += f.snap ? d : turnRate > 13 ? d * (1 - Math.exp(-dt * turnRate)) : clamp(d * (1 - Math.exp(-dt * turnRate)), -11 * dt, 11 * dt);  // nobody turns right round in a frame or two: about a quarter of a second for a half turn
       f.lean += ((f.snap ? 0 : clamp(d * 0.9 * run, -0.32, 0.32)) - f.lean) * (1 - Math.exp(-dt * 9));
     } else f.lean *= Math.exp(-dt * 9);
     if (p.spinT > 0) f.heading += dt * Math.PI * 2 / 0.5;
@@ -3732,8 +3795,11 @@
     f.oy += f.sy;
     if (!(p.thrT > 0) && !winding) f.wind = 0;
     if (!(p.thrT > 0)) f.thB = null;
-    easePose(f, tg, f.snap || snap ? (f.snap ? 1 : 1 - Math.exp(-dt * 60)) : 1 - Math.exp(-dt * 28), striding, dt);
+    const jumped = f.snap;
+    if (!setNow) f.stT = 0;
+    easePose(f, tg, f.snap ? 1 : poseRate ? 1 - Math.exp(-dt * poseRate) : snap ? 1 - Math.exp(-dt * 60) : 1 - Math.exp(-dt * 28), striding, dt, armRate && !f.snap ? 1 - Math.exp(-dt * armRate) : undefined);
     f.snap = false;
+    if (POPS) popCheck(f, p, s, dt, jumped);
     applyPose(f);
     if (!(p.down || p.fell || flat || pileOn)) {
       f.pvx = p.vx;  // how fast he is going, kept for the frame he is hit (the engine has stopped him by then)
@@ -6173,6 +6239,11 @@
       cheer = Math.max(cheer, v);
     },
     /* test hook: lodTest(false) draws every number and name whatever its size, to compare a frame with and without */
+    pops(on) {
+      if (on === true) POPS = {};
+      else if (on === false) POPS = null;
+      return POPS ? Object.entries(POPS).map(([k, v]) => ({ what: k, ...v })).sort((a, b) => b.n - a.n) : null;
+    },
     lodTest(on) {
       lodOn = on !== false;
     },

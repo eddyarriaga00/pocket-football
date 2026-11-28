@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `eeccdbe`, before the pop fixes and the pop detector (2026-11-27)
   - `6a722b0`, before the hand-off, the carried-across ball and the quality step-down change (2026-11-27)
   - `2f097d2`, before the rebuilt throw (2026-11-27)
   - `b077b95`, before the controller's first-press fix and the input tests (2026-11-22).
@@ -3609,6 +3610,8 @@ The owner: "make sure controller is fully good and keyboard and mouse".
   exhibitions, a quarterback and a receiver career game, a season, a watched game and a controller-only game clean;
   the hand-off looked at on film. Not checked: the step-down on a real slow phone or in low power mode (the test
   pane skips watchSpeed), the catch and pick-up carry on film.
+
+- **2026-11-27, the pop detector and its first fixes (1.15).** `PG.r3d.pops(true)` then a watched game stepped with a render each step, then `PG.r3d.pops()`: every joint that turns more than 0.6 in a sixtieth of a second, heading swings and draw-offset jumps, counted by what the man was doing. First run: 127 kinds, the worst a shoulder going 3.6 in a frame (easing from 3.0 to -3.0 through his hips: easePose now takes a shoulder the short way), linemen dropping into their stance in three frames (now over half a second, `poseRate`), half turns in a frame or two (heading capped at 11 a second outside the throw), hands in a block chattering (arms eased at 12 a second, `armRate`). After: about 26 kinds, mostly near the threshold; left are the 3x walk's legs before the snap and the throw's whip, both meant to be fast, and arms of fallen men after the whistle (about 1.0). Checked: fingerprint unchanged; three rough exhibitions, a quarterback career game, a watched game and a mouse-only game clean. Not looked at on screen.
 
 ## Morning hand-off
 
