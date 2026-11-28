@@ -801,6 +801,60 @@
       }
       return false;
     }
+    if (a === 'heart') {
+      // the anthem: standing tall, the right hand flat on the chest over the heart, the left at his side, chin up
+      armIK(-0.43, -0.13, -0.2);
+      tg[SRX] = ARM[0];
+      tg[SRZ] = ARM[1];
+      tg[ER] = ARM[2];
+      tg[SLX] = 0.04;
+      tg[EL] = 0.12;
+      tg[CHRX] = 0.05;
+      tg[HEADRX] = -0.1;
+      tg[PELRZ] = Math.sin(time * 0.8 + f.seed) * 0.012;
+      return false;
+    }
+    if (a === 'huddle' || a === 'break') {
+      // in the ring: leaning in, an arm across the man on each side, everyone bouncing on the same beat; then the
+      // right hand into the middle and thrown up as they break
+      const b = Math.abs(Math.sin(time * 5.4));
+      tg[PELY] = HIP - 0.13 + b * 0.06;
+      tg[CHRX] = -0.48;
+      tg[HEADRX] = 0.38;
+      tg[SLX] = tg[SRX] = 1.15;
+      tg[SLZ] = -1.15;
+      tg[SRZ] = 1.15;
+      tg[EL] = tg[ER] = 0.3;
+      tg[HL] = tg[HR] = 0.42;
+      tg[KL] = tg[KR] = -0.7 + b * 0.25;
+      if (a === 'break') {
+        if (f.brOn !== p) {
+          f.brOn = p;
+          f.brAt = time;
+        }
+        const u = (time - f.brAt) / 0.75, up = smooth(clamp((u - 0.55) / 0.3, 0, 1));
+        tg[SRX] = lerp(1.35, 2.95, up);
+        tg[SRZ] = lerp(0.1, 0.2, up);
+        tg[ER] = 0.08;
+        tg[CHRX] = lerp(-0.6, 0.06, up);
+        tg[HEADRX] = lerp(0.4, -0.15, up);
+        tg[PELY] = HIP - 0.13 + up * 0.14;
+      } else f.brOn = null;
+      plant(tg);
+      return false;
+    }
+    if (a === 'beaten') {
+      // down on one knee, head down, a hand on the helmet
+      for (let i = 0; i < NPOSE; i++) tg[i] = KNEEL[i];
+      tg[CHRX] = -0.5;
+      tg[HEADRX] = -0.45;
+      tg[SRX] = 2.5;
+      tg[ER] = 2.2;
+      tg[SRZ] = 0.4;
+      tg[SLX] = 0.5;
+      tg[EL] = 0.6;
+      return false;
+    }
     if (a === 'sit') {
       // the cart's driver on his bench: thighs level, shins down, hands forward on the wheel
       tg[PELY] = 0.68;
@@ -1108,7 +1162,8 @@
     }
     if (!props) buildProps();
     props.g.visible = true;
-    const W = props.walk, on = sc.kind === 'walkout', t = sc.t, Ch = props.champ, champ = sc.kind === 'trophy';
+    const W = props.walk, on = sc.kind === 'walkout', t = sc.t, Ch = props.champ, champ = sc.kind === 'trophy' || sc.kind === 'award';  // the stage and the cup: the title, or an award of your own
+    const fw = champ ? 0 : sc.fw;  // when the fireworks start: with the scene on the stage, or when a scene says (the anthem, a walk-off)
     const Ca = sc.kind === 'injury' && sc.cart;
     props.cart.visible = !!Ca;
     if (Ca) {
@@ -1260,7 +1315,7 @@
       props.coin.position.set(lerp(x0, x1, u), h, lerp(z0, z1, u));
       props.coin.rotation.set(u < 1 && t >= 1.4 ? t * 26 : t < 1.4 ? 0 : 0, 0, 0);
     }
-    for (const b of Ch.bursts) b.visible = champ;
+    for (const b of Ch.bursts) b.visible = fw !== undefined;
     if (champ) {
       Ch.skirt.color.set(t0.c1);
       // the cup in the hands of the man holding it up: just above his helmet, turning slowly
@@ -1270,9 +1325,11 @@
         Ch.cup.position.set(CUPAT.x, CUPAT.y + 0.42, CUPAT.z);
         Ch.cup.rotation.y = t * 0.6;
       }
+    }
+    if (fw !== undefined) {
       const cols = [t0.c1, t0.c2, '#ffffff', '#9ad1ff'];
       Ch.bursts.forEach((b, k) => {
-        const d = b.userData, u = (t - d.at) / 1.9, pos = b.geometry.attributes.position;
+        const d = b.userData, u = (t - fw - d.at * (champ ? 1 : 0.6)) / 1.9, pos = b.geometry.attributes.position;
         if (u <= 0 || u >= 1) {
           b.material.opacity = 0;
           return;
@@ -1421,6 +1478,55 @@
       } else {
         v3.set(mx, 6, -(y - 11));  // up and away
         v3b.set(mx, 1.8, -y);
+      }
+    },
+    anthem(sc, P, v3, v3b) {
+      const t = sc.t;
+      if (t < 3.7) {
+        const u = t / 3.7, y = lerp(41, 58, u);
+        v3.set(FW / 2 - 9 + 3.4, 2.05, -(y + 2.7));  // walking down your line from in front of it, a face at a time
+        v3b.set(FW / 2 - 9, 2.25, -y);
+      } else {
+        const u = Math.min(1, (t - 3.7) / 3.1);
+        v3.set(FW / 2, lerp(7, 10, u), -lerp(24, 19, u));  // high behind both lines, the board and the fireworks beyond
+        v3b.set(FW / 2, lerp(3.5, 6, u), -62);
+      }
+    },
+    huddle(sc, P, v3, v3b) {
+      const t = sc.t, cx = sc.cx, cy = sc.cy;
+      if (t < 3) {
+        const a = 0.5 + t * 0.42;
+        v3.set(cx + Math.sin(a) * 5.6, 2.5, -(cy - Math.cos(a) * 5.6));  // round the outside of the ring at head height
+        v3b.set(cx, 1.9, -cy);
+      } else {
+        const u = Math.min(1, (t - 3) / 2.4);
+        v3.set(cx + 1.5, lerp(5.5, 8.5, u), -(cy + lerp(13, 20, u)));  // from in front and above as they break and come out
+        v3b.set(cx, 1.4, -(cy + lerp(0, 6, u)));
+      }
+    },
+    walkoff(sc, P, v3, v3b) {
+      const t = sc.t, me = sc.me || P[0], s = sc.side || -1, a = 0.5 + t * 0.2;
+      if (t < 1.8) {
+        const u = smooth(t / 1.8);
+        v3.set(me.x - s * lerp(9, 5.2, u), lerp(2.6, 1.7, u), -(me.y - 2.2));  // on him from the far side, his bench pouring in behind him
+        v3b.set(me.x, 2.1, -me.y);
+      } else if (t < 4.2) {
+        v3.set(me.x - s * Math.cos(a) * 8, 3.4, -(me.y - Math.sin(a) * 8));  // round the pile
+        v3b.set(me.x, 2, -me.y);
+      } else {
+        const u = smooth(Math.min(1, (t - 4.2) / 2.2));
+        v3.set(me.x - s * 6, lerp(7, 17, u), -(me.y - lerp(12, 24, u)));  // up and away: the pile, the stands, the fireworks
+        v3b.set(me.x, lerp(2, 7, u), -(me.y + 10));
+      }
+    },
+    award(sc, P, v3, v3b) {
+      const t = sc.t, me = sc.me || P[0], a = -0.5 + t * 0.14;
+      if (t < 2.6) {
+        v3.set(me.x + Math.sin(a) * 7.5, 2.2, -me.y + Math.cos(a) * 7.5);  // low, coming round the front of the stage
+        v3b.set(me.x, 3.2, -me.y);
+      } else {
+        v3.set(me.x + Math.sin(a) * 4.6, 3.3, -me.y + Math.cos(a) * 4.6);  // in on you and the cup
+        v3b.set(me.x, 3.9, -me.y);
       }
     },
     walkout(sc, P, v3, v3b) {

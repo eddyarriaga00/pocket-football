@@ -1935,6 +1935,12 @@
 
   function showAwards(then) {
     const po = C.po, list = (po.night || []).slice().reverse(), mine = list.filter(x => x.w.me);
+    if (mine.length && PG.cinema && !po.awScene) {
+      // an award of your own: you on the stage with it first, once, then the night's list
+      po.awScene = 1;
+      persist();
+      return PG.cinema('award', { team: C.team, name: C.name, num: C.num, pos: C.pos, award: mine[0].a, season: C.season }, () => showAwards(then));
+    }
     po.nightSeen = true;
     persist();
     const who = x => `${esc(x.name)} <span class="aw-t">${x.ab}${x.me ? ' · you' : x.riv ? ' · your rival' : ''}</span>`;

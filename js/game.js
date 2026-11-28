@@ -315,7 +315,9 @@
       const intro = () => startIntro(o, G.first);
       G.rivalry = o.rivalry || null;
       G.toss = { mine: !G.lock || G.share >= 0.99, coin: Math.random() < 0.5 ? 'heads' : 'tails', call: null, win: null, choice: null };  // you call it as a captain
-      const toss = () => playScene('toss', {}, () => tossDone(intro));  // every game: the captains and the coin at midfield
+      const toss0 = () => playScene('toss', {}, () => tossDone(intro));  // every game: the captains and the coin at midfield
+      /* the anthem first, for the big ones (a playoff, primetime, a rival) and about one other game in three */
+      const big = !!(o.mustWin || o.title || G.prime || G.rivalry), toss = () => (big || Math.random() < 0.34 ? playScene('anthem', {}, toss0) : toss0());
       if (G.mode === 'career') playScene('walkout', {}, () => (G.rivalry ? playScene('faceoff', {}, toss) : toss()));  // a career game opens in the tunnel; a rival game then at midfield
       else toss();
       return;
@@ -699,6 +701,152 @@
       return A;
     },
     cues: [[0.2, () => PG.audio && PG.audio.crowd.cheer(0.5, 3)]],
+  };
+
+  /* ---------- four more scenes (1.28) ---------- */
+
+  /* The anthem, before the toss of a big game (a playoff, primetime, a rival, and now and then any game): both sides
+     in a line down their own side of the field, hand on heart, facing the same end. The camera walks down your line, then
+     cuts high behind both as the fireworks go up and the crowd lets go. */
+  SCENES.anthem = {
+    dur: 6.8,
+    setup(sc) {
+      const A = [], roles = ['QB', 'RB', 'X', 'Z', 'S', 'TE', 'LT', 'LG', 'C', 'RG', 'RT'], lead = G.lock && roles.includes(G.lock) ? G.lock : 'QB';
+      for (const tm of [0, 1]) [lead, ...roles.filter(r => r !== lead)].forEach((role, k) => {
+        const p = rosterMan(tm, G.ros[tm][role] ? role : roles[k], k);
+        p.x = FW / 2 + (tm === 0 ? -9 : 9);  // on the numbers, not the sidelines: an upright phone could not see both lines at once
+        p.y = 38 + k * 2.3;
+        p.face = 0;  // up the field, toward the big board
+        p.act = 'heart';
+        A.push(p);
+      });
+      const t0 = TEAMS[G.tm[0]], t1 = TEAMS[G.tm[1]];
+      sc.fw = 3.7;  // the fireworks, from the cut to the wide shot
+      sc.cap = `<small>${esc(TEAMS[G.tm[G.home || 0]].city)} · before kickoff</small><b>The anthem</b><span>${esc(t0.name)} and ${esc(t1.name)}</span>`;
+      return A;
+    },
+    cues: [
+      [0.2, () => PG.audio && PG.audio.crowd.ooh && PG.audio.crowd.ooh(0.2)],
+      [3.7, () => {
+        snd('boom');
+        if (PG.audio) PG.audio.crowd.cheer(1.2, 4);
+      }],
+      [5, () => snd('boom')],
+    ],
+  };
+
+  /* The huddle before the second half: your eleven in a ring, arms on each other, bouncing, one man in the middle with
+     something to say. Hands in, hands up, and they run out. */
+  SCENES.huddle = {
+    dur: 5.4,
+    setup(sc) {
+      const roles = ['QB', 'RB', 'X', 'Z', 'S', 'TE', 'LT', 'LG', 'C', 'RG', 'RT'], lead = G.lock && roles.includes(G.lock) ? G.lock : 'QB', cx = FW / 2, cy = 36;
+      const A = [lead, ...roles.filter(r => r !== lead)].map((role, k) => {
+        const p = rosterMan(0, G.ros[0][role] ? role : 'QB', k), a = (k - 1) / 10 * Math.PI * 2;
+        p.x = k ? cx + Math.cos(a) * 2.5 : cx;
+        p.y = k ? cy + Math.sin(a) * 2.5 : cy;
+        p.face = k ? Math.atan2(-(cx - p.x), cy - p.y) : 0;
+        p.act = k ? 'huddle' : 'cheer';
+        p.lead = k === 0;
+        p.go = [cx + (k - 5) * 3.6, cy + 13 + (k % 3)];  // out toward midfield, spread across it
+        p.at = 3.9 + (k % 4) * 0.08;
+        p.spd = 6.6;
+        return p;
+      });
+      sc.cx = cx;
+      sc.cy = cy;
+      const t = TEAMS[G.tm[0]], d = G.score[0] - G.score[1];
+      sc.cap = `<small>Second half</small><b>${esc(t.name)} break the huddle</b><span>${d > 0 ? `Up by ${d}` : d < 0 ? `Down by ${-d}` : 'All square'}</span>`;
+      return A;
+    },
+    cues: [
+      [0.2, () => PG.audio && PG.audio.crowd.cheer(0.5, 3)],
+      [3, () => {
+        for (const p of P) p.act = 'break';
+        snd('ooh');
+      }],
+      [3.8, () => {
+        for (const p of P) p.act = null;
+        if (PG.audio) PG.audio.crowd.cheer(0.9, 2.5);
+      }],
+    ],
+  };
+
+  /* The walk-off: a game won on its last score. The man who won it where he won it, his whole side sprinting off
+     the bench to bury him, the other side down on a knee or walking away, fireworks. o: { team, role, num, name, x,
+     y }. It takes the place of the handshake. */
+  SCENES.walkoff = {
+    dur: 6.4,
+    setup(sc) {
+      const o = sc.o, w = o.team, side = w === 0 ? -1 : 1, x = clamp(o.x == null ? FW / 2 : o.x, 8, FW - 8), y = clamp(o.y == null ? 50 : o.y, 4, 96), A = [];
+      const me = rosterMan(w, G.ros[w][o.role] ? o.role : 'QB', 0);
+      if (o.name) Object.assign(me, { name: o.name, num: o.num });
+      Object.assign(me, { x, y, act: 'cheer', lead: true, face: side < 0 ? -Math.PI / 2 : Math.PI / 2 });  // turned to his own bench, which is on its way
+      A.push(me);
+      ['RB', 'X', 'Z', 'TE', 'LT', 'LG', 'C', 'RG', 'RT', 'MLB', 'CB1', 'FS'].forEach((role, k) => {
+        if (!G.ros[w][role]) return;
+        const p = rosterMan(w, role, k + 1), a = k * 2.39996, r = 1.7 + (k % 3) * 0.75;
+        p.x = side < 0 ? -1.5 : FW + 1.5;
+        p.y = y + (k - 5.5) * 2.6;
+        p.go = [clamp(x + Math.cos(a) * r, 1, FW - 1), y + Math.sin(a) * r];
+        p.at = 0.15 + k * 0.1;
+        p.spd = 8.6;
+        p.then = 'cheer';
+        A.push(p);
+      });
+      ['QB', 'RB', 'X', 'C', 'MLB', 'FS'].forEach((role, k) => {
+        if (!G.ros[1 - w][role]) return;
+        const p = rosterMan(1 - w, role, k + 20);
+        p.x = clamp(x - side * (7 + k * 2.2), 2, FW - 2);  // on the far side of him from the bench that is coming
+        p.y = y + (k % 2 ? 3 : -3) + k;
+        if (k % 2) p.act = 'beaten';
+        else {
+          p.go = [side < 0 ? FW + 2 : -2, p.y + (k - 2) * 2];  // the long walk to their own sideline
+          p.spd = 2.3;
+          p.at = 0.6 + k * 0.3;
+        }
+        A.push(p);
+      });
+      sc.me = me;
+      sc.side = side;
+      sc.fw = 1.4;
+      const tm = TEAMS[G.tm[w]];
+      sc.cap = `<small>Final · ${G.ot ? 'overtime' : 'on the last score'}</small><b>${esc(tm.name)} win it, ${Math.max(G.score[0], G.score[1])}–${Math.min(G.score[0], G.score[1])}</b><span>#${me.num} ${esc(me.name)}</span>`;
+      return A;
+    },
+    cues: [
+      [0.1, sc => {
+        if (PG.audio) PG.audio.crowd.cheer(1.4, 6);
+        if (sc.o.team === 0) {
+          snd('horn');
+          confetti(0);
+        }
+      }],
+      [1.4, () => snd('boom')],
+      [3, sc => {
+        snd('boom');
+        if (sc.o.team === 0) confetti(0);
+      }],
+    ],
+  };
+
+  /* Awards night, when one of them is yours: the stage at midfield under the lights of an empty stadium, you on it
+     with the trophy over your head, flash bulbs and a fanfare. o: { team, name, num, award, season }. */
+  SCENES.award = {
+    dur: 6.2,
+    setup(sc) {
+      const o = sc.o, me = { x: FW / 2, y: 50, vx: 0, vy: 0, team: 0, role: o.pos || 'QB', num: o.num, name: o.name, act: 'trophy', face: Math.PI, lift: 0.45 };
+      sc.me = me;
+      sc.cap = `<small>Awards night · season ${o.season || ''}</small><b>${esc(o.award || 'Award winner')}</b><span>#${o.num} ${esc(o.name)}</span>`;
+      return [me];
+    },
+    cues: [
+      [0.1, () => {
+        snd('fanfare');
+        if (PG.audio) PG.audio.crowd.cheer(0.9, 5);
+      }],
+      [2.6, () => snd('boom')],
+    ],
   };
 
   /* The championship: a stage at midfield in team colors, the trophy over your head (render3d.js holds it in your
@@ -2971,7 +3119,7 @@
 
   function logScore(team, kind, text, drive) {
     if (!G.scores) G.scores = [];
-    const e = { q: Math.min(G.q, 5), team, kind, text, drive, score: G.score.slice() };
+    const e = { q: Math.min(G.q, 5), c: G.clock, team, kind, text, drive, score: G.score.slice() };  // c: the clock when it was scored (a walk-off is a score with none left)
     G.scores.push(e);
     return e;
   }
@@ -3339,6 +3487,7 @@
       credit(c, 'td', 1);
       if (t === off && ps.mode !== 'ko' && !AUTO) driveCard('Touchdown drive', G.lastScore.drive);
       G.celeb = celebFor(t, c);
+      G.hero = c ? { team: t, role: c.role, num: c.num, name: c.name, x: c.x, y: c.y } : null;  // the last man to score a touchdown, and where
       kickoff(1 - t);
       confetti(t);
       if (t === 0) {
@@ -4028,6 +4177,14 @@
       if (G.onEnd) G.onEnd({ env: G.env, pgr: G.pgr, mateLog: G.mateLog, score: G.score.slice(), my: G.my, stats: G.stats, ot: G.ot, potg: playerOfGame(), wmvp: G.score[0] === G.score[1] ? null : playerOfGame(G.score[0] > G.score[1] ? 0 : 1), potgHtml: potgHtml(), box: G.box, potdHtml: potdHtml(), scoringHtml: scoringHtml(G.scores), drill: G.drill });
       else showFinal();
     };
+    /* a game won on its last score, in overtime or with the fourth quarter all but gone, ends with the winners on the
+       field (the walk-off) instead of the handshake */
+    const last = (G.scores || [])[(G.scores || []).length - 1], wn = G.score[0] === G.score[1] ? -1 : G.score[0] > G.score[1] ? 0 : 1;
+    const took = last && wn >= 0 && last.team === wn && Math.abs(G.score[0] - G.score[1]) <= (last.kind === 'TD' ? 8 : 3), late = last && (G.ot || (last.q >= 4 && last.c <= 10));
+    if (took && late) {
+      const h = last.kind === 'TD' && G.hero && G.hero.team === wn ? G.hero : null;  // a touchdown: the man who scored it; a field goal: the kicker, at midfield
+      return playScene('walkoff', { team: wn, role: h ? h.role : G.ros[wn].K ? 'K' : 'QB', num: h && h.num, name: h && h.name, x: h ? h.x : null, y: h ? h.y : null }, done);
+    }
     playScene('final', {}, done);
   }
 
@@ -7222,6 +7379,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.28', 'November 2026', ['The anthem: before a playoff, a primetime or a rival game, and now and then any game, both sides line up hand on heart and the fireworks go up', 'The huddle: your eleven in a ring before the second half, hands in, and they break', 'The walk-off: a game won on its last score ends with the whole bench burying the man who won it', 'Awards night: when an award is yours, you are on the stage with the trophy first']],
     ['1.27', 'November 2026', ['A title screen: the stadium, the name coming in a word at a time, and Tap to start', 'A new start menu: your career on a big card with your player standing in it, the other modes as tiles, a bar of small things along the bottom', 'The stadium now shows behind the top of the menu, and everything rises into place when it opens']],
     ['1.26', 'November 2026', ['200 new comments in the social feed, from fans, the other side, neutrals, analysts and teammates', '80 new league news stories: signings, trades, injuries, coaches and odd things from round the league', '63 new things for your coach to say after a game', "37 new ways to write your game's headline", '20 new weekly events in your inbox']],
     ['1.25', 'November 2026', ['A sack gets its moment: the camera cuts to the sacker celebrating over the quarterback, his side round him', 'So does an interception or a fumble taken away: the man who came up with it celebrates with the ball', 'Halftime opens on your quarterback jogging off, then the wide shot', 'The team now runs out of a tunnel you can see, with its smoke and the stands round it (the first shot was nearly black)', 'Coin toss and draft shots are framed for an upright phone, and nothing from the game is left lying over a cutscene']],
@@ -7538,7 +7696,7 @@
     const fh = (G.scores || []).filter(e => e.q <= 2);
     scr.innerHTML = `<div class="sheet fin"><div class="shd"><b>Halftime</b><span>${tname(G.poss)} get the ball</span></div>${finTop('Half', 2)}
   ${statTable()}${G.lineFn?`<p class="note">You: ${G.lineFn(G.my)}</p>`:''}${scoringHtml(fh) || '<p class="note">No points in the first half.</p>'}${leadersHtml()}<button class="go" id="h2">Second half</button></div>`;
-    $('#h2').onclick = startCall;
+    $('#h2').onclick = () => playScene('huddle', {}, startCall);  // the huddle breaks, then the second half
   }
 
   function showFinal() {
