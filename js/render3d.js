@@ -3470,6 +3470,22 @@
             tg[EL] = tg[ER] = lerp(0.35, 0.04, stretch);
             tg[HEADRX] = lerp(tg[HEADRX], -0.05, stretch);
           }
+          /* The hands go to the ball itself over the last quarter of a second or so (a ball coming over his shoulder,
+             only at the very end): until 1.16 they were held out in its general direction and the ball arrived
+             wherever it arrived. Each hand a little to its own side of it. */
+          const home = smooth(clamp(1 - left / (over ? 0.12 : 0.28), 0, 1));
+          if (home > 0) {
+            inv4.copy(f.chest.matrixWorld).invert();
+            HAND.set(a.x, passZ(a), -a.y).applyMatrix4(inv4);
+            for (let k = 0; k < 2; k++) {
+              const sh = k ? f.shR : f.shL;
+              armIK(HAND.x + (k ? 0.07 : -0.07) - sh.position.x, HAND.y - sh.position.y, HAND.z + 0.03 - sh.position.z);
+              tg[k ? SRX : SLX] = lerp(tg[k ? SRX : SLX], ARM[0], home);
+              tg[k ? SRZ : SLZ] = lerp(tg[k ? SRZ : SLZ], ARM[1], home);
+              tg[k ? ER : EL] = lerp(tg[k ? ER : EL], ARM[2], home);
+            }
+            armRate = 45;
+          }
         } else if (p.team !== ps.offTeam && a.T - a.t < 0.42 && Math.hypot(p.x - a.x1, p.y - a.y1) < 2.4) {
           // a defender at the catch point gets a hand up; right on it, he goes up with the receiver
           const near = Math.hypot(p.x - a.x1, p.y - a.y1);
@@ -3481,6 +3497,22 @@
             f.leap = Math.max(f.leap, up);
             tg[SLX] = lerp(tg[SLX], 2.5, up);
             tg[EL] = 0.25;
+          }
+          /* and the hand goes for the ball itself as it arrives: the one on the ball's side, or both when he is right
+             under it (an interception is made with two hands) */
+          const home = smooth(clamp(1 - (a.T - a.t) / 0.22, 0, 1));
+          if (home > 0) {
+            inv4.copy(f.chest.matrixWorld).invert();
+            HAND.set(a.x, passZ(a), -a.y).applyMatrix4(inv4);
+            for (let k = 0; k < 2; k++) {
+              if (near > 0.9 && (HAND.x > 0) !== !!k) continue;
+              const sh = k ? f.shR : f.shL;
+              armIK(HAND.x + (near > 0.9 ? 0 : k ? 0.07 : -0.07) - sh.position.x, HAND.y - sh.position.y, HAND.z + 0.03 - sh.position.z);
+              tg[k ? SRX : SLX] = lerp(tg[k ? SRX : SLX], ARM[0], home);
+              tg[k ? SRZ : SLZ] = lerp(tg[k ? SRZ : SLZ], ARM[1], home);
+              tg[k ? ER : EL] = lerp(tg[k ? ER : EL], ARM[2], home);
+            }
+            armRate = 45;
           }
         }
       }

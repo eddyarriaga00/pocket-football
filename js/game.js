@@ -7167,6 +7167,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.16', 'November 2026', ["The catch: the receiver's hands go to the ball itself as it arrives, at any height", 'A defender at the catch reaches for the ball, with both hands when he is under it']],
     ['1.15', 'November 2026', ['Smoother movement: arms no longer swing right round after the whistle, players get down into their stance instead of dropping into it, nobody spins round in a frame, and hands in a block no longer chatter']],
     ['1.14', 'November 2026', ['The hand-off: the quarterback holds the ball out in both hands and the back takes it from him', 'The ball is carried across on a hand-off, a catch and a snap; it no longer jumps from one place to the next', 'Fixed: one slow moment could switch off shadows, glow, sharpness and detailed players for good. They are back on, and the game now only eases off for the visit, and only when it helps']],
     ['1.13', 'November 2026', ['The throw is rebuilt: the quarterback turns side-on, steps into it, opens his hips and follows through', 'The ball stays in his hand through the wind-up and leaves at the top of the throw', 'A throw on the run and the pump fake use the same motion']],
