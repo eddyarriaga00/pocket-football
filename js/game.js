@@ -3550,7 +3550,7 @@
         takeaway: big === 'Interception!' || (kind === 'td' && !own) || (kind === 'fumble' && arg.team !== off), tkl: ps.userTkl || 0 });
     }
     G.state = 'dead';
-    G.deadT = score ? 2.6 : !AUTO && hurry(G.poss) && G.poss === off ? 1.1 : 1.7;
+    G.deadT = score ? (!AUTO && !QUIET && G.celeb ? 4.9 : 2.6) : !AUTO && hurry(G.poss) && G.poss === off ? 1.1 : 1.7;
     banner(big, sub, G.deadT * 1000 - 150);
     updHud();
   }
@@ -4173,11 +4173,11 @@
      The scorer's celebration (render3d.js draws them) is picked here, by Math.random so seeded runs are not touched.
      A career player who has chosen his own always does that one. About one in three, the whole side joins in on the
      same beat. */
-  const CELEBS = ['Jump', 'Spike', 'Strut', 'Kneel', 'Roar', 'Bow', 'Shuffle', 'Salute', 'To the sky', 'Flex', 'Leap'];
+  const CELEBS = ['Jump', 'Spike', 'Strut', 'Kneel', 'Roar', 'Bow', 'Shuffle', 'Salute', 'To the sky', 'Flex', 'Leap', 'Phone call', 'Push-ups', 'Shimmy', 'Rock the baby', 'Statue', 'Bow and arrow', 'Ball spin'];
 
   function celebFor(team, who) {
     const mine = who && who === G.me && G.heroCeleb >= 0;
-    return { team, who, style: mine ? G.heroCeleb : Math.floor(Math.random() * CELEBS.length), group: Math.random() < 0.35 ? 1 + (Math.random() < 0.5 ? 1 : 0) : 0 };
+    return { team, who, style: mine ? G.heroCeleb : Math.floor(Math.random() * CELEBS.length), group: Math.random() < 0.45 ? 1 + Math.floor(Math.random() * 4) : 0 };  // the whole side together: 1 jumps, 2 shuffles, 3 poses for a picture, 4 does the wave
   }
 
   /* ---------- the coach's challenge ----------
@@ -7175,6 +7175,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.22', 'November 2026', ['Touchdowns are filmed in three shots: a push in on the scorer, a drift across his front while he celebrates, then a pull back over the whole side', 'Seven new celebrations: Phone call, Push-ups, Shimmy, Rock the baby, Statue, Bow and arrow and Ball spin (18 in all, picked at random)', 'Two new team celebrations: everyone poses for a picture, or does the wave', 'The ball takes part: a spike bounces away, and it is spun, cradled or held to the ear', 'The scorer plays to the camera, his teammates gather behind him, and the beaten side walks out of the shot']],
     ['1.21', 'November 2026', ['Three new menu songs in the style of the theme, Two minute drill, Under the lights and Kickoff, and the four play in a random order']],
     ['1.20', 'November 2026', ['The center has a hand on the ball before the snap and fires it back between his legs, on every play and every kick']],
     ['1.19', 'November 2026', ['Field goals and extra points have a holder: the snap comes back, he puts the ball down, and the kicker steps in and kicks it', 'Punts: the snap goes back to the punter, who takes his steps and drops it onto his foot']],
@@ -8206,7 +8207,8 @@
       const w = cel && p.team === cel.team && p !== cel.who ? cel.who : null;
       if (w && hyp(w.x - p.x, w.y - p.y) < 40) {
         // a place in a loose ring round him, each man his own (golden-angle spacing), the nearer ones closest
-        const i = P.indexOf(p), a = i * 2.39996 + 0.7, r = 1.6 + (i % 3) * 0.7, tx = clamp(w.x + Math.cos(a) * r, 0.6, FW - 0.6), ty = w.y + Math.sin(a) * r;
+        /* the side toward midfield is left open: that is where the camera is (render3d.js), and nobody stands in front of it */
+        const i = P.indexOf(p), a = Math.atan2(w.y - 50, (w.x - FW / 2) * 0.35) + ((i * 0.618034) % 1 - 0.5) * 3.9, r = 1.9 + (i % 3) * 0.8, tx = clamp(w.x + Math.cos(a) * r, 0.6, FW - 0.6), ty = w.y + Math.sin(a) * r;
         const dx = tx - p.x, dy = ty - p.y, d = hyp(dx, dy), spd = d > 0.35 ? Math.min(6.2, d * 1.8) : 0, e = 1 - Math.exp(-dt * 3.5);
         p.vx += ((d ? dx / d : 0) * spd - p.vx) * e;
         p.vy += ((d ? dy / d : 0) * spd - p.vy) * e;
@@ -8219,6 +8221,14 @@
             p.vy += oy / o * (1.1 - o) * 6 * dt * 10;
           }
         }
+      } else if (cel && p.team !== cel.team && hyp(cel.who.x - p.x, cel.who.y - p.y) < 7) {
+        /* the beaten side does not stand in the scorer's picture: anyone near him walks off to the side, out of the
+           lane between him and the camera */
+        const sc = cel.who, mx = (FW / 2 - sc.x) * 0.35, my = 50 - sc.y, ml = hyp(mx, my) || 1, px = -my / ml, py = mx / ml, ox = p.x - sc.x, oy = p.y - sc.y, o = hyp(ox, oy) || 1;
+        const sd = ox * px + oy * py >= 0 ? 1 : -1, dx = px * sd * 1.6 + ox / o * 0.6, dy = py * sd * 1.6 + oy / o * 0.6, dl = hyp(dx, dy) || 1, e = 1 - Math.exp(-dt * 3.5);
+        p.vx += (dx / dl * 3.4 - p.vx) * e;
+        p.vy += (dy / dl * 3.4 - p.vy) * e;
+        if (p.x < 1 || p.x > FW - 1) p.vx = 0;
       } else {
         p.vx *= k;
         p.vy *= k;

@@ -1706,6 +1706,7 @@
   /* the ball in the throwing hand: where it is, in the forearm's own space */
   const TH_GRIP = [0, -0.36, -0.03];
   let lastKicker = null;
+  const spike = [0, 0, 0];  // where a spiked ball left the scorer's hand
   const kickFrom = [0, 0, 0];
   const held = { who: null, on: false, x: 0, y: 0, z: 0, fx: 0, fy: 0, fz: 0, t: 0 };  // who had the ball on the last frame and where it was drawn, for the hand-over
 
@@ -2040,9 +2041,202 @@
     tg[HEADRX] = 0.1;
   }
 
-  function celebrate(f, scorer, tg, style, group) {
-    const u = f.seed / 6.2832, sync = !scorer && group > 0, b = Math.abs(Math.sin(time * 6.5 + (sync ? 0 : f.seed)));
-    const v = scorer ? (style >= 0 ? style % 11 : Math.floor(u * 11) % 11) : sync ? (group === 2 ? 4 : 1) : Math.floor(u * 5) % 5;
+  /* The newer celebrations (1.22), the scorer's twelfth to eighteenth. Each says what the ball is doing (celebBall):
+     0 tucked as he carries it, 1 in his throwing hand, 2 on the turf in front of him, 3 the same and spinning,
+     4 cradled at his chest, 5 spiked (it leaves his hand and bounces away). */
+  const CELEB_N = 18;
+  let celebBall = 0;
+
+  function celebMore(f, tg, v) {
+    const t = celebT, b = Math.abs(Math.sin(time * 6.5));
+    if (v === 11) {
+      // a phone call: the ball at his ear, the other hand on his hip, weight on one leg, nodding along; then he hangs up
+      const done = t % 3.4 > 2.7 ? smooth((t % 3.4 - 2.7) / 0.3) : 0;
+      armIK(-0.19, lerp(0.3, -0.1, done), lerp(-0.08, -0.4, done));
+      tg[SRX] = ARM[0];
+      tg[SRZ] = ARM[1];
+      tg[ER] = ARM[2];
+      tg[SLX] = 0.3;
+      tg[SLZ] = -0.75;
+      tg[EL] = 1.9;
+      tg[PELRZ] = 0.07 + Math.sin(time * 2.4) * 0.03;
+      tg[CHRZ] = -0.08;
+      tg[HEADRX] = 0.08 + Math.max(0, Math.sin(time * 5.5)) * 0.12 * (1 - done);
+      tg[HEADRY] = -0.25 * (1 - done);
+      tg[HL] = 0.12;
+      tg[KL] = -0.3;
+      tg[HR] = -0.04;
+      celebBall = 1;
+      return false;
+    }
+    if (v === 12) {
+      // push-ups beside the ball: down on his hands, body straight, pumping
+      const w = Math.abs(Math.sin(time * 4.6)), drop = smooth(Math.min(1, t / 0.5));
+      tg[PELY] = lerp(HIP, 0.36 + w * 0.13, drop);
+      tg[PELRX] = -1.42 * drop;
+      tg[CHRX] = 0;
+      tg[HEADRX] = 0.55 * drop;
+      tg[SLX] = tg[SRX] = 1.45 * drop;
+      tg[SLZ] = -0.25 * drop;
+      tg[SRZ] = 0.25 * drop;
+      tg[EL] = tg[ER] = lerp(0.3, 1.35 * (1 - w), drop);
+      tg[HL] = tg[HR] = 0.03;
+      tg[KL] = tg[KR] = -0.06;
+      tg[AL] = tg[AR] = 1.0 * drop;
+      celebBall = 2;
+      return true;
+    }
+    if (v === 13) {
+      // a shimmy: low, arms out, the shoulders shaking fast over slow hips
+      const w = Math.sin(time * 17), h = Math.sin(time * 4.2);
+      tg[PELY] = HIP - 0.15 + Math.abs(h) * 0.04;
+      tg[PELRZ] = h * 0.1;
+      tg[CHRX] = -0.12 + h * 0.1;
+      tg[CHRY] = w * 0.32;
+      tg[CHRZ] = w * 0.1;
+      tg[SLX] = tg[SRX] = 0.45;
+      tg[SLZ] = -0.95;
+      tg[SRZ] = 0.95;
+      tg[EL] = tg[ER] = 1.25;
+      tg[HL] = tg[HR] = 0.5;
+      tg[KL] = tg[KR] = -0.85;
+      tg[HLZ] = -0.14;
+      tg[HRZ] = 0.14;
+      tg[HEADRX] = 0.12;
+      plant(tg);
+      celebBall = 2;
+      return true;
+    }
+    if (v === 14) {
+      // rocking the ball like a baby: cradled in both arms, swaying, his head down over it
+      const w = Math.sin(time * 3.1);
+      tg[SLX] = tg[SRX] = 0.78;
+      tg[SLZ] = 0.26;
+      tg[SRZ] = -0.26;
+      tg[EL] = tg[ER] = 1.72;
+      tg[CHRY] = w * 0.5;
+      tg[CHRZ] = w * 0.1;
+      tg[CHRX] = -0.1;
+      tg[HEADRX] = -0.32;
+      tg[PELRZ] = w * 0.06;
+      tg[PELY] = HIP - 0.05;
+      tg[HL] = tg[HR] = 0.18;
+      tg[KL] = tg[KR] = -0.34;
+      plant(tg);
+      celebBall = 4;
+      return false;
+    }
+    if (v === 15) {
+      // the statue: one knee up, one arm straight out in front, the ball tucked, held still
+      const up = smooth(Math.min(1, t / 0.45)), wob = Math.sin(time * 2.2) * 0.02;
+      tg[SLX] = 1.5 * up;
+      tg[SLZ] = -0.1;
+      tg[EL] = 0.06;
+      tg[SRX] = 0.45;
+      tg[ER] = 1.9;
+      tg[SRZ] = -0.2;
+      tg[HL] = 1.25 * up;
+      tg[KL] = -1.5 * up;
+      tg[AL] = 0.5 * up;
+      tg[HR] = -0.05;
+      tg[KR] = -0.12;
+      tg[CHRX] = -0.12 + wob;
+      tg[CHRY] = 0.2 * up;
+      tg[HEADRX] = 0.1;
+      tg[PELY] = HIP - 0.02;
+      return false;
+    }
+    if (v === 16) {
+      // a bow and arrow at the sky: the front arm long, the back hand drawn to the cheek, let go, watch it fly
+      const ph = t % 2.1, draw = ph < 1.1 ? smooth(ph / 1.1) : ph < 1.25 ? 1 - (ph - 1.1) / 0.15 : 0, gone = ph >= 1.25 ? 1 : 0;
+      tg[CHRY] = -0.75;
+      tg[CHRX] = 0.2;
+      tg[HEADRY] = 0.7;
+      tg[HEADRX] = -0.3;
+      tg[SLX] = 2.05;
+      tg[SLZ] = -0.85;
+      tg[EL] = 0.05;
+      tg[SRX] = lerp(1.9, 1.55, draw) + gone * 0.5;
+      tg[SRZ] = lerp(0.2, 0.75, draw);
+      tg[ER] = lerp(0.5, 2.3, draw) * (1 - gone * 0.8);
+      tg[HLZ] = -0.16;
+      tg[HRZ] = 0.16;
+      tg[HL] = 0.1;
+      tg[HR] = 0.25;
+      tg[KR] = -0.4;
+      tg[PELY] = HIP - 0.04;
+      plant(tg);
+      celebBall = 2;
+      return false;
+    }
+    // 17, the ball spun on the turf: down on a knee, a flick of the wrist, then up with both arms wide while it turns
+    const dn = t < 1.5 ? smooth(Math.min(1, t / 0.35)) : 1 - smooth(Math.min(1, (t - 1.5) / 0.4));
+    for (let i = 0; i < NPOSE; i++) tg[i] = lerp(STAND[i], KNEEL[i], dn);
+    tg[SRX] = lerp(2.6, 1.05, dn) + (t > 0.5 && t < 0.8 ? Math.sin((t - 0.5) / 0.3 * Math.PI) * 0.35 : 0);
+    tg[ER] = lerp(0.45, 0.25, dn);
+    tg[SRZ] = lerp(0.8, 0.1, dn);
+    tg[SLX] = lerp(2.6, 0.5, dn);
+    tg[SLZ] = lerp(-0.8, -0.2, dn);
+    tg[EL] = lerp(0.45, 0.9, dn);
+    tg[HEADRX] = lerp(0.2, -0.35, dn);
+    if (dn < 0.05) tg[PELY] = HIP + b * 0.06;
+    celebBall = t > 0.55 ? 3 : 1;
+    return true;
+  }
+
+  /* the whole side in on it (group 3 and 4, 1.22). The photograph: everyone turns to the camera and strikes a pose of
+     his own, the front ones down on a knee. The wave: arms thrown up one man after another, round the ring. */
+  function celebTeam(f, tg, group, order) {
+    if (group === 3) {
+      const k = Math.floor(f.seed * 1.6) % 4, in0 = smooth(Math.min(1, celebT / 0.6));
+      if (k === 0) {
+        for (let i = 0; i < NPOSE; i++) tg[i] = lerp(tg[i], KNEEL[i], in0);
+        tg[SRX] = 1.5 * in0;
+        tg[ER] = 0.1;  // down on a knee, pointing at the camera
+        tg[HEADRX] = 0.15;
+      } else if (k === 1) {
+        tg[SLX] = tg[SRX] = 1.5 * in0;
+        tg[SLZ] = -1.3 * in0;
+        tg[SRZ] = 1.3 * in0;
+        tg[EL] = tg[ER] = 2.2 * in0;  // both arms flexed
+        tg[CHRX] = 0.08;
+      } else if (k === 2) {
+        tg[SLX] = tg[SRX] = 0.75;
+        tg[SLZ] = 0.5;
+        tg[SRZ] = -0.5;
+        tg[EL] = tg[ER] = 1.9;  // arms folded, chin up
+        tg[HEADRX] = -0.12;
+        tg[CHRX] = 0.1;
+      } else {
+        tg[SRX] = 2.9 * in0;
+        tg[ER] = 0.15;
+        tg[SRZ] = 0.2;  // one finger to the sky
+        tg[SLX] = 0.3;
+        tg[SLZ] = -0.7;
+        tg[EL] = 1.8;
+        tg[PELRZ] = 0.06;
+      }
+      return k === 0;
+    }
+    const w = Math.max(0, Math.sin(time * 5 - order * 0.55));
+    tg[SLX] = tg[SRX] = 0.4 + w * 2.6;
+    tg[SLZ] = -0.25 - w * 0.2;
+    tg[SRZ] = 0.25 + w * 0.2;
+    tg[EL] = tg[ER] = 1.2 * (1 - w) + 0.15;
+    tg[PELY] = HIP - 0.1 + w * 0.16;
+    tg[HL] = tg[HR] = 0.3 * (1 - w);
+    tg[KL] = tg[KR] = -0.55 * (1 - w);
+    tg[CHRX] = lerp(-0.15, 0.1, w);
+    tg[HEADRX] = 0.2 * w;
+    return false;
+  }
+
+  function celebrate(f, scorer, tg, style, group, order) {
+    const u = f.seed / 6.2832, sync = !scorer && (group === 1 || group === 2), b = Math.abs(Math.sin(time * 6.5 + (sync ? 0 : f.seed)));
+    const v = scorer ? (style >= 0 ? style % CELEB_N : Math.floor(u * CELEB_N) % CELEB_N) : sync ? (group === 2 ? 4 : 1) : Math.floor(u * 5) % 5;
+    if (scorer && v >= 11) return celebMore(f, tg, v);
+    if (!scorer && group >= 3) return celebTeam(f, tg, group, order || 0);
+    if (scorer && v === 1) celebBall = 5;
     if (!scorer && v === 4) {
       shuffleStep(tg, Math.sin(time * 7 + (sync ? 0 : f.seed)));
       return false;
@@ -3028,13 +3222,17 @@
       tg[KR] = -0.35;
       tg[HEADRX] = 0.4;
       plant(tg);
-    } else if (s.celeb && s.G.state === 'dead' && !(p.team === s.celeb.team && p !== s.celeb.who && sp > 1.3)) {
+    } else if (s.celeb && s.G.state === 'dead' && !(p !== s.celeb.who && sp > 1.3)) {
       // a teammate still running to the scorer runs (the last branch); he celebrates once he is there
       eyes = false;
       if (p.team === s.celeb.team) {
-        snap = celebrate(f, p === s.celeb.who, tg, s.celeb.style ?? -1, s.celeb.group || 0);
-        const w = s.celeb.who;
-        if (w && w !== p && Math.hypot(w.x - p.x, w.y - p.y) < 6) {
+        const w = s.celeb.who, grp = s.celeb.group || 0;
+        snap = celebrate(f, p === w, tg, s.celeb.style ?? -1, grp, w ? Math.atan2(p.y - w.y, p.x - w.x) * 2 : 0);
+        if (p === w || (grp === 3 && w)) {
+          hx = camera.position.x - p.x;  // the scorer plays to the camera, and so does everyone when the side poses for its picture
+          hy = -camera.position.z - p.y;
+          turnRate = 14;
+        } else if (w && Math.hypot(w.x - p.x, w.y - p.y) < 6) {
           hx = w.x - p.x;  // gathered round him, facing him
           hy = w.y - p.y;
         }
@@ -5150,6 +5348,7 @@
     }
     endsT += dt;
     celebT = G.celeb && G.state === 'dead' ? celebT + dt : 0;
+    celebBall = 0;
     const msg = G.ros && G.state === 'dead' && !G.celeb && BOARD_SAYS.test(G.last || '') ? G.last : '';  // the board has a word for the big ones
     const bk = G.ros ? [G.score, G.q, Math.ceil(G.clock || 0), s.down, !!G.celeb, msg].join('|') : 'menu';
     if (bk !== boardKey) {
@@ -5371,6 +5570,24 @@
           }
           else if (c === ps.qb && ps.mode === 'run' && ps.runner && ps.runner !== c && !ps.handoff && !c.down) v3.set(0, 0.1, -0.33).applyMatrix4(f.chest.matrixWorld);  // riding in both hands at his belt until he gives it
           else v3.set(f.ballL ? -0.03 : 0.03, -0.24, -0.1).applyMatrix4((f.ballL ? f.elL : f.elR).matrixWorld);  // under the other arm when the right hand is the one fending a man off
+          let spinning = 0;
+          const cb = G.celeb && G.state === 'dead' && G.celeb.who === c ? celebBall : 0;
+          if (cb === 1 || (cb === 5 && celebT < 0.62)) v3.set(TH_GRIP[0], TH_GRIP[1], TH_GRIP[2]).applyMatrix4(f.elR.matrixWorld);
+          else if (cb === 4) v3.set(0.04, 0.32, -0.3).applyMatrix4(f.chest.matrixWorld);
+          else if (cb === 2 || cb === 3) {
+            // on the turf, a step in front of him
+            v3.set(c.x - Math.sin(f.heading) * 1.15, 0.2, -(c.y + Math.cos(f.heading) * 1.15));
+            spinning = cb === 3 ? 1 : 0;
+          } else if (cb === 5) {
+            // spiked: straight down off the turf, up over his head, and away in smaller bounces
+            const tb = celebT - 0.62, hop = Math.abs(Math.sin(tb * 4.4)) * Math.exp(-tb * 1.15) * 3.4;
+            v3.set(spike[0] - Math.sin(f.heading) * Math.min(3.2, tb * 1.7), 0.2 + hop, spike[2] - Math.cos(f.heading) * Math.min(3.2, tb * 1.7));
+            spinning = 2;
+          }
+          if (cb === 5 && celebT < 0.62) {
+            spike[0] = v3.x;
+            spike[2] = v3.z;
+          }
           bx = v3.x;
           by = -v3.z;
           bz = v3.y;
@@ -5397,7 +5614,9 @@
             bz = lerp(held.fz, bz, k);
             held.t -= dt || 0;
           }
-          ball.rotation.set(0.35, f.heading, 0);
+          if (spinning === 1) ball.rotation.set(Math.PI / 2, 0, time * 16);
+          else if (spinning === 2) ball.rotation.set(time * 11, time * 3, 0);
+          else ball.rotation.set(0.35, f.heading, 0);
         }
       } else if (ps.mode !== 'ko' || G.state === 'pre') {
         bx = ps.bx;
@@ -5530,10 +5749,15 @@
       v3.set(cm.fx + side * 13, 3.4, -(cm.fy - st.dir * 5));
       v3b.set(cm.fx, 1.5, -cm.fy);
     } else if (G.celeb && G.state === 'dead' && G.celeb.who) {
-      // touchdown: circle the scorer
-      const w = G.celeb.who, a = time * 0.55;
-      v3.set(w.x + Math.sin(a) * 7.5, 2.9, -w.y + Math.cos(a) * 7.5);
-      v3b.set(w.x, 2.1, -w.y);
+      /* Touchdown, in three shots (1.22; it was one slow circle, with whoever stood in the way). The camera is out
+         toward midfield from him, so the stands are behind him and his teammates gather on the far side (coast() in
+         game.js leaves that side open). It pushes in low on him, drifts across his front while he celebrates, and for
+         the last second and a half rises and pulls back to take in the whole side. */
+      const w = G.celeb.who, t = celebT, mx = FW / 2 - w.x, my = 50 - w.y, ml = Math.hypot(mx, my) || 1, a0 = Math.atan2(my / ml, mx / ml * 0.35);
+      const push = smooth(clamp(t / 0.8, 0, 1)), out = smooth(clamp((t - 3.3) / 1.4, 0, 1)), a = a0 + Math.sin(t * 0.5 - 0.6) * 0.55;
+      const R = lerp(lerp(10, 4.9, push), 11.5, out), h = lerp(lerp(2.6, 1.5, push), 5.2, out);
+      v3.set(w.x + Math.cos(a) * R, h, -(w.y + Math.sin(a) * R));
+      v3b.set(w.x, lerp(lerp(1.7, 2.15, push), 1.5, out), -w.y);
     } else {
       /* once a ball carrier is in the open field the camera closes in on him */
       const chase = ps && ps.carrier && !ps.air && (ps.open || ps.mode === 'ko') && (G.state === 'live' || G.state === 'dead');
@@ -6361,11 +6585,11 @@
     return cv.toDataURL('image/png');
   }
 
-  /* every celebration as a picture: the scorer's eleven, the teammates' five, the beaten side's two, each at `at` seconds */
+  /* every celebration as a picture ({ only: n } for one of the scorer's): the scorer's eighteen, the teammates' five, the beaten side's two, each at `at` seconds */
   function celebStrip(opts) {
     if (!renderer) return null;
     const o = opts || {}, ar = arenaOf(), at = o.at === undefined ? 1.8 : o.at, cell = o.cell || 200, teams = PG.TEAMS || [{ c1: '#c0392b', c2: '#f1f1f1' }];
-    const list = [...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(v => [true, 0.5, v]), ...[0, 1, 2, 3, 4].map(v => [false, (v + 0.5) / 5]), ['lost', 0.3], ['lost', 0.8]];
+    const list = o.only !== undefined ? [[true, 0.5, o.only]] : [...Array.from({ length: CELEB_N }, (_, v) => v).map(v => [true, 0.5, v]), ...[0, 1, 2, 3, 4].map(v => [false, (v + 0.5) / 5]), ['lost', 0.3], ['lost', 0.8]];
     const cv = document.createElement('canvas'), x = cv.getContext('2d'), f = ar.a.f, keep = { seed: f.seed, t: celebT };
     cv.width = cell * list.length;
     cv.height = Math.round(cell * ar.ph / ar.pw);
