@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `6a722b0`, before the hand-off, the carried-across ball and the quality step-down change (2026-11-27)
   - `2f097d2`, before the rebuilt throw (2026-11-27)
   - `b077b95`, before the controller's first-press fix and the input tests (2026-11-22).
   - `e65774b`, before the returner and deep-safety hop fixes (2026-11-21).
@@ -305,8 +306,8 @@ work. This is the list, in the order proposed; he decides the order. Each item i
 
 Animation
 1. [x] The throw (1.13): full body, ball in the hand, run throw, pump fake.
-2. [ ] The quarterback around the throw: the snap into his hands (shotgun and under center), the drop's footwork,
-   the hand-off and the pitch (the ball changing hands), a throw-away, taking a sack.
+2. [~] The quarterback around the throw. Done in 1.14: the hand-off (hands on the ball, the ball carried across),
+   the snap on every play. Left: the drop's footwork looked at on film, the pitch, a throw-away, taking a sack.
 3. [ ] The catch: hands to the ball at every height, the jump, over the shoulder, the toe tap, the turn up the field
    afterwards; the defender's swat and the interception.
 4. [ ] The ball carrier: cuts, stiff arm, spin and juke looked at again on the new stride; a dive at the goal line.
@@ -321,7 +322,8 @@ Beyond animation (proposed, not asked for yet)
 - The look of the players in play. The owner said on 2026-11-22 that the models "feel severely downgraded". The
   model code has not changed since 2026-11-16; the suspect is watchSpeed() in game.js, which turns off close-up
   models, the color pass, sharpness and shadows for good when the frame rate dips (a phone in Low Power Mode is held
-  to 30). Not confirmed on his phone. Fix: do not save the step-down, undo a step that did not help, restore once.
+  to 30). Not confirmed on his phone. Changed in 1.14 all the same: a step-down lasts for the visit (LOW), a step
+  that does not help is undone, and saved settings get the full look back once (SET.q14).
 - The ball: its size next to the players, the spiral, the arc.
 - The camera: framing by situation.
 - Still offered and not built: head-to-head online, cloud saves, team logos, a draft screen and trades.
@@ -3594,6 +3596,19 @@ The owner: "make sure controller is fully good and keyboard and mouse".
   set `PG.r3d.debugCam = { pos, look }` beside the quarterback and copy `#gl` after each `PG.dbg.render()`. Not
   checked: how it reads at game-camera distance in motion, a left-handed thrower (there is none), feet measured for
   slide. The plan for the rest is under "Overhaul plan".
+
+- **2026-11-27, the hand-off, the ball changing hands, the quality step-down (1.14).** `tools/film.js` is new: a
+  camera beside a player and a grid of frames (`F.start()`, `F.until(test)`, `F.grid(who, opts)`). Filmed, the
+  hand-off had the quarterback's hands at his chest and the ball under his arm, and the ball was in the back's arm on
+  the next frame. Now his hands are solved onto the ball at his belt, and `held` in render3d.js carries the ball from
+  where it was last drawn to its new holder over 0.14 s (a give, a catch, a ball picked up); the snap's rise off the
+  turf applies on every play, not only passes. watchSpeed() no longer writes into the settings: steps live in `LOW`
+  for the visit, a step is measured over the next 150 frames and undone if it did not buy a tenth of the frame time
+  (then nothing more is tried), and settings saved before 1.14 have fx, shadows, detail and sharpness reset once
+  (`SET.q14`; a choice the player made by hand is reset with them). Checked: fingerprint unchanged; three rough
+  exhibitions, a quarterback and a receiver career game, a season, a watched game and a controller-only game clean;
+  the hand-off looked at on film. Not checked: the step-down on a real slow phone or in low power mode (the test
+  pane skips watchSpeed), the catch and pick-up carry on film.
 
 ## Morning hand-off
 

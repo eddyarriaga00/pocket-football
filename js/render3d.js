@@ -1705,6 +1705,7 @@
 
   /* the ball in the throwing hand: where it is, in the forearm's own space */
   const TH_GRIP = [0, -0.36, -0.03];
+  const held = { who: null, on: false, x: 0, y: 0, z: 0, fx: 0, fy: 0, fz: 0, t: 0 };  // who had the ball on the last frame and where it was drawn, for the hand-over
 
   /* the shortest distance between two segments (a0 to a1, b0 to b1), without making anything new */
   const SD1 = new T.Vector3(), SD2 = new T.Vector3(), SR = new T.Vector3();
@@ -3270,13 +3271,16 @@
       if (ps.mode === 'run' && s.live && ps.runner && ps.runner !== ps.qb) {
         // the exchange
         if (p === ps.qb && !ps.handoff) {
-          tg[SLX] = 0.75;
-          tg[SRX] = 0.75;
-          tg[SLZ] = 0.25;
-          tg[SRZ] = -0.25;
-          tg[EL] = 1.6;
-          tg[ER] = 1.6;
-        }  // both hands on the ball
+          // both hands on the ball, out in front of his belt where the back will take it (the ball is drawn there)
+          armIK(-0.25, 0.11 - f.shR.position.y, -0.31);
+          tg[SRX] = ARM[0];
+          tg[SRZ] = ARM[1];
+          tg[ER] = ARM[2];
+          armIK(0.25, 0.11 - f.shL.position.y, -0.31);
+          tg[SLX] = ARM[0];
+          tg[SLZ] = ARM[1];
+          tg[EL] = ARM[2];
+        }
           else if (p === ps.qb && ps.t < 1.7) {
             tg[SRX] = 1.25;
             tg[SRZ] = 0.5;
@@ -5097,15 +5101,33 @@
             v3.set(0.06, 0.4, -0.27).applyMatrix4(f.chest.matrixWorld);
             if (f.hand > 0) v3.lerp(v3b.set(TH_GRIP[0], TH_GRIP[1], TH_GRIP[2]).applyMatrix4(f.elR.matrixWorld), f.hand);  // winding up, or pumping: it goes back with his hand
           }
+          else if (c === ps.qb && ps.mode === 'run' && ps.runner && ps.runner !== c && !ps.handoff && !c.down) v3.set(0, 0.1, -0.33).applyMatrix4(f.chest.matrixWorld);  // riding in both hands at his belt until he gives it
           else v3.set(f.ballL ? -0.03 : 0.03, -0.24, -0.1).applyMatrix4((f.ballL ? f.elL : f.elR).matrixWorld);  // under the other arm when the right hand is the one fending a man off
           bx = v3.x;
           by = -v3.z;
           bz = v3.y;
-          if (pocket && G.state === 'live' && ps.t < 0.16) {
+          if (c === ps.qb && G.state === 'live' && ps.t < 0.16 && !ps.thrown && !ps.handoff) {
+            // the snap: up off the turf and back into his hands, on any play
             const u = ps.t / 0.16;
+            bz = lerp(0.18, bz, u) + Math.sin(u * Math.PI) * Math.min(0.25, Math.hypot(bx - ps.bx, by - ps.los) * 0.08);
             bx = lerp(ps.bx, bx, u);
             by = lerp(ps.los, by, u);
-            bz = lerp(0.18, bz, u) + Math.sin(u * Math.PI) * 0.25;
+          }
+          /* Changing hands (a give, a catch, a ball picked up): it is carried across over a tenth of a second or so,
+             not gone from one place and in another on the next frame. */
+          if (held.who !== c && held.on && Math.hypot(held.x - bx, held.y - by, held.z - bz) < 3) {
+            held.t = 0.14;
+            held.fx = held.x;
+            held.fy = held.y;
+            held.fz = held.z;
+          }
+          held.who = c;
+          if (held.t > 0) {
+            const k = smooth(1 - held.t / 0.14);
+            bx = lerp(held.fx, bx, k);
+            by = lerp(held.fy, by, k);
+            bz = lerp(held.fz, bz, k);
+            held.t -= dt || 0;
           }
           ball.rotation.set(0.35, f.heading, 0);
         }
@@ -5117,6 +5139,13 @@
       }
       if (bx === null) ball.visible = false;
       else ball.position.set(bx, bz, -by);
+      if (!c || a || ps.loose) held.who = null;
+      held.on = bx !== null && G.state !== 'pre' && G.state !== 'kickm' && !(a && a.kick && a.t < 0.2);
+      if (bx !== null) {
+        held.x = bx;
+        held.y = by;
+        held.z = bz;
+      }
       ballShadow.visible = !!a;
       if (a) ballShadow.position.set(a.x, 0.04, -a.y);
       targetRing.visible = !!(a && !a.kick);

@@ -62,6 +62,18 @@
   }
 
   const SET = Object.assign({ snd: true, mus: true, ql: 180, diff: 1, me: 0, opp: 5, acc: 'white' }, load('pg.settings', {}));
+  /* What the game has given up by itself to keep the frame rate (watchSpeed): for this visit only, never saved. Until
+     1.14 each step was written into the settings for good, so one slow minute (or a phone in its low power mode,
+     which is held to 30 frames a second whatever is drawn) left the players plain from then on. Settings saved
+     before 1.14 get the full look back once. */
+  const LOW = { detail: false, fx: false, px: false, shad: false, stop: false };
+  if (!SET.q14) {
+    delete SET.fx;
+    delete SET.shad;
+    delete SET.detail;
+    delete SET.px;
+    SET.q14 = 1;
+  }
   /* white is the default accent since 2026-11-16 (the owner's pick); the settings saved before then carry the old
      default, blue, so that becomes white once, and any accent chosen after this sticks */
   if (SET.accV !== 2) {
@@ -118,7 +130,7 @@
     cv.height = H * DPR;
     F = Math.min(W, H * 0.62) * 0.62;  // on a wide screen the flat field fits the height
     CY = H * 0.5;
-    if (R3) R3.resize(W, H, SET.px === 'bal' ? Math.min(DPR, 1.5) : DPR);
+    if (R3) R3.resize(W, H, SET.px === 'bal' || LOW.px ? Math.min(DPR, 1.5) : DPR);
   }
 
   addEventListener('resize', resize);
@@ -7155,6 +7167,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.14', 'November 2026', ['The hand-off: the quarterback holds the ball out in both hands and the back takes it from him', 'The ball is carried across on a hand-off, a catch and a snap; it no longer jumps from one place to the next', 'Fixed: one slow moment could switch off shadows, glow, sharpness and detailed players for good. They are back on, and the game now only eases off for the visit, and only when it helps']],
     ['1.13', 'November 2026', ['The throw is rebuilt: the quarterback turns side-on, steps into it, opens his hips and follows through', 'The ball stays in his hand through the wind-up and leaves at the top of the throw', 'A throw on the run and the pump fake use the same motion']],
     ['1.12', 'November 2026', ['Fixed: the first button press after picking a controller up in the middle of a play was lost']],
     ['1.11', 'November 2026', ['Fixed: a kick returner slid onto the ball as he caught it', 'Fixed: a deep safety could hop a yard at the snap near the goal line']],
@@ -7884,7 +7897,7 @@
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     if (R3) {
       ctx.clearRect(0, 0, W, H);
-      R3.render({ G, P, ps, cam, scene: G.state === 'scene' ? G.scene : null, teams: TEAMS, acc: ACC, shake, isCtl, down: G.dnTxt || '', plain: SET.cin === false, env: G.env, shadows: SET.shad !== false, fx: SET.fx !== false, zoom: SET.zoom, detail: SET.detail !== false, charge: G.chg && G.state === 'live' ? pwOf(G.chg.t) : -1 }, FDT);
+      R3.render({ G, P, ps, cam, scene: G.state === 'scene' ? G.scene : null, teams: TEAMS, acc: ACC, shake, isCtl, down: G.dnTxt || '', plain: SET.cin === false, env: G.env, shadows: SET.shad !== false && !LOW.shad, fx: SET.fx !== false && !LOW.fx, zoom: SET.zoom, detail: SET.detail !== false && !LOW.detail, charge: G.chg && G.state === 'live' ? pwOf(G.chg.t) : -1 }, FDT);
       if (shake > 0) shake -= FDT;
     } else {
       if (shake > 0) {
@@ -8233,32 +8246,46 @@
 
   /* Nobody can test every phone, so the game watches its own frame rate. If play stays under about 40 frames a
      second for a few seconds it gives up the most expensive effect that is still on: first the glow pass, then
-     the sharpness, then the shadows; a replay that drags gives up the detailed close-up models first. Each step is
-     saved, and Settings can turn any of them back on. */
+     the sharpness, then the shadows; a replay that drags gives up the detailed close-up models first. A step lasts
+     for this visit only (LOW). And a step that does not buy at least a tenth of the frame time back is undone, and
+     nothing more is tried: the phone is being held to that rate (low power mode), not struggling to draw. */
+  let slowSum = 0, slowN = 0, tried = null;
+
   function watchSpeed(raw) {
-    if (!R3 || AUTO || window.PG_TEST || G.paused || document.hidden || raw > 0.25 || (G.state !== 'live' && G.state !== 'pre' && G.state !== 'replay')) return;
-    slow = raw > 1 / 40 ? slow + 1 : Math.max(0, slow - 2);
+    if (!R3 || AUTO || window.PG_TEST || LOW.stop || G.paused || document.hidden || raw > 0.25 || (G.state !== 'live' && G.state !== 'pre' && G.state !== 'replay')) return;
+    if (tried) {
+      // the 150 frames after a step: did it help?
+      tried.sum += raw;
+      if (++tried.n < 150) return;
+      if (tried.sum / tried.n > tried.was * 0.9) {
+        LOW[tried.what] = false;
+        LOW.stop = true;
+        if (tried.what === 'px') resize();
+      }
+      tried = null;
+      slow = slowSum = slowN = 0;
+      return;
+    }
+    if (raw > 1 / 40) {
+      slow++;
+      slowN++;
+      slowSum += raw;
+    } else {
+      slow = Math.max(0, slow - 2);
+      if (!slow) slowSum = slowN = 0;
+    }
     if (slow < 150) return;
-    slow = 0;
+    const was = slowSum / slowN;
+    slow = slowSum = slowN = 0;
     let what = '';
-    if (G.state === 'replay' && SET.detail !== false) {
-      SET.detail = false;
-      what = 'simpler close-ups';
-    } else if (SET.fx !== false) {
-      SET.fx = false;
-      what = 'glow pass off';
-    } else if (SET.px !== 'bal') {
-      SET.px = 'bal';
-      resize();
-      what = 'sharpness lowered';
-    } else if (SET.shad !== false) {
-      SET.shad = false;
-      what = 'shadows off';
-    }
-    if (what) {
-      save('pg.settings', SET);
-      toast('Smoother play: ' + what);
-    }
+    if (G.state === 'replay' && SET.detail !== false && !LOW.detail) what = 'detail';
+    else if (SET.fx !== false && !LOW.fx) what = 'fx';
+    else if (SET.px !== 'bal' && !LOW.px) what = 'px';
+    else if (SET.shad !== false && !LOW.shad) what = 'shad';
+    if (!what) return;
+    LOW[what] = true;
+    if (what === 'px') resize();
+    tried = { what, was, sum: 0, n: 0 };
   }
 
   function frame(ts) {
