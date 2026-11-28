@@ -16,7 +16,10 @@ down it is checked the way a backup file is; two phones that both played get a c
 - `eddyarriaga00.github.io` as an authorized domain (every Pocket game is served from it).
 - GitHub sign-in: on only if the GitHub OAuth app was set up; until then the GitHub button says it is not switched on.
 
-## The one thing to do: publish the rules
+## The rules (published 2026-11-28)
+
+Done: the rules below were published on 2026-11-28, and the live rules were checked section by section against
+`docs/firebase-rules.json`. Repeat these steps only when that file changes.
 
 This game keeps its copy at `football/<your id>` (PocketBasketball's is at `saves/<your id>`, PocketSoccer's at
 `soccer/<your id>`; they must not share a place). The database's rules have to allow it:
