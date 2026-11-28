@@ -1247,3 +1247,65 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 .mode:active,.tile:active{transform:scale(.985)}
 .chip:active{transform:scale(.95)}
 @media (prefers-reduced-motion:reduce){#screen button{transition:none}}
+
+/* ---------- the title screen and the start menu (1.27) ---------- */
+.title{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;box-sizing:border-box;width:100%;padding:0 22px calc(38px + var(--sb));pointer-events:auto;text-align:left;
+  background:radial-gradient(ellipse at 50% 38%,transparent 40%,rgba(4,7,14,.42) 100%),linear-gradient(rgba(6,10,19,.06) 34%,rgba(6,10,19,.88))}
+.title .tl{overflow:hidden;padding-bottom:2px}
+.title .tl span,.title .tl em{display:block;font-family:var(--display);font-stretch:112%;font-style:normal;font-weight:800;font-size:min(13.4vw,92px);line-height:.92;letter-spacing:-.015em;text-transform:uppercase;color:#fff;text-shadow:0 4px 26px rgba(0,0,0,.55);animation:wordIn .75s cubic-bezier(.16,.84,.24,1) both}
+.title .tl em{color:var(--acc);animation-delay:.14s}
+.title .tl i{display:block;height:5px;width:88px;margin-top:14px;border-radius:3px;background:var(--acc);transform-origin:0 50%;animation:barW .6s .55s cubic-bezier(.2,.8,.2,1) both}
+.title p{margin:14px 0 0;max-width:22em;font-size:14px;line-height:1.45;color:#c9d3e4;animation:capIn .6s .75s both}
+.title .tgo{margin-top:26px;padding:11px 20px;border-radius:999px;border:1px solid rgba(255,255,255,.5);background:rgba(6,10,19,.5);font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#fff;animation:capIn .6s 1s both,tgo 1.9s 1.6s ease-in-out infinite}
+.title>small{position:absolute;right:16px;top:calc(14px + env(safe-area-inset-top,0px));padding:2px 8px;border-radius:999px;background:rgba(6,10,19,.72);font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.14em;color:#d9e0ec}
+.title:active .tgo{background:#fff;color:#06101f}
+@keyframes wordIn{from{opacity:0;transform:translateY(60%)}to{opacity:1;transform:none}}
+@keyframes barW{from{transform:scaleX(0)}to{transform:none}}
+@keyframes tgo{0%,100%{opacity:1}50%{opacity:.5}}
+@media (min-aspect-ratio:1/1){.title{align-items:center;text-align:center;padding-bottom:calc(30px + var(--sb))}.title .tl i{margin-left:auto;margin-right:auto;transform-origin:50% 50%}.title .tl span,.title .tl em{font-size:clamp(40px,11vh,92px)}}
+@media (min-aspect-ratio:1/1) and (max-height:500px){.title p{margin-top:8px;font-size:12.5px}.title .tgo{margin-top:14px}}
+
+.home.v2{background:linear-gradient(rgba(6,10,19,.14),rgba(6,10,19,.42) 30%,rgba(6,10,19,.92) 58%,rgba(6,10,19,.97)) local;padding-top:calc(24px + env(safe-area-inset-top,0px))}
+.mtop{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.home.v2 h1{font-size:34px;text-shadow:0 3px 22px rgba(0,0,0,.6)}
+.mtop small{margin-bottom:3px;padding:2px 8px;border-radius:999px;background:rgba(6,10,19,.72);font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.14em;color:#d9e0ec}
+.home.v2 .offer{margin-top:auto}
+.hcard{position:relative;overflow:hidden;box-sizing:border-box;display:grid;align-content:end;justify-items:start;gap:4px;width:100%;min-height:clamp(150px,27vh,270px);margin-top:auto;padding:16px;border-radius:16px;text-align:left;
+  background:#101a2d;background:linear-gradient(120deg,color-mix(in srgb,var(--c) 62%,#0b1322),#0b1322 78%);border:1px solid rgba(255,255,255,.16);box-shadow:0 14px 34px rgba(0,0,0,.4)}
+.home.v2 .offer+.hcard{margin-top:10px}
+.hcard::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(6,10,19,.5),transparent 62%);pointer-events:none}
+.hcard>*{position:relative;z-index:1}
+.hcard img{position:absolute;z-index:0;right:-4%;bottom:-6%;height:124%;width:auto;max-width:62%;object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 10px 18px rgba(0,0,0,.5));pointer-events:none}
+.hcard .hk{font-family:var(--display);font-weight:700;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.78)}
+.hcard b{max-width:64%;font-family:var(--display);font-stretch:108%;font-weight:800;font-size:clamp(20px,6.6vw,30px);line-height:1;text-transform:uppercase;color:#fff;overflow-wrap:break-word;text-shadow:0 2px 12px rgba(0,0,0,.45)}
+.hcard b.long{font-size:clamp(15px,5vw,22px)}   /* a long double name: smaller, so it breaks at its hyphen and not inside a word */
+.hcard .hs{max-width:60%;font-size:12.5px;line-height:1.4;color:rgba(255,255,255,.86)}
+.hcard .hgo{margin-top:10px;padding:8px 15px;border-radius:999px;background:#fff;color:#06101f;font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.hcard:active{transform:scale(.99)}
+.mgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-top:8px}
+.mtile{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:2px 10px;min-height:64px;box-sizing:border-box;padding:10px 12px;border-radius:12px;text-align:left;background:rgba(21,31,51,.9);border:1px solid var(--line)}
+.mtile:last-child:nth-child(odd){grid-column:1/-1}
+.mtile .mi{grid-row:1/3;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--panel3);color:var(--mute);text-decoration:none}
+.mtile .mi svg{width:18px;height:18px;fill:currentColor}
+.mtile .mi.tb{background:var(--c);font:800 11px var(--display);letter-spacing:.02em;box-shadow:0 0 0 2px rgba(255,255,255,.14)}
+.mtile>*{min-width:0}
+.mtile b{align-self:end;overflow-wrap:break-word;font-family:var(--display);font-weight:800;font-size:13px;letter-spacing:.05em;text-transform:uppercase}
+.mtile span{align-self:start;font-size:11px;line-height:1.3;color:var(--mute);display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.mtile:active{transform:scale(.98)}
+.mbar{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;margin-top:10px}
+.mbar button{display:grid;justify-items:center;align-content:start;gap:5px;min-height:48px;padding:7px 2px 4px;border-radius:10px;color:#aab6cc;font-family:var(--display);font-weight:700;font-size:10px;line-height:1.2;letter-spacing:.04em;text-transform:uppercase;text-align:center}
+.mbar svg{width:19px;height:19px;fill:currentColor}
+.mbar button:active{background:var(--panel2);color:var(--ink)}
+.home.v2.in>*{animation:rise .55s cubic-bezier(.2,.8,.2,1) both}
+.home.v2.in>.hcard{animation-delay:.08s}
+.home.v2.in>.mgrid{animation-delay:.16s}
+.home.v2.in>.mbar{animation-delay:.24s}
+.home.v2.in .hcard img{animation:heroIn .7s .2s cubic-bezier(.2,.8,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes heroIn{from{opacity:0;transform:translateX(26px)}to{opacity:1;transform:none}}
+@media (min-height:760px){.home.v2 h1{font-size:40px}.mtile{min-height:70px}.mtile b{font-size:14px}.mtile span{font-size:12px}}
+@media (max-height:600px){.hcard{min-height:128px;padding:13px}.home.v2 h1{font-size:28px}}
+@media (min-aspect-ratio:1/1){.home.v2{background:linear-gradient(rgba(6,10,19,.3),rgba(6,10,19,.8) 46%,rgba(6,10,19,.95)) local}}
+@media (min-aspect-ratio:1/1) and (max-height:500px){.hcard{min-height:108px}.mtile{min-height:56px}}
+@media (max-width:359px){.mtile{grid-template-columns:minmax(0,1fr);padding:10px 11px}.mtile .mi{display:none}}   /* a small phone: the tiles lose their round badge, or "Exhibition" does not fit */
+@media (prefers-reduced-motion:reduce){.title *,.home.v2.in>*,.home.v2.in .hcard img{animation:none}}

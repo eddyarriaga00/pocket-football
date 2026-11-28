@@ -366,6 +366,8 @@
   }
 
   /* a cut through black: the screen is dark for a moment and comes up on what is next (into and out of a cutscene) */
+  let dipT = 0;
+
   function dip() {
     let e = $('#dip');
     if (!e) {
@@ -376,6 +378,8 @@
     e.classList.remove('on');
     void e.offsetWidth;  // so the animation starts again
     e.classList.add('on');
+    clearTimeout(dipT);
+    dipT = setTimeout(() => e.classList.remove('on'), 800);  // and it is taken off whatever the animation did: it can never be left covering the game
   }
 
   function playScene(kind, o, then) {
@@ -6773,7 +6777,22 @@
     return url ? `<div class="mhero" style="--c:${team.c1}"><img src="${url}" alt="">${cap ? `<span class="hcap">${cap}</span>` : ''}</div>` : '';
   }
 
-  function showMenu() {
+  /* The title screen (1.27): the first thing on screen when the game opens. The stadium, the name coming in a word at
+     a time, and one thing to do. The tap is also what lets a browser start the music. Not shown again after that,
+     and not at all when the page is opened for testing (?test), where the menu is wanted at once. */
+  let titled = /[?&]test\b/.test(location.search);
+
+  function showTitle() {
+    if (titled) return showMenu();
+    toMenu();
+    scr.innerHTML = `<button class="title" id="ts" aria-label="PocketFootball. Start"><small>v${esc(PG.data.VERSION)}</small><div class="tl"><span>Pocket</span><em>Football</em><i></i></div><p>Full 11-on-11 football, built for one hand.</p><div class="tgo">Tap to start</div></button>`;
+    $('#ts').onclick = () => {
+      titled = true;
+      showMenu(true);
+    };
+  }
+
+  function showMenu(intro) {
     PG.rosterYear = 0;  // outside a career or a season the rosters are the first year's
     if (G.state === 'menu') G.env = null;  // the stadium behind the menus is always a clear night
     toMenu();
@@ -6782,15 +6801,17 @@
     // the hero: your career player if there is one, else your season's team, else your team in the settings
     const cd = cs && PG.career.data, hi = cd ? cd.team : st != null ? st : SET.me || 0;
     const hero = heroHtml(TEAMS[hi], true, cd ? cd.num : 12, cd ? cd.look : null, cd ? `<b>${esc(cd.name)}</b> #${cd.num} · ${cd.pos}` : `<b>${esc(TEAMS[hi].city)}</b> ${esc(TEAMS[hi].name)}`);
-    scr.innerHTML = `<div class="menu home fill"><h1>Pocket<wbr><em>Football</em></h1><p class="tag">Full 11-on-11 football, built for one hand.</p>${hero}
+    /* The start menu (1.27, redrawn): the wordmark over the stadium, then down where the thumb is a featured card
+       for your career with your player standing in it, the other modes as tiles two across, and a bar of small
+       things along the bottom. `intro` is the first showing after the title screen: everything rises in. */
+    const strip = s => String(s || '').replace(/^Continue:\s*/, ''), url = PG.r3d && PG.r3d.portrait ? PG.r3d.portrait(TEAMS[hi], true, cd ? cd.num : 12, cd ? cd.look : null, 600) : null;
+    const tile = (id, badge, name, sub) => `<button class="mtile" id="${id}">${badge}<b>${name}</b><span>${sub}</span></button>`;
+    const bar = (id, icon, label) => `<button id="${id}">${icon}<span>${label}</span></button>`;
+    scr.innerHTML = `<div class="menu home v2 fill${intro === true ? ' in' : ''}"><header class="mtop"><h1>Pocket<wbr><em>Football</em></h1><small>v${esc(PG.data.VERSION)}</small></header>
   ${offer?'<div class="offer"><b>First time here?</b><span>Training camp teaches passing, running and tackling in three short drills.</span><div class="row2"><button class="go sm" id="oY">Start camp</button><button class="btn2" id="oN">Not now</button></div></div>':''}
-  <button class="mode main" id="mC">${menuBadge(ct, 'career')}<b>Career</b><span>${cs||'Create a player, lock in at your position, and build a legacy one season at a time.'}</span><i>›</i></button>
-  <button class="mode" id="mSe">${menuBadge(st, 'season')}<b>Season</b><span>${ss||'Take one team through a 17-game season and the playoffs.'}</span><i>›</i></button>
-  <button class="mode" id="mE">${menuBadge(null, 'exh')}<b>Exhibition</b><span>Pick two teams and play one game.</span><i>›</i></button>
-  ${camp?`<button class="mode" id="mT">${menuBadge(null, 'camp')}<b>Training camp</b><span>${camp.summary()}</span><i>›</i></button>`:''}
-  ${PG.online?`<button class="mode" id="mO">${menuBadge(null, 'online')}<b>Online</b><span>Talk with everyone playing.</span><i>›</i></button>`:''}
-  <div class="row2 mrow"><button class="btn2" id="mS">${MENU_ICON.set}Settings</button><button class="btn2" id="mH">${MENU_ICON.how}How to play</button></div>
-  <div class="row2 mrow" style="margin-top:8px">${PG.milestones?`<button class="btn2" id="mM">${MENU_ICON.mile}${PG.milestones.summary()}</button>`:''}${PG.career&&PG.career.hall?`<button class="btn2" id="mF">${MENU_ICON.hall}Hall of fame</button>`:''}</div></div>`;
+  <button class="hcard" id="mC" style="--c:${TEAMS[hi].c1}">${url ? `<img src="${url}" alt="">` : ''}<span class="hk">Career</span><b${cd && Math.max(...cd.name.split(/[\s-]/).map(w => w.length)) > 8 ? ' class="long"' : ''}>${cd ? esc(cd.name) : 'Start a career'}</b><span class="hs">${cd ? esc(strip(cs).replace(cd.name + ' · ', '')) : 'Create a quarterback or a receiver and build a legacy.'}</span><span class="hgo">${cd ? 'Continue' : 'Begin'} ›</span></button>
+  <div class="mgrid">${tile('mSe', menuBadge(st, 'season'), 'Season', ss ? esc(strip(ss)) : '17 games and the playoffs')}${tile('mE', menuBadge(null, 'exh'), 'Exhibition', 'One game, any two teams')}${camp ? tile('mT', menuBadge(null, 'camp'), 'Training camp', esc(camp.summary().split(' · ').pop())) : ''}${PG.online ? tile('mO', menuBadge(null, 'online'), 'Online', 'Talk with everyone playing') : ''}</div>
+  <nav class="mbar">${bar('mS', MENU_ICON.set, 'Settings')}${bar('mH', MENU_ICON.how, 'How to play')}${PG.milestones ? bar('mM', MENU_ICON.mile, esc(PG.milestones.summary())) : ''}${PG.career && PG.career.hall ? bar('mF', MENU_ICON.hall, 'Hall of fame') : ''}</nav></div>`;
     /* the offer is for the first look at the menu: any choice here answers it */
     const go = f => () => {
       if (camp) camp.seen();
@@ -7201,6 +7222,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.27', 'November 2026', ['A title screen: the stadium, the name coming in a word at a time, and Tap to start', 'A new start menu: your career on a big card with your player standing in it, the other modes as tiles, a bar of small things along the bottom', 'The stadium now shows behind the top of the menu, and everything rises into place when it opens']],
     ['1.26', 'November 2026', ['200 new comments in the social feed, from fans, the other side, neutrals, analysts and teammates', '80 new league news stories: signings, trades, injuries, coaches and odd things from round the league', '63 new things for your coach to say after a game', "37 new ways to write your game's headline", '20 new weekly events in your inbox']],
     ['1.25', 'November 2026', ['A sack gets its moment: the camera cuts to the sacker celebrating over the quarterback, his side round him', 'So does an interception or a fumble taken away: the man who came up with it celebrates with the ball', 'Halftime opens on your quarterback jogging off, then the wide shot', 'The team now runs out of a tunnel you can see, with its smoke and the stands round it (the first shot was nearly black)', 'Coin toss and draft shots are framed for an upright phone, and nothing from the game is left lying over a cutscene']],
     ['1.24', 'November 2026', ['The banner (Touchdown, Kickoff, First down) sits on its own dark band, so it reads over the stadium scoreboard and the crowd', 'Every button now answers a press', 'Sideways phones: the touchdown camera stands further back so the scorer is in the picture, and the banner no longer sits across the player card', 'Small phones: a long double name on the career card breaks at its hyphen, not in the middle of a word', 'A touchdown that ends a quarter gets its celebration before the teams change ends']],
@@ -8377,7 +8399,7 @@
     boot() {
       resize();
       setGfx(SET.gfx !== '2d');
-      showMenu();
+      showTitle();
       requestAnimationFrame(frame);
     },
     /* test hooks: tools/harness.js drives the game through these */
