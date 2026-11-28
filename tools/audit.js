@@ -207,6 +207,23 @@ window.A = (() => {
     /* a dialog covers everything else: while one is up, only what is inside it counts */
     const ov = q('#ov'), root = ov && shown(ov) ? ov : app();
 
+    /* a word broken across two lines (a long name in a narrow card: "Montgomer / y-Okafor"). Letters and digits only:
+       a break at a hyphen or a space is where a break belongs. */
+    {
+      const tw = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), rg = document.createRange();
+      for (let n = tw.nextNode(); n; n = tw.nextNode()) {
+        const el = n.parentElement;
+        if (!el || !shown(el) || el.closest('svg,canvas,script,style') || n.nodeValue.length < 8) continue;
+        const re = /[A-Za-z0-9’']{6,}/g;
+        for (let m = re.exec(n.nodeValue); m; m = re.exec(n.nodeValue)) {
+          rg.setStart(n, m.index);
+          rg.setEnd(n, m.index + m[0].length);
+          const rs = [...rg.getClientRects()].filter(r => r.width > 0.5);
+          if (rs.length > 1 && Math.abs(rs[0].top - rs[rs.length - 1].top) > 4) add('split', path(el), `"${m[0]}" is broken across lines`, 2);
+        }
+      }
+    }
+
     /* sideways scrolling */
     for (const el of qa('.menu,.sheet,.dlg', root)) if (shown(el) && el.scrollWidth > el.clientWidth + 1) add('scroll', path(el), `${el.scrollWidth} wide in ${el.clientWidth}`, 2);
 

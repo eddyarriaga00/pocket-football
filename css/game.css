@@ -75,6 +75,13 @@ input{font:inherit;font-size:16px;color:var(--ink);background:var(--panel2);bord
 #banner{position:absolute;left:0;right:0;top:max(26%,190px);display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;pointer-events:none;
   opacity:0;transform:translateY(6px);transition:opacity .18s,transform .18s;font-family:var(--display);padding:0 16px}
 #banner.on{opacity:1;transform:none}
+/* the banner sits on a band of its own (1.24): dark across the middle and fading out at the ends, a hairline above and
+   below, so the words read over the stadium's own scoreboard, the crowd or snow */
+#banner{padding:13px 18px 12px;isolation:isolate}
+#banner::before{content:'';position:absolute;inset:0;z-index:-1;background:
+  linear-gradient(90deg,transparent,rgba(255,255,255,.26) 28%,rgba(255,255,255,.26) 72%,transparent) top/100% 1px no-repeat,
+  linear-gradient(90deg,transparent,rgba(255,255,255,.26) 28%,rgba(255,255,255,.26) 72%,transparent) bottom/100% 1px no-repeat,
+  linear-gradient(90deg,rgba(6,10,19,0),rgba(6,10,19,.8) 16%,rgba(6,10,19,.8) 84%,rgba(6,10,19,0))}
 #banner b{font-weight:800;font-size:28px;line-height:1.05;letter-spacing:.01em;color:var(--chalk);text-shadow:0 2px 0 rgba(0,0,0,.6),0 0 22px rgba(0,0,0,.65);text-transform:uppercase;text-wrap:balance}
 #banner span{background:rgba(6,10,19,.9);border-left:3px solid var(--acc);padding:4px 10px;border-radius:6px;font-family:var(--body);font-size:12px;font-weight:600}
 #toast{position:absolute;left:50%;top:max(18.5%,157px);transform:translateX(-50%);width:max-content;max-width:88%;box-sizing:border-box;text-align:center;line-height:1.35;pointer-events:none;opacity:0;transition:opacity .15s;
@@ -338,7 +345,7 @@ tr.me td{color:var(--acc);font-weight:700}
 /* career */
 .pc{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px 12px 18px}
 .pc::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--c,var(--acc))}
-.pc h3{margin:0;font-family:var(--display);font-weight:800;font-size:19px;line-height:1.1;letter-spacing:.01em;text-transform:uppercase;overflow-wrap:anywhere}
+.pc h3{margin:0;font-family:var(--display);font-weight:800;font-size:clamp(14px,5.2vw,19px);line-height:1.1;letter-spacing:.01em;text-transform:uppercase;overflow-wrap:break-word}   /* a long double name breaks at its hyphen on a small phone, not in the middle of a word (it was "Montgomer / y-Okafor" at 320 wide) */
 .pc p{margin:3px 0 0;color:var(--mute);font-size:12px;line-height:1.45}
 .pc .ovr{grid-row:1/3;grid-column:2;text-align:center;font-family:var(--display);font-weight:800;font-size:30px;line-height:1;font-variant-numeric:tabular-nums}
 .pc .ovr small{display:block;margin-top:3px;font-size:10px;letter-spacing:.14em;color:var(--mute);font-weight:700}
@@ -1205,6 +1212,7 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
   .grid.row .card canvas{aspect-ratio:7/4}
   #pad{max-width:300px}   /* fewer, wider rows: the buttons keep below the middle of a short screen */
   #banner b{font-size:22px}
+  #banner{top:156px;padding-top:9px;padding-bottom:8px}   /* below the broadcast card (80 to 150 down), which it used to sit across */
 }
 
 /* a computer screen or a big tablet: the scoreboard, the buttons and the play call a size up */
@@ -1231,3 +1239,10 @@ table.dft td i{display:inline-block;width:8px;height:8px;margin-right:7px;border
 .rst u{text-decoration:none;font-family:var(--display);font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
 .rst .st b{font-weight:800}
 .rst .me{background:var(--panel2);box-shadow:inset 3px 0 0 var(--acc)}
+
+/* every button answers a press (1.24): the tiles, chips, tabs and rows that had no pressed look of their own */
+#screen button{transition:transform .09s ease-out,filter .09s ease-out}
+#screen button:active:not(.scene):not(.go):not(.ans):not(:disabled){filter:brightness(1.22)}
+.mode:active,.tile:active{transform:scale(.985)}
+.chip:active{transform:scale(.95)}
+@media (prefers-reduced-motion:reduce){#screen button{transition:none}}

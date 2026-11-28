@@ -7190,6 +7190,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.24', 'November 2026', ['The banner (Touchdown, Kickoff, First down) sits on its own dark band, so it reads over the stadium scoreboard and the crowd', 'Every button now answers a press', 'Sideways phones: the touchdown camera stands further back so the scorer is in the picture, and the banner no longer sits across the player card', 'Small phones: a long double name on the career card breaks at its hyphen, not in the middle of a word', 'A touchdown that ends a quarter gets its celebration before the teams change ends']],
     ['1.23', 'November 2026', ['Cutscenes are letterboxed, come up out of black and go back through it, with a soft dark edge round the picture', 'A change of shot is now a cut, and within a shot the camera drifts and eases in instead of standing still', 'A touchdown cuts straight to the scorer']],
     ['1.22', 'November 2026', ['Touchdowns are filmed in three shots: a push in on the scorer, a drift across his front while he celebrates, then a pull back over the whole side', 'Seven new celebrations: Phone call, Push-ups, Shimmy, Rock the baby, Statue, Bow and arrow and Ball spin (18 in all, picked at random)', 'Two new team celebrations: everyone poses for a picture, or does the wave', 'The ball takes part: a spike bounces away, and it is spun, cradled or held to the ear', 'The scorer plays to the camera, his teammates gather behind him, and the beaten side walks out of the shot']],
     ['1.21', 'November 2026', ['Three new menu songs in the style of the theme, Two minute drill, Under the lights and Kickoff, and the four play in a random order']],
@@ -8228,6 +8229,15 @@
         const dx = tx - p.x, dy = ty - p.y, d = hyp(dx, dy), spd = d > 0.35 ? Math.min(6.2, d * 1.8) : 0, e = 1 - Math.exp(-dt * 3.5);
         p.vx += ((d ? dx / d : 0) * spd - p.vx) * e;
         p.vy += ((d ? dy / d : 0) * spd - p.vy) * e;
+        {
+          // on his way round, he keeps out of the lane between the scorer and the camera
+          const mx = (FW / 2 - w.x) * 0.35, my = 50 - w.y, ml = hyp(mx, my) || 1, ox = p.x - w.x, oy = p.y - w.y, along = (ox * mx + oy * my) / ml, across = (-ox * my + oy * mx) / ml;
+          if (along > 0.3 && along < 16 && Math.abs(across) < 3.2) {
+            const sd = across >= 0 ? 1 : -1, push = (3.2 - Math.abs(across)) * 14 * dt;
+            p.vx += -my / ml * sd * push;
+            p.vy += mx / ml * sd * push;
+          }
+        }
         for (const q of P) {
           // and they keep an arm's length from each other (and from him)
           if (q === p || q.team !== p.team || q.down || q.fell) continue;

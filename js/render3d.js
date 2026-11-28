@@ -5344,7 +5344,9 @@
       if (G.state === 'menu' || G.state === 'intro' || G.state === 'over') {
         turnEnds(endsWant);
         endsT = 9;
-      } else if (endsT >= 2.6) endsT = 0;  // start the crane
+      } else if (endsT >= 2.6) {
+        if (!(G.celeb && G.state === 'dead')) endsT = 0;  // start the crane (after the celebration, when a touchdown ends the quarter)
+      }
       else if (endsT >= 1.15) turnEnds(endsWant);  // and turn the stadium round at the top of it
     }
     endsT += dt;
@@ -5772,7 +5774,8 @@
       if (celebT < dt * 1.5) cm.snap = true;  // a cut to him, then the push in
       const w = G.celeb.who, t = celebT, mx = FW / 2 - w.x, my = 50 - w.y, ml = Math.hypot(mx, my) || 1, a0 = Math.atan2(my / ml, mx / ml * 0.35);
       const push = smooth(clamp(t / 0.8, 0, 1)), out = smooth(clamp((t - 3.3) / 1.4, 0, 1)), a = a0 + Math.sin(t * 0.5 - 0.6) * 0.55;
-      const R = lerp(lerp(10, 4.9, push), 11.5, out), h = lerp(lerp(2.6, 1.5, push), 5.2, out);
+      const wide = clamp((camera.aspect - 0.7) / 0.9, 0, 1);  // a wide screen sees less top to bottom: the camera stands further back, or it is all legs
+      const R = lerp(lerp(10, 4.9, push), 11.5, out) * lerp(1, 1.8, wide), h = lerp(lerp(2.6, 1.5, push), 5.2, out) + 0.5 * wide;
       v3.set(w.x + Math.cos(a) * R, h, -(w.y + Math.sin(a) * R));
       v3b.set(w.x, lerp(lerp(1.7, 2.15, push), 1.5, out), -w.y);
     } else {
