@@ -314,11 +314,11 @@ Animation
    the snap on every play. Left: the drop's footwork looked at on film, the pitch, a throw-away, taking a sack.
 3. [~] (1.16: hands to the ball, the defender's hand to the ball; left: the turn up the field, jump and toe tap on film) The catch: hands to the ball at every height, the jump, over the shoulder, the toe tap, the turn up the field
    afterwards; the defender's swat and the interception.
-4. [ ] The ball carrier: cuts, stiff arm, spin and juke looked at again on the new stride; a dive at the goal line.
+4. [ ] (filmed 2026-11-27, nothing changed: no defect found at film size) The ball carrier: cuts, stiff arm, spin and juke looked at again on the new stride; a dive at the goal line.
 5. [~] (1.17: four stances, the punch, the arm over; left: a real shed, a pancake, double teams) The line: pass sets, rush moves, run blocks. Today two men lean on each other.
-6. [ ] Tackles and getting up: wraps, the fall, the rise.
+6. [ ] (filmed 2026-11-27, nothing changed; pops left: a fallen man's arms after the whistle, about 1.0 a frame) Tackles and getting up: wraps, the fall, the rise.
 7. [~] (1.18: the swing, the kickoff run-up, the ball waits for the foot, the punt's drop; left: a holder and a snap on place kicks, the returner's catch on film) Kicking: the kicker's approach, the holder, the punter's drop and swing, the returner's catch.
-8. [ ] Between-play life: huddle, walk, signals, celebrations, officials.
+8. [ ] (filmed once 2026-11-27, nothing changed; the scene is dimmed under the play sheet, so film it before the sheet opens) Between-play life: huddle, walk, signals, celebrations, officials.
 9. [x] (1.15, `PG.r3d.pops`) A pop detector: a test that lists any joint that jumps in one frame, run over full games, so transitions
    between all of the above are found by a tool and not by eye.
 
