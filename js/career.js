@@ -613,9 +613,16 @@
     if (C.pos === 'LB') f = m.int >= 1 ? 'grabs an interception' : m.sack >= 1 ? `gets ${m.sack>1?m.sack+' sacks':'a sack'}` : m.tkl >= 5 ? `makes ${m.tkl} tackles` : '';
     if (C.pos === 'CB') f = m.int >= 1 ? `picks off ${m.int>1?m.int+' passes':'a pass'}` : m.pbu >= 2 ? `breaks up ${m.pbu} passes` : '';
     const sc = `${Math.max(us,them)}\u2013${Math.min(us,them)}`;
-    if (won) return f ? `${n} ${f} as the ${t} beat the ${o} ${sc}` : `${t} get past the ${o} ${sc}`;
-    if (us === them) return `${t} and ${o} finish level at ${us}`;
-    return f ? `${n} ${f}, but the ${t} fall to the ${o} ${sc}` : `${o} hand the ${t} a ${sc} loss`;
+    /* ten ways to write each kind of result (1.26; there was one), picked by Math.random so seeded runs are untouched */
+    const one = a => a[Math.floor(Math.random() * a.length)];
+    if (won) return f ? one([`${n} ${f} as the ${t} beat the ${o} ${sc}`, `${n} ${f} in a ${sc} win over the ${o}`, `${n} ${f} and the ${t} top the ${o} ${sc}`, `${n} ${f} to lead the ${t} past the ${o}, ${sc}`, `Behind ${n}, who ${f}, the ${t} beat the ${o} ${sc}`,
+      `${n} ${f}; ${t} win ${sc}`, `The ${o} have no answer for ${n}, who ${f} in a ${sc} ${t} win`, `${n} ${f} as the ${t} hold off the ${o}, ${sc}`, `${t} ride ${n} past the ${o}: he ${f} in a ${sc} win`, `${n} ${f} and the ${t} are winners, ${sc} over the ${o}`])
+      : one([`${t} get past the ${o} ${sc}`, `${t} beat the ${o} ${sc}`, `${t} handle the ${o}, ${sc}`, `${t} take care of the ${o} ${sc}`, `${sc}: ${t} over the ${o}`, `${t} grind out a ${sc} win over the ${o}`, `${t} find a way against the ${o}, ${sc}`, `${o} fall to the ${t}, ${sc}`,
+        `${t} win it ${sc} over the ${o}`, `A ${sc} win for the ${t} over the ${o}`]);
+    if (us === them) return one([`${t} and ${o} finish level at ${us}`, `${t} and ${o} tie ${us}\u2013${us}`, `Nothing separates the ${t} and the ${o}: ${us}\u2013${us}`, `${t}, ${o} play to a ${us}\u2013${us} tie`, `A ${us}\u2013${us} draw for the ${t} and the ${o}`,
+      `Overtime settles nothing: ${t} ${us}, ${o} ${us}`, `${t} and ${o} share it, ${us} apiece`, `Honors even: ${t} ${us}, ${o} ${us}`, `${t} and ${o} cannot be split at ${us}`, `All square at ${us} between the ${t} and the ${o}`]);
+    return f ? one([`${n} ${f}, but the ${t} fall to the ${o} ${sc}`, `${n} ${f} in a ${sc} loss to the ${o}`, `${n} ${f}, and it is not enough: ${o} ${sc}`, `Despite ${n}, who ${f}, the ${t} lose ${sc} to the ${o}`, `${o} beat the ${t} ${sc}; ${n} ${f} in defeat`, `${n} ${f} but the ${o} take it, ${sc}`])
+      : one([`${o} hand the ${t} a ${sc} loss`, `${t} fall ${sc} to the ${o}`, `${o} beat the ${t} ${sc}`, `${t} come up short against the ${o}, ${sc}`, `A ${sc} defeat for the ${t} against the ${o}`, `${o} too much for the ${t}: ${sc}`]);
   }
 
   /* the short line shown under the scorebug during a game */
@@ -961,7 +968,36 @@
      and deadline deals around the league, your own headline, and when the season ends the champion and the big awards.
      Kept in C.lnews, newest first, the last 60; the News tab shows them by week. The flavor items (injuries, trades,
      who is fired) use Math.random, so seeded test runs are untouched. */
-  const NEWS_KIND = { you: 'You', score: 'Final', upset: 'Upset', streak: 'Streak', lead: 'Leader', inj: 'Injury', coach: 'Coaching', trade: 'Trade', award: 'Award', po: 'Playoffs', deal: 'Contract' };
+  const NEWS_KIND = { you: 'You', score: 'Final', upset: 'Upset', streak: 'Streak', lead: 'Leader', inj: 'Injury', coach: 'Coaching', trade: 'Trade', award: 'Award', po: 'Playoffs', deal: 'Contract', wire: 'League' };
+  /* The wire (1.26): eighty small stories from round the league, one or two a week beside the ones the scores write.
+     {A} a team, {B} another, {P} a player's name, {pos} a position, {body} what hurts, {n} a small number. None of
+     them says anything about a result or a statistic, which the game keeps itself and they could contradict. */
+  const WIRE = {
+    deal: ['The {A} sign {pos} {P} to a {n}-year extension.', '{P}, the {A} {pos}, agrees to a new deal through next season.', 'The {A} and {pos} {P} are far apart in contract talks, sources say.', 'The {A} pick up the option on {pos} {P}.', 'The {A} restructure {P}’s contract to free up room.',
+      'Free agent {pos} {P} visits the {A} this week.', 'The {A} bring back veteran {pos} {P} on a one-year deal.', 'The {A} release {pos} {P} after {n} seasons.', '{P} holds out of practice as talks with the {A} stall.', 'The {A} make {P} the highest-paid {pos} in club history.',
+      'The {A} sign a kicker off the street and hold a tryout for another.', 'The {A} add {pos} {P} to the practice squad.'],
+    trade: ['The {A} trade {pos} {P} to the {B} for a late-round pick.', 'The {A} and the {B} swap backups at {pos}.', 'The {B} call the {A} about {pos} {P}. No deal yet.', 'The {A} listen to offers for {pos} {P}.', 'The {A} deal a future pick to the {B} for help at {pos}.',
+      '{P} asks the {A} for a trade. The club says no.', 'The {A} take {pos} {P} off the trade block.', 'The {A} and the {B} talk, but nothing gets done.'],
+    inj: ['{P}, the {A} {pos}, is day to day with a sore {body}.', 'The {A} get {pos} {P} back at practice this week.', '{P} of the {A} clears the concussion protocol.', 'The {A} place {pos} {P} on injured reserve.', '{P} ({body}) is questionable for the {A} this week.',
+      'The {A} rest {P} on Wednesday. No concern, the coach says.', 'The {A} {pos} {P} has surgery and is out for the season.', 'A {body} injury will keep the {A}’ {P} out for {n} weeks.', 'The {A} activate {pos} {P} from injured reserve.', '{P} practices in full for the {A} after a {body} scare.',
+      'Three {A} starters sit out practice with the flu.', 'Nobody is on the {A} injury report this week.'],
+    coach: ['The {A} coach: “We are closer than people think.”', 'The {A} hand play calling to their offensive coordinator.', 'The {A} coach will not name a starter at {pos} until Sunday.', 'The {A} owner gives the head coach a vote of confidence.', 'The {A} fire their defensive coordinator.',
+      'The {A} coach is fined for comments about the officials.', 'The {A} coach on the {B}: “As well coached as anyone we play.”', 'The {A} hold a players-only meeting.', 'The {A} coach cancels the day off: “We have work to do.”', 'The {A} give their coach a two-year extension.',
+      'The {A} bench their starting {pos}.', 'The {A} coach: “I have never been prouder of a group.”'],
+    wire: ['The {A} announce another sellout for Sunday.', 'The {A} unveil an alternate uniform for their next home game.', 'The {A} will retire the number of a former {pos} at halftime.', 'Rain is in the forecast for the {A} on Sunday.', 'The league moves the {A} game into the night slot.',
+      'The league fines {P} of the {A} for a late hit.', '{P} of the {A} is the conference player of the week.', 'The {A} rookie {P} wins rookie of the month.', 'The {A} {pos} {P} will play his 100th game on Sunday.', 'The {A} name {P} a captain for the rest of the season.',
+      'The {A} open a new training facility.', 'The {A} announce plans to renovate their stadium.', 'The {A} lay new turf after complaints from players.', 'The {A} travel a day early for their trip to play the {B}.', 'The {A} and the {B} hold a joint practice.',
+      'The {A} host a youth camp with {P} and teammates.', '{P} of the {A} donates his game check to a local school.', 'The {A} honor their championship team from twenty years ago.', 'The {A} mascot wins the league’s mascot race. It was not close.', 'The {A} {pos} {P} says the {B} “talk too much”.',
+      '{P} of the {A} guarantees a win over the {B}.', 'The {B} put a quote from the {A}’ {P} on their locker room wall.', 'The {A} wear throwback helmets this week.', 'The {A} add a former {pos} to their ring of honor.', 'The {A} crowd is the loudest in the league, a study says.',
+      'The league reviews a disputed call from the {A} game.', 'The league admits an officiating error in the {A} game.', 'The {A} kicker hits from 60 yards in practice. Teammates mob him.', 'The {A} punter is the league’s unlikely jersey seller of the week.', '{P} of the {A} becomes a father on Tuesday and practices on Wednesday.',
+      'The {A} {pos} {P} says he will retire after the season.', 'The {A} sign a rugby player and try him at {pos}.', 'The {A} long snapper has not had a bad snap in {n} years.', 'The {A} bus breaks down on the way to practice. They walk the last mile.', 'The {A} team plane is delayed by fog.',
+      'A stray dog runs onto the {A} practice field and is adopted by the {pos} room.'],
+  };
+  function wireStory(nm, i, j) {
+    const k = anyOf(['deal', 'trade', 'inj', 'coach', 'wire', 'wire', 'wire']), pos = anyOf(['quarterback', 'running back', 'receiver', 'tight end', 'tackle', 'guard', 'center', 'pass rusher', 'linebacker', 'cornerback', 'safety']);
+    const w = { A: nm(i), B: nm(j), P: anyOf(PG.NAMES), pos, body: anyOf(['knee', 'ankle', 'hamstring', 'shoulder', 'back', 'calf', 'wrist']), n: 2 + Math.floor(Math.random() * 4) };
+    return [k, anyOf(WIRE[k]).replace(/\{(\w+)\}/g, (_, q) => w[q])];
+  }
   function addNews(items) {
     C.lnews = items.concat(C.lnews || []).slice(0, 60);
   }
@@ -996,6 +1032,18 @@
           C.fired.push(i);
           add('coach', i, `The ${nm(i)} fire their head coach after an 0–${r.l} start.`);
         } else add('streak', i, `Still no win for the ${nm(i)} (0–${r.l}).`);
+      }
+      {
+        // off the wire: one most weeks, sometimes two, never the same story twice in a week
+        const told = new Set();
+        for (let q = Math.random() < 0.85 ? (Math.random() < 0.4 ? 2 : 1) : 0; q > 0; q--) {
+          const i = other();
+          let j = other();
+          if (j === i) j = (i + 3) % TEAMS.length;
+          const [k, text] = wireStory(nm, i, j);
+          if (!told.has(text)) add(k, i, text);
+          told.add(text);
+        }
       }
       if (Math.random() < 0.4) {
         const i = other(), pos = anyOf(['quarterback', 'running back', 'receiver', 'left tackle', 'linebacker', 'cornerback', 'safety', 'pass rusher']), wks = 2 + Math.floor(Math.random() * 4);
@@ -1108,6 +1156,27 @@
       C.trust >= 50 && { who: social().coachName, text: 'Asks for your read on a new play for this week.', ch: [['Give your idea', { trust: 3 }], ['Trust the staff', { trust: 1 }]] },
       deal().left === 1 && { id: 'leak', who: 'Your agent', text: 'Wants to let it leak that other teams are interested.', ch: [['Leak it', { hype: 4, trust: -3 }], ['Keep it quiet', { trust: 1 }]] },
       last && last.us < last.them && { id: 'meeting', who: `${mate.first} ${mate.last}`, text: 'Calls a players-only meeting after the loss and wants you to speak.', ch: [['Speak up', { trust: 2, chem: 2 }], ['Let others talk', {}]] },
+      /* twenty more (1.26) */
+      { who: 'Position coach', text: 'Offers an extra hour on your footwork before practice.', ch: [['Put in the hour', { xp: 120 }], ['Sleep in', {}]] },
+      { who: 'Team chef', text: 'Has a meal plan for you this week. No dessert.', ch: [['Follow it', { xp: 90 }], ['Order pizza', { chem: 1 }]] },
+      { who: 'Equipment manager', text: 'New cleats from the sponsor have arrived. They are not broken in.', ch: [['Wear them', { hype: 2 }], ['Keep the old pair', { trust: 1 }]] },
+      { who: `${mate.first} ${mate.last}`, text: 'Wants to run extra routes after Wednesday practice.', ch: [['Stay out', { chem: 3, xp: 60 }], ['Hit the showers', {}]] },
+      { who: 'A local school', text: 'Asks if you will speak at an assembly on your day off.', ch: [['Speak', { fol: 0.02, hype: 3 }], ['Send a video', { fol: 0.01 }]] },
+      { who: 'Your agent', text: 'A late-night talk show wants you on Thursday.', ch: [['Do the show', { hype: 6, fol: 0.02, trust: -2 }], ['Decline', { trust: 1 }]] },
+      { who: so.coachName, text: 'Wants volunteers for the scout team this week.', ch: [['Volunteer', { trust: 3 }], ['Stay with your group', {}]] },
+      { who: 'Team doctor', text: 'Recommends a day off your feet.', ch: [['Rest', { trust: 1 }], ['Practice anyway', { xp: 100, trust: -1 }]] },
+      { who: `${mate.first} ${mate.last}`, text: 'Is having a hard week and asks to talk after practice.', ch: [['Listen', { chem: 4 }], ['Not tonight', {}]] },
+      { who: 'A reporter', text: 'Asks for a sit-down feature about your season.', ch: [['Give the interview', { hype: 4, fol: 0.02 }], ['Keep it about the team', { trust: 2 }]] },
+      { who: 'Strength coach', text: 'Has a new lifting plan. It is hard.', ch: [['Do the plan', { xp: 160 }], ['Do your usual', {}]] },
+      { who: 'Your family', text: 'Is in town and wants dinner the night before the game.', ch: [['Go to dinner', { hype: 2 }], ['Stay at the hotel', { trust: 1 }]] },
+      { who: `${mate.first} ${mate.last}`, text: 'Bet the linemen he could out-eat them. Wants you at the table.', ch: [['Join in', { chem: 3 }], ['Pass', {}]] },
+      { who: 'Team captain', text: 'Is organizing a players’ film session, no coaches.', ch: [['Attend', { chem: 2, trust: 1 }], ['Skip it', { trust: -1 }]] },
+      { who: 'A charity', text: 'Asks you to host its dinner on Friday night.', ch: [['Host', { fol: 0.02, hype: 3, trust: -1 }], ['Send a signed ball', { fol: 0.01 }]] },
+      { who: 'Video crew', text: 'Wants to put a microphone on you for Sunday.', ch: [['Wear it', { hype: 5, fol: 0.01 }], ['No thanks', {}]] },
+      { who: 'A veteran on the team', text: 'Offers to show you how he studies an opponent.', ch: [['Sit with him', { xp: 110, chem: 1 }], ['Do it your way', {}]] },
+      { who: so.coachName, text: 'Asks you to stay after and help a young player with the calls.', ch: [['Help him', { trust: 2, chem: 1 }], ['Go home', {}]] },
+      { who: 'Your agent', text: 'A sneaker company wants a quick commercial.', ch: [['Shoot it', { xp: 200, hype: 2, trust: -1 }], ['After the season', { trust: 1 }]] },
+      { who: 'Team owner', text: 'Invites you to the suite to meet sponsors before Sunday.', ch: [['Go up', { hype: 3, fol: 0.01 }], ['Stay in your routine', { trust: 1 }]] },
     ].filter(Boolean);
     C.ev = Math.random() < 0.67 && pool.length ? anyOf(pool) : null;
     persist();
@@ -1623,19 +1692,28 @@
     if (C.pos === 'LB') weak = m.tkl < 2 ? 'getting off blocks' : '';
     if (C.pos === 'CB') weak = m.pbu + m.int === 0 ? 'your eyes in coverage' : '';
     let a;
-    if (role1 !== role0) a = up ? any(['You have earned it.', 'I have seen enough.']) + ` You are ${role1 === 'Starter' ? 'my starter' : 'in the rotation'} from now on.`
+    if (role1 !== role0) a = up ? any(['You have earned it.', 'I have seen enough.', 'You made the decision easy.', 'Nobody handed you this.', 'The tape made the call for me.', 'You forced my hand, in the best way.']) + ` You are ${role1 === 'Starter' ? 'my starter' : 'in the rotation'} from now on.`
       : `I am moving you down to ${role1 === 'Backup' ? 'the bench' : 'the rotation'} until I see more.`;
-    else if (pts >= 8) a = any(['That is the player we brought here.', 'Best game I have seen from you.', 'Keep stacking games like that one.']);
-    else if (pts >= 6) a = won ? any(['Good work. That is winning football.', 'I will take that every week.']) : 'You did your part. The rest of us owe you one.';
-    else if (pts >= 4) a = weak ? `Solid. Clean up ${weak} and you are a problem for this league.` : any(['Solid day. There is more in you.', 'Fine. Now do it again.']);
-    else a = weak ? `Not good enough. We are working on ${weak} this week.` : any(['Not good enough. See me at practice.', 'I expect more from you than that.']);
-    if (met === 3 && role1 === role0) a += ' Three for three on your goals: that is how trust is built.';
-    if (C.phase === 'done') return a + ' Enjoy the break. We go again next season.';
+    else if (pts >= 8) a = any(['That is the player we brought here.', 'Best game I have seen from you.', 'Keep stacking games like that one.', 'That is as good as it gets at your position.', 'I am going to show that tape to the whole room.', 'You played like the best player on the field. You were.',
+      'Games like that are why we brought you in.', 'I did not have one correction for you today.', 'That was special. Do not let it be rare.', 'You took the game over. That is what the great ones do.', 'Write that one down and remember how it felt.']);
+    else if (pts >= 6) a = won ? any(['Good work. That is winning football.', 'I will take that every week.', 'You were a big part of that win.', 'Clean, tough, smart. That is our kind of game.', 'That is the standard. Hold it.', 'You made the plays that were there. That wins games.', 'I liked what I saw. Keep building.',
+      'A good day’s work and a win to go with it.', 'You gave us a chance on every series.'])
+      : any(['You did your part. The rest of us owe you one.', 'You played well enough to win. We did not.', 'That loss is not on you.', 'I wish I had ten more who played like you today.', 'You held up your end. I have to get the rest right.', 'Keep playing like that and the wins will come.']);
+    else if (pts >= 4) a = weak ? any([`Solid. Clean up ${weak} and you are a problem for this league.`, `Decent, but ${weak} cost us. That is this week’s work.`, `I can live with most of it. Not ${weak}.`, `Fix ${weak} and that is a good game.`])
+      : any(['Solid day. There is more in you.', 'Fine. Now do it again.', 'Decent. I know there is another level.', 'A steady day. Steady is not the ceiling.', 'You were all right. All right does not win titles.', 'Good enough today. Aim higher next week.', 'Some good, some not. Watch the tape with me Monday.',
+        'I have no complaints and no compliments.', 'You did your job. Now go past it.']);
+    else a = weak ? any([`Not good enough. We are working on ${weak} this week.`, `We cannot win with ${weak}. You know that.`, `It came down to ${weak}. We fix it now.`, `Too many mistakes, starting with ${weak}.`])
+      : any(['Not good enough. See me at practice.', 'I expect more from you than that.', 'That was not you out there. Find him by Wednesday.', 'We both know that was not good enough.', 'I am not angry. I am waiting to see how you answer.', 'Bad days happen. Bad weeks do not, not here.',
+        'You let that game get away from you.', 'I need more. So does everyone in that room.', 'Flush it. Then come in early tomorrow.']);
+    if (met === 3 && role1 === role0) a += any([' Three for three on your goals: that is how trust is built.', ' All three goals met: that is a professional.', ' You hit every goal I set. I notice that.', ' Three goals, three ticks. Keep doing exactly that.']);
+    if (C.phase === 'done') return a + any([' Enjoy the break. We go again next season.', ' Rest up. Next season starts sooner than you think.', ' Get away from the game for a bit. Then come back hungry.', ' Good year. Go and be with your family.']);
     const o = nextOpp(), strong = C.ovrs[o] >= C.ovrs[C.team] + 3, soft = C.ovrs[o] <= C.ovrs[C.team] - 3;
-    const b = C.rival && C.rival.team === o ? `${C.rival.name} and the ${TEAMS[o].name} are next. You know what that game means.`
-      : C.phase !== 'reg' ? `It is win or go home against the ${TEAMS[o].name} now.`
-      : strong ? `The ${TEAMS[o].name} are next, and they are better than us on paper. Prove the paper wrong.`
-      : soft ? `The ${TEAMS[o].name} are next. No letting up.` : `The ${TEAMS[o].name} are next.`;
+    const T = TEAMS[o].name, R = C.rival ? C.rival.name : '';
+    const b = C.rival && C.rival.team === o ? any([`${R} and the ${T} are next. You know what that game means.`, `${R} and the ${T} are next. I do not need to say anything else.`, `The ${T} and ${R} next. Keep your head and let your game talk.`])
+      : C.phase !== 'reg' ? any([`It is win or go home against the ${T} now.`, `Lose to the ${T} and we go home. So we do not lose.`, `The ${T} stand between us and the next round.`])
+      : strong ? any([`The ${T} are next, and they are better than us on paper. Prove the paper wrong.`, `The ${T} are next and nobody gives us a chance. Good.`, `Next is the ${T}. They are the better team until we show otherwise.`, `Big test next: the ${T}. I want your best week of practice.`])
+      : soft ? any([`The ${T} are next. No letting up.`, `The ${T} are next. That is a game we should win, so prepare like we could lose.`, `Next is the ${T}. Take them lightly and I will sit you.`, `The ${T} next. Good teams beat the teams they should.`])
+      : any([`The ${T} are next.`, `Next up, the ${T}.`, `On to the ${T}.`, `We turn the page to the ${T}.`]);
     return a + ' ' + b;
   }
 

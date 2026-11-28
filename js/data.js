@@ -228,6 +228,6 @@
   const ORD = ['1st', '2nd', '3rd', '4th'];
 
   /* the number Settings › About shows: raise it when a release changes what players see */
-  const VERSION = '1.25';
+  const VERSION = '1.26';
   window.PG = { data: { VERSION, TEAMS, CONF, DIV, SUR, OLR, OLX, OFFR, DEFR, BASE, QUICK, NUM, FORM, FNAME, ROUTES, RNAME, OFF, DPOS, DEF, STYLES, SCHEME, LCOL, ORD } };
 })();
