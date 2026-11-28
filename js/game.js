@@ -1044,6 +1044,14 @@
       o.FB.y = los - dir * 2;
       o.X.x = bx - 6;
       o.Z.x = bx + 7.5;
+      if (op.n === 'Field Goal') {
+        /* a field goal has a holder (1.19): the fullback kneels seven yards back, just to the side of the spot, and
+           the kicker stands two steps behind it and to the other side */
+        o.FB.x = bx + 0.6;
+        o.FB.y = los - dir * 7;
+        o.QB.x = clamp(bx - 1.1, 1, FW - 1);
+        o.QB.y = los - dir * 8.6;
+      }
     }
     if (ps.mode === 'run') {
       const rn = o[op.run.who];
@@ -7167,6 +7175,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.19', 'November 2026', ['Field goals and extra points have a holder: the snap comes back, he puts the ball down, and the kicker steps in and kicks it', 'Punts: the snap goes back to the punter, who takes his steps and drops it onto his foot']],
     ['1.18', 'November 2026', ['Kickoffs are kicked: the kicker runs up, plants beside the ball and swings through it', 'Punts and field goals: a backswing, the foot meets the ball, a high finish', 'The ball waits for the foot on every kick, and a punt is dropped from the hands']],
     ['1.17', 'November 2026', ['Line play: pass blockers sit back and punch, run blockers drive low, pass rushers lean in and throw an arm over, run defenders hold their ground']],
     ['1.16', 'November 2026', ["The catch: the receiver's hands go to the ball itself as it arrives, at any height", 'A defender at the catch reaches for the ball, with both hands when he is under it']],

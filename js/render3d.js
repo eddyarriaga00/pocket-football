@@ -3145,6 +3145,32 @@
       thLegs = true;
       inHand = age < f.thRel ? 1 : 0;
       snap = true;
+    } else if (s.holder === p && sp < 1 && (s.pre || (ps.air && ps.air.kick && ps.air.t < s.kickHit + 0.3))) {
+      /* the holder: down on one knee beside the spot, hands out for the snap, then one finger on top of the ball
+         until it is kicked out from under it */
+      const d = s.dir;
+      tg.set(KNEEL);
+      tg[CHRX] = -0.3;
+      tg[HEADRX] = 0.25;
+      eyes = false;
+      hx = ps.bx - p.x - Math.sign(p.x - ps.bx || 1) * 0.6;
+      hy = d * 0.9;
+      const near = Math.hypot(ball.position.x - p.x, -ball.position.z - p.y) < 2.4 && ball.visible;
+      inv4.copy(f.chest.matrixWorld).invert();
+      if (near) HAND.copy(ball.position);
+      else HAND.set(p.x + (ps.bx - p.x) * 0.85, 0.75, -(p.y + d * 0.5));
+      if (near && ps.air && ps.air.t > s.kickHit) HAND.set(p.x + (ps.bx - p.x) * 0.85, 0.5, -p.y);  // it has gone: the hand stays where it was
+      HAND.y += near ? 0.16 : 0;
+      HAND.applyMatrix4(inv4);
+      for (let k = 0; k < 2; k++) {
+        const sh = k ? f.shR : f.shL;
+        armIK(HAND.x + (near ? 0 : k ? 0.1 : -0.1) - sh.position.x, HAND.y - (near && k ? 0.12 : 0) - sh.position.y, HAND.z - sh.position.z);
+        tg[k ? SRX : SLX] = ARM[0];
+        tg[k ? SRZ : SLZ] = ARM[1];
+        tg[k ? ER : EL] = ARM[2];
+      }
+      armRate = 30;
+      poseRate = 9;
     } else if (kickV >= 0) {
       /* The kick (1.18: until then the leg swung after the ball had gone, and nobody kicked a kickoff at all). The
          ball waits for the foot (see the ball, below). A tenth of a second of backswing into the ball, a high finish
@@ -5123,11 +5149,28 @@
     /* who is kicking, when his foot meets the ball, and where he stands to do it. The engine has the ball in the air
        from the moment of the kick; here it waits for the foot: a tenth of a second for a punt or a place kick, and
        0.45 s on a kickoff, which the kicker runs up to from three yards back. */
-    let kicker = null, kickHit = 0.1, kickAt = null, kickPunt = false;
-    if (ps && ps.air && ps.air.kick && ps.air.t < 1.2) {
-      const a = ps.air;
-      if (ps.mode === 'kick' && ps.qb) kicker = ps.qb;
-      else {
+    let kicker = null, kickHit = 0.1, kickAt = null, kickPunt = false, kickSnap = 0, kickSpot = null, holder = null;
+    if (ps && ps.mode === 'kick' && G.op && G.op.n === 'Field Goal') holder = P.find(q => q.role === 'FB' && q.team === ps.offTeam && !q.down) || null;
+    if (ps && ps.air && ps.air.kick && ps.air.t < 1.6) {
+      const a = ps.air, far = Math.hypot(a.x1 - a.x0, a.y1 - a.y0) || 1, ux = (a.x1 - a.x0) / far, uy = (a.y1 - a.y0) / far;
+      kickPunt = !!(ps.kick && ps.kick.type === 'punt');
+      if (ps.mode === 'kick' && ps.qb) {
+        /* a punt or a field goal. The snap goes back first (0.4 s to a punter, 0.3 s to the holder, who puts it
+           down), the kicker takes his steps, and his foot gets there at 0.8 s or 0.6 s. A kick that is blocked has
+           no time for any of that. */
+        kicker = ps.qb;
+        if (a.T < 1.2 || !ps.los) kickAt = [kicker.x, kicker.y, ux, uy];
+        else if (kickPunt) {
+          kickSnap = 0.4;
+          kickHit = 0.8;
+          kickAt = [a.x0 + ux * 1.2, a.y0 + uy * 1.2, ux, uy];
+        } else {
+          kickSnap = 0.3;
+          kickHit = 0.6;
+          kickSpot = holder ? [holder.x + (ps.bx - holder.x) * 0.85, ps.los - (G.dir || 1) * 7] : [ps.bx, ps.los - (G.dir || 1) * 7];
+          kickAt = [kickSpot[0] - ux * 0.35 - uy * 0.3, kickSpot[1] - uy * 0.35 + ux * 0.3, ux, uy];
+        }
+      } else {
         let best = 6;
         for (const q of P) if (!q.down && q.team !== ps.offTeam) {
           const dq = Math.hypot(q.x - a.x0, q.y - a.y0);
@@ -5137,16 +5180,14 @@
           }
         }
         if (a.t >= 0.05 && lastKicker && P.indexOf(lastKicker) >= 0) kicker = lastKicker;
-        if (kicker) kickHit = 0.45;
+        if (kicker) {
+          kickHit = 0.45;
+          kickAt = [a.x0 - ux * 0.35 - uy * 0.3, a.y0 - uy * 0.35 + ux * 0.3, ux, uy];
+        }
       }
       lastKicker = kicker;
-      kickPunt = !!(ps.kick && ps.kick.type === 'punt');
-      if (kicker) {
-        const far = Math.hypot(a.x1 - a.x0, a.y1 - a.y0) || 1, ux = (a.x1 - a.x0) / far, uy = (a.y1 - a.y0) / far;
-        kickAt = kickHit > 0.2 ? [a.x0 - ux * 0.35 - uy * 0.3, a.y0 - uy * 0.35 + ux * 0.3, ux, uy] : [kicker.x, kicker.y, ux, uy];
-      }
     } else lastKicker = null;
-    const st = { G, ps, kicker, kickHit, kickAt, kickPunt, pre: G.state === 'pre' || G.state === 'kickm', live: G.state === 'live' || G.state === 'replay', dir: G.dir || 1, celeb: G.celeb || null, charge: s.charge, P, figOf: q => (P.indexOf(q) < 0 ? null : figs[SIDELINE + P.indexOf(q)]) };  // a man who is not on the field has no figure (the slot before the first player's is a reserve on the bench)
+    const st = { G, ps, kicker, kickHit, kickAt, kickPunt, holder, pre: G.state === 'pre' || G.state === 'kickm', live: G.state === 'live' || G.state === 'replay', dir: G.dir || 1, celeb: G.celeb || null, charge: s.charge, P, figOf: q => (P.indexOf(q) < 0 ? null : figs[SIDELINE + P.indexOf(q)]) };  // a man who is not on the field has no figure (the slot before the first player's is a reserve on the bench)
     let ctl = null;
     for (let i = 0; i < MAXP; i++) {
       const f = figs[SIDELINE + i], p = P[i];
@@ -5247,14 +5288,25 @@
             /* it waits for the foot, then catches up with its flight */
             const fk = figs[SIDELINE + P.indexOf(kicker)], late = kickHit > 0.2 ? 0.55 : 0.3;
             if (a.t < kickHit) {
-              if (kickPunt && fk) {
-                // a punt: out of his hands and dropped onto the foot
-                const u = a.t / kickHit;
+              if (a.t < kickSnap) {
+                // the snap: back from the line to the punter's hands, or the holder's
+                const u = a.t / kickSnap, tx = kickSpot ? kickSpot[0] : a.x0, ty = kickSpot ? kickSpot[1] : a.y0;
+                bx = lerp(ps.bx, tx, u);
+                by = lerp(ps.los, ty, u);
+                bz = lerp(0.18, kickSpot ? 0.55 : 1.25, u) + Math.sin(u * Math.PI) * 0.3;
+              } else if (kickPunt && fk) {
+                // a punt: held out in front of him as he steps, then dropped onto the foot
+                const u = clamp((a.t - (kickHit - 0.12)) / 0.12, 0, 1);
                 bx = fk.root.position.x + kickAt[2] * 0.55;
                 by = -fk.root.position.z + kickAt[3] * 0.55;
                 bz = lerp(1.25, 0.55, u * u);
+              } else if (kickSpot) {
+                // put down on the spot, the holder's finger on top of it
+                bx = kickSpot[0];
+                by = kickSpot[1];
+                bz = lerp(0.55, 0.2, smooth(clamp((a.t - kickSnap) / 0.12, 0, 1)));
               } else {
-                const out = ps.mode === 'ko' ? 0 : 0.42;  // a place kick is struck a little in front of where he stands
+                const out = ps.mode === 'ko' ? 0 : 0.42;  // a place kick with no holder is struck a little in front of where he stands
                 bx = a.x0 + kickAt[2] * out;
                 by = a.y0 + kickAt[3] * out;
                 bz = ps.mode === 'ko' ? 0.36 : 0.18;
