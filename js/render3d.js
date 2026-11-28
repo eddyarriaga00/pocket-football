@@ -3845,6 +3845,21 @@
       tg[HL] -= lean;
       tg[HR] -= lean;
     }
+    if (p.role === 'C' && p.team === ps.offTeam && !p.down && ps.mode !== 'ko') {
+      /* the center and the ball (1.20): his hand is on it before the snap, and at the snap the arm fires it back
+         between his legs, then comes up into the block. On a kick the same, when the kick is called for. */
+      const kt = ps.air && ps.air.kick && s.kickSnap ? ps.air.t : -1, t = kt >= 0 ? kt : s.live && !ps.air && ps.t < 0.3 ? ps.t : -1, on = s.pre && sp < 0.4 ? 1 : t >= 0 && t < 0.3 ? 1 - smooth(clamp((t - 0.14) / 0.16, 0, 1)) : 0;
+      if (on > 0) {
+        const back = t >= 0 ? smooth(clamp(t / 0.12, 0, 1)) : 0, d = s.dir;
+        inv4.copy(f.chest.matrixWorld).invert();
+        HAND.set(lerp(ps.bx, p.x, back), lerp(0.24, 0.62, back), -lerp(ps.los, p.y - d * 0.75, back)).applyMatrix4(inv4);
+        armIK(HAND.x - f.shR.position.x, HAND.y - f.shR.position.y, HAND.z - f.shR.position.z);
+        tg[SRX] = lerp(tg[SRX], ARM[0], on);
+        tg[SRZ] = lerp(tg[SRZ], ARM[1], on);
+        tg[ER] = lerp(tg[ER], ARM[2], on);
+        if (t >= 0) armRate = 50;
+      }
+    }
     if (kickRun && s.kickAt && kickV < 0) {
       // running up to the ball, facing where it will go
       hx = s.kickAt[2];
@@ -5187,7 +5202,7 @@
       }
       lastKicker = kicker;
     } else lastKicker = null;
-    const st = { G, ps, kicker, kickHit, kickAt, kickPunt, holder, pre: G.state === 'pre' || G.state === 'kickm', live: G.state === 'live' || G.state === 'replay', dir: G.dir || 1, celeb: G.celeb || null, charge: s.charge, P, figOf: q => (P.indexOf(q) < 0 ? null : figs[SIDELINE + P.indexOf(q)]) };  // a man who is not on the field has no figure (the slot before the first player's is a reserve on the bench)
+    const st = { G, ps, kicker, kickHit, kickAt, kickPunt, kickSnap, holder, pre: G.state === 'pre' || G.state === 'kickm', live: G.state === 'live' || G.state === 'replay', dir: G.dir || 1, celeb: G.celeb || null, charge: s.charge, P, figOf: q => (P.indexOf(q) < 0 ? null : figs[SIDELINE + P.indexOf(q)]) };  // a man who is not on the field has no figure (the slot before the first player's is a reserve on the bench)
     let ctl = null;
     for (let i = 0; i < MAXP; i++) {
       const f = figs[SIDELINE + i], p = P[i];
