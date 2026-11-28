@@ -7447,6 +7447,7 @@
   /* What's new: the newest first. Add an entry here (and raise VERSION in data.js) whenever a release changes what
      players see. */
   const NEWS = [
+    ['1.30', 'November 2026', ["Signing in on a phone with careers no longer asks which save to keep when the account's copy is empty"]],
     ['1.29', 'November 2026', ['Accounts: sign in with your email, Google or GitHub. It is the same account as in PocketBasketball', 'An account keeps a copy of your save, so a cleared browser or a new phone does not lose your career', 'Sign in from the top of the menu or from Settings']],
     ['1.28', 'November 2026', ['The anthem: before a playoff, a primetime or a rival game, and now and then any game, both sides line up hand on heart and the fireworks go up', 'The huddle: your eleven in a ring before the second half, hands in, and they break', 'The walk-off: a game won on its last score ends with the whole bench burying the man who won it', 'Awards night: when an award is yours, you are on the stage with the trophy first']],
     ['1.27', 'November 2026', ['A title screen: the stadium, the name coming in a word at a time, and Tap to start', 'A new start menu: your career on a big card with your player standing in it, the other modes as tiles, a bar of small things along the bottom', 'The stadium now shows behind the top of the menu, and everything rises into place when it opens']],

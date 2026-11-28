@@ -244,6 +244,12 @@
         await upload();
         return;
       }
+      /* an account copy with no careers in it (made by signing in on a phone that had none) is nothing to keep:
+         this phone's careers go up over it without asking */
+      if (hasLocal && rec.players === 0) {
+        await upload();
+        return;
+      }
       /* a phone that has never agreed with this account counts its careers as new: they are never overwritten without asking */
       const agreed = !!a.synced && a.uid === user.uid, cloudNewer = rec.at > (agreed ? a.synced : 0), localNewer = agreed ? localAt > a.synced : hasLocal;
       if (!cloudNewer) {
