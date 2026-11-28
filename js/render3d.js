@@ -3067,20 +3067,42 @@
         wantY = -hy / dl * back;
         tg[PELRZ] = 0.13;
       }
-      tg[PELY] = HIP - 0.12;
-      tg[CHRX] = of ? -0.3 : -0.4;
-      tg[HEADRX] = 0.3;
+      /* Four different jobs, four different bodies (until 1.17 every block was the same crouch):
+         pass protection sits back, chest up and seat down, on short choppy feet;
+         a run block is low and leaning, the legs driving in long pumps;
+         a pass rusher leans in behind his hands and, every second or two, throws an arm over to get by;
+         a run defender sits low and square, arms long, holding his ground. */
+      const mine = p.team === ps.offTeam, passing = ps.mode === 'pass' && !ps.thrown && !ps.open, job = mine ? (passing ? 0 : 1) : passing ? 2 : 3;
+      const wj = job === 0 ? Math.sin(time * 19 + f.seed) : w, amp = [0.16, 0.38, 0.32, 0.2][job];
+      tg[PELY] = HIP - [0.15, 0.13, 0.1, 0.17][job];
+      tg[CHRX] = [-0.12, -0.52, -0.46, -0.26][job] + (of ? 0 : -0.1);
+      tg[HEADRX] = [0.12, 0.42, 0.36, 0.24][job];
       tg[SLX] = 1.45;
       tg[SRX] = 1.45;
       tg[EL] = 0.25;
       tg[ER] = 0.25;
-      tg[HL] = 0.45 + w * 0.3;
-      tg[HR] = 0.45 - w * 0.3;
-      tg[KL] = -0.75;
-      tg[KR] = -0.75;
+      tg[HL] = [0.6, 0.5, 0.48, 0.55][job] + wj * amp;
+      tg[HR] = [0.6, 0.5, 0.48, 0.55][job] - wj * amp;
+      tg[KL] = tg[KR] = [-1.0, -0.8, -0.75, -0.95][job];
+      tg[HLZ] = -0.1;
+      tg[HRZ] = 0.1;  // a base wider than his hips
       plant(tg);
       /* hands on him: the blocker's inside, on the chest plate; the defender's wider and higher, on the shoulder pads */
       if (of && of !== f) handsOn(f, tg, p.x + f.sx, -(p.y + f.sy), of, !p.block, w * 0.012);
+      if (job === 0) {
+        // the punch: one hand, then the other, shot out and brought back
+        const pu = Math.max(0, Math.sin(time * 6.5 + f.seed * 3));
+        tg[Math.sin(time * 3.25 + f.seed * 1.5) > 0 ? ER : EL] += 0.55 * (1 - pu);
+      } else if (job === 2) {
+        // the arm over: about a third of a second, on one side or the other
+        const ph = (time * 0.55 + f.seed * 0.37) % 1, u = ph < 0.2 ? Math.sin(ph / 0.2 * Math.PI) : 0, sd = Math.floor(time * 0.55 + f.seed * 0.37) % 2 ? 1 : -1;
+        if (u > 0) {
+          tg[sd > 0 ? SRX : SLX] = lerp(tg[sd > 0 ? SRX : SLX], 2.75, u);
+          tg[sd > 0 ? ER : EL] = lerp(tg[sd > 0 ? ER : EL], 0.9, u);
+          tg[CHRY] += sd * 0.45 * u;
+          tg[PELRZ] += sd * 0.08 * u;
+        }
+      }
       armRate = 12;  // the hands are solved onto a man who is moving: followed a little softly, they do not chatter
     } else if (p.fc) {
       // fair catch: one arm straight up, waving, eyes on the ball

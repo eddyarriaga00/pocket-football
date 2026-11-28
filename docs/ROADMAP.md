@@ -18,6 +18,7 @@ what is next. Update it after every item.
   `git revert --no-edit <commit>..main` then push `main`; the site redeploys in a minute or two. Or tell the
   session "roll back to before <what>".
 - **Rollback points** (newest first; the commit is the last good `main` before that change):
+  - `5ea42fa`, before the four line-play stances (2026-11-27)
   - `cf5ec21`, before the hands-to-the-ball catch (2026-11-27)
   - `eeccdbe`, before the pop fixes and the pop detector (2026-11-27)
   - `6a722b0`, before the hand-off, the carried-across ball and the quality step-down change (2026-11-27)
@@ -313,7 +314,7 @@ Animation
 3. [~] (1.16: hands to the ball, the defender's hand to the ball; left: the turn up the field, jump and toe tap on film) The catch: hands to the ball at every height, the jump, over the shoulder, the toe tap, the turn up the field
    afterwards; the defender's swat and the interception.
 4. [ ] The ball carrier: cuts, stiff arm, spin and juke looked at again on the new stride; a dive at the goal line.
-5. [ ] The line: pass sets, rush moves, run blocks. Today two men lean on each other.
+5. [~] (1.17: four stances, the punch, the arm over; left: a real shed, a pancake, double teams) The line: pass sets, rush moves, run blocks. Today two men lean on each other.
 6. [ ] Tackles and getting up: wraps, the fall, the rise.
 7. [ ] Kicking: the kicker's approach, the holder, the punter's drop and swing, the returner's catch.
 8. [ ] Between-play life: huddle, walk, signals, celebrations, officials.
@@ -3615,6 +3616,8 @@ The owner: "make sure controller is fully good and keyboard and mouse".
 - **2026-11-27, the pop detector and its first fixes (1.15).** `PG.r3d.pops(true)` then a watched game stepped with a render each step, then `PG.r3d.pops()`: every joint that turns more than 0.6 in a sixtieth of a second, heading swings and draw-offset jumps, counted by what the man was doing. First run: 127 kinds, the worst a shoulder going 3.6 in a frame (easing from 3.0 to -3.0 through his hips: easePose now takes a shoulder the short way), linemen dropping into their stance in three frames (now over half a second, `poseRate`), half turns in a frame or two (heading capped at 11 a second outside the throw), hands in a block chattering (arms eased at 12 a second, `armRate`). After: about 26 kinds, mostly near the threshold; left are the 3x walk's legs before the snap and the throw's whip, both meant to be fast, and arms of fallen men after the whistle (about 1.0). Checked: fingerprint unchanged; three rough exhibitions, a quarterback career game, a watched game and a mouse-only game clean. Not looked at on screen.
 
 - **2026-11-27, the catch (1.16).** Filmed, the receiver held his arms out in a set direction and the ball arrived near them. Now over the last 0.28 s (0.12 s for a ball over the shoulder) both arms are solved onto the ball's own position in the chest's space (armIK, eased at 45 a second), each hand a little to its side; the defender at the catch point does the same with the hand on the ball's side, both hands when he is within 0.9 yards of where it lands. The carry-across from 1.14 takes it from the hands to the tuck. Checked: fingerprint unchanged; two rough exhibitions, a receiver career game and a watched game clean; one catch looked at on film from two sides. Not checked on film: the jump, the toe tap, the over-the-shoulder ball, an interception.
+
+- **2026-11-27, line play (1.17).** Every block was one crouch with the legs pumping. The block branch of poseFor now has four jobs by side and play: pass protection (chest up, seat down, quick short steps, one hand punching while the other stays on him), run block (low, leaning, long leg drive), pass rush (leaning in behind the hands, an arm thrown over for a fifth of every 1.8 s on a seeded side, the chest turning with it), run defense (low and square). A wider base for all four. The carrier and a tackle were filmed too and nothing was changed there. Checked: fingerprint unchanged; pops over 7000 watched steps show nothing new from blocks; two rough exhibitions, a quarterback career game and a watched game clean; the line looked at on film from above (small). Not checked: each job close up.
 
 ## Morning hand-off
 
